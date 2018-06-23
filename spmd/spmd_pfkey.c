@@ -326,7 +326,6 @@ static int
 spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 {
 	struct rcf_policy *pl = NULL;
-	struct rcf_ipsec *ips = NULL;
 	struct rc_addrlist *al = NULL;
 	struct rc_addrlist *ipal = NULL;
 	struct rc_addrlist *ipal_tmp = NULL;
@@ -373,7 +372,6 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	if (!sl->pl->ips) {
 		return -1;
 	}
-	ips = sl->pl->ips;
 
 	/* check rcf_ipsec{} sa_* set or NULL */
 	if (set_satype(sl, rc)<0) {
