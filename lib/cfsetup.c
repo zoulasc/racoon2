@@ -3026,7 +3026,6 @@ rcf_fix_addrlist(struct cf_list *head, struct rc_addrlist **dst,
 {
 	struct rc_addrlist *new_head = 0, *new = 0, **lastap;
 	struct cf_list *n, *m;
-	rc_vchar_t va;
 	struct rc_addrlist *al = 0;
 	char port[10];
 	int nport;
@@ -3060,8 +3059,6 @@ rcf_fix_addrlist(struct cf_list *head, struct rc_addrlist **dst,
 				    "at %d in %s\n", m->lineno, m->file);
 				goto err;
 			}
-			va.l = strlen(n->d.str);
-			va.v = n->d.str;
 			error = rcs_getaddrlist(n->d.str, port, RCT_ADDR_FQDN, &al);
 			if (error) {
 				plog(PLOG_INTERR, PLOGLOC, NULL,
