@@ -290,7 +290,7 @@ cb_signal(void *arg)
 {
 	int signo;
 
-	signo = (int)arg;
+	signo = (int)(intptr_t)arg;
 
 	switch (signo) {
 	case SIGHUP:
