@@ -66,16 +66,16 @@ all:  $(PROG) $(TESTPROG)
 install: install-prog install-doc
 
 install-prog: $(PROG)
-	$(INSTALL) -d $(sbindir)
-	$(INSTALL_PROGRAM) $(PROG) $(sbindir)
+	$(INSTALL) -d $(DESTDIR)$(sbindir)
+	$(INSTALL_PROGRAM) $(PROG) $(DESTDIR)$(sbindir)
 
 install-doc:
-	$(INSTALL) -d $(mandir)/man8
+	$(INSTALL) -d $(DESTDIR)$(mandir)/man8
 # not friendly with -n  :-(
 	sysconfdir="$$(echo '$(sysconfdir)' | sed 's/%/\\\%/g')"; \
 	for f in $(MAN); do \
 		sed -e s%\@sysconfdir\@%"$$sysconfdir"%g < $$f > $${f}.tmp; \
-		$(INSTALL_DATA) $${f}.tmp $(mandir)/man$${f##*.}/$$f; \
+		$(INSTALL_DATA) $${f}.tmp $(DESTDIR)$(mandir)/man$${f##*.}/$$f; \
 		rm $${f}.tmp; \
 	done
 

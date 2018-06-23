@@ -12,7 +12,7 @@ INSTALL_SCRIPT=@INSTALL_SCRIPT@
 all:
 
 install: all install-startup-@startup_scripts@ install-samples install-hook
-	$(INSTALL) -d -o 0 -g 0 -m 700 /var/run/racoon2
+	$(INSTALL) -d -o 0 -g 0 -m 700 $(DESTDIR)/var/run/racoon2
 
 install-samples:
 	$(INSTALL) -d $(sysconfdir)

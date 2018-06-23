@@ -17,10 +17,10 @@ PROG=pskgen
 all:
 
 install: all
-	$(INSTALL) -d $(sbindir)
-	$(INSTALL_SCRIPT) $(PROG) $(sbindir)
-	$(INSTALL_DATA) $(PROG).8 $(mandir)/man8
-	$(INSTALL) -d $(prefix)/etc/racoon2
+	$(INSTALL) -d $(DESTDIR)$(sbindir)
+	$(INSTALL_SCRIPT) $(PROG) $(DESTDIR)$(sbindir)
+	$(INSTALL_DATA) $(PROG).8 $(DESTDIR)$(mandir)/man8
+	$(INSTALL) -d $(DESTDIR)$(prefix)/etc/racoon2
 	sh ./autogen.spmd.pwd
 
 depend:

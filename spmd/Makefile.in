@@ -38,11 +38,11 @@ spmdctl: spmdctl.o ../lib/libracoon.a
 spmdctl.o: spmd_internal.h
 
 install: all
-	$(INSTALL_DIR) $(sbindir)
-	$(INSTALL_PROGRAM) $(DAEMON) $(sbindir)
-	$(INSTALL_PROGRAM) $(COMMAND) $(sbindir)
-	$(INSTALL_DIR) $(man8dir)
-	$(INSTALL_DATA) $(MANFILES) $(man8dir)
+	$(INSTALL_DIR) $(DESTDIR)$(sbindir)
+	$(INSTALL_PROGRAM) $(DAEMON) $(DESTDIR)$(sbindir)
+	$(INSTALL_PROGRAM) $(COMMAND) $(DESTDIR)$(sbindir)
+	$(INSTALL_DIR) $(DESTDIR)$(man8dir)
+	$(INSTALL_DATA) $(MANFILES) $(DESTDIR)$(man8dir)
 
 clean:
 	-rm -f $(TARGET) *.o $(COMMAND)
