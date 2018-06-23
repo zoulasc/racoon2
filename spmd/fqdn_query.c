@@ -163,10 +163,9 @@ static int
 fqdn_query_response(struct task *t) 
 {
 	char data[MAX_UDP_DNS_SIZE];
-	int ret;
 
 	/* just discard */
-	ret = recvfrom(t->fd, data, sizeof(data), t->flags, t->sa, &(t->salen));
+	(void)recvfrom(t->fd, data, sizeof(data), t->flags, t->sa, &(t->salen));
 
 	spmd_free(t->sa);
 	close(t->fd);
@@ -178,9 +177,8 @@ static int
 fqdn_query_send(struct task *t)
 {
 	struct task *newt = NULL;
-	int ret=0;
 
-	ret = sendto(t->fd, t->msg, t->len, t->flags, t->sa, t->salen);
+	(void)sendto(t->fd, t->msg, t->len, t->flags, t->sa, t->salen);
 
 	newt = task_alloc(0);
 	newt->fd = t->fd;
