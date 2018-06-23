@@ -38,8 +38,16 @@ setval {
 	# Your IP Address
 	MY_IPADDRESS	"192.168.0.1";
 
-	# Peer's IP Address
+	# Peer's IP Address (If peer is behind NAT this should be set to Peer's
+	#		     Public IP address)
 	PEERS_IPADDRESS	"192.168.1.1";
+
+### Transport Mode NAT-T Settings ###
+	# Your Public IP Address (Your IP address if you are not behind NAT)
+	MY_PUBLIC_IPADDRESS	"216.58.194.142";
+
+	# Peer's Private IP Address
+	PEERS_PRIVATE_IPADDRESS	"10.0.0.1";
 
 ### Tunnel Mode Settings ###
 	# Your Network Address or Host Address (host-to-host tunnel mode)
