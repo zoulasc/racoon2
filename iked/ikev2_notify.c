@@ -281,12 +281,16 @@ resp_ike_sa_auth_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 			     struct ikev2_child_param *child_param,
 			     int *http_cert_lookup_supported)
 {
-	struct ikev2_header *ikehdr;
 	struct ikev2payl_notify *notify;
+#ifdef notyet
+	struct ikev2_header *ikehdr;
 	uint32_t message_id;
+#endif
 
+#ifdef notyet
 	ikehdr = (struct ikev2_header *)msg->v;
 	message_id = get_uint32(&ikehdr->message_id);
+#endif
 	notify = (struct ikev2payl_notify *)payload;
 
 	switch (get_notify_type(notify)) {
