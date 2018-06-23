@@ -1,0 +1,39 @@
+# $Id: TODO
+
+List of work needed on the racoon2 package
+
+1. Debug and fix the hook scripts. In one configuration that has been recently
+   tested for IKEv1, only the ph1-up script runs, and it does not load the
+   scripts in the ph1-up.d directory. This makes it difficult to do whatever
+   maintenance tasks that need to be completed when certain events occur.
+
+2. Debug and fix the management of the phase 2 SA's in IKEv1 when the peer
+   terminates the connection and the phase 1 ISAKMP-SA is purged. Currently
+   only one of the phase 2 SA's is deleted and the ph1-down script is not
+   currently being called when phase 1 goes down.
+
+3. Relax the matching that racoon2 does at the beginning of the phase2 exchange
+   when we are acting as a passive responder. Currently the selectors need to
+   exactly match the traffic the client/peer is proposing to send to us and
+   receive from us. For example, if our selectors specify that we want to
+   require esp in transport mode for the udp upper layer protocol and any
+   port but the peer specifies only udp port 1701, the L2TP port, then
+   racoon2 will fail to find a matching selector. Racoon is much more forgiving
+   at this stage of the negotiations with the peer. This behavior makes it
+   virtually impossible to craft a flexible configuration that supports
+   multiple types of clients. Perhaps this problem is limited to transport
+   mode with IKEv1 when we don't receive much information about the peer's
+   network configuration and the type of traffic the peer wants to protect.
+   For tunnel mode, this strict matching is desirable, especially when
+   there is NAT-T, because it provides a way to validate the traffic
+   coming through the tunnel and reject unwanted traffic. But it seems this is
+   not needed or desireable for transport mode when other mechanisms such as
+   validating tcp/udp checksums are used to validate the traffic.
+
+4. For NAT traversal in transport mode, NAT original address payloads are
+   ignored on input. I did not notice if racoon2 sends the NAT original address
+   payloads to the peer. Without handling and processing these payloads, the
+   checksum fixup in NAT-T transport mode cannot be optimized. Racoon does
+   handle these payloads.
+
+5. Test other scenarios: tunnel mode, IKEv2, etc.
