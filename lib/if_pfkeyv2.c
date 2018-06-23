@@ -1139,19 +1139,16 @@ rcpfk_set_sadbkey(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 {
 	rc_vchar_t *buf;
 	struct sadb_key *p;
-	int keytype;
 	size_t keylen;
 	caddr_t key;
 	int len, prevlen, extlen;
 
 	switch (type) {
 	case SADB_EXT_KEY_AUTH:
-		keytype = rct2pfk_authtype(rc->authtype);
 		key = rc->authkey;
 		keylen = rc->authkeylen;
 		break;
 	case SADB_EXT_KEY_ENCRYPT:
-		keytype = rct2pfk_enctype(rc->enctype);
 		key = rc->enckey;
 		keylen = rc->enckeylen;
 		break;
