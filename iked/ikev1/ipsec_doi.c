@@ -503,55 +503,43 @@ print_ph1mismatched(p, proposal)
 	memset(&sa, 0, sizeof(sa));
 	if (t2isakmpsa(p->trns, &sa) < 0)
 		return;
+	plog(PLOG_PROTOERR, PLOGLOC, NULL,
+	    "ours: enctype=%s authmethod=%s hashtype %s dh_group %s\n",
+	    s_oakley_attr_v(OAKLEY_ATTR_ENC_ALG, sa.enctype),
+	    s_oakley_attr_v(OAKLEY_ATTR_AUTH_METHOD, sa.authmethod),
+	    s_oakley_attr_v(OAKLEY_ATTR_HASH_ALG, sa.hashtype),
+	    s_oakley_attr_v(OAKLEY_ATTR_GRP_DESC, sa.dh_group));
 	for (s = proposal; s ; s = s->next) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "DB(prop#%d:trns#%d):Peer(prop#%d:trns#%d) "
+		    "theirs: enctype=%s authmethod=%s hashtype %s dh_group %s\n",
+		    s->prop_no, s->trns_no,
+		    p->prop->p_no, p->trns->t_no,
+		    s_oakley_attr_v(OAKLEY_ATTR_ENC_ALG, s->enctype),
+		    s_oakley_attr_v(OAKLEY_ATTR_AUTH_METHOD, s->authmethod),
+		    s_oakley_attr_v(OAKLEY_ATTR_HASH_ALG, s->hashtype),
+		    s_oakley_attr_v(OAKLEY_ATTR_GRP_DESC, s->dh_group));
 		if (sa.enctype != s->enctype) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
-				"rejected enctype: "
-				"DB(prop#%d:trns#%d):Peer(prop#%d:trns#%d) = "
-				"%s:%s\n",
-				s->prop_no, s->trns_no,
-				p->prop->p_no, p->trns->t_no,
-				s_oakley_attr_v(OAKLEY_ATTR_ENC_ALG,
-					s->enctype),
-				s_oakley_attr_v(OAKLEY_ATTR_ENC_ALG,
-					sa.enctype));
+			    "rejected enctype\n");
+			continue;
 		}
 		if (sa.authmethod != s->authmethod) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
-				"rejected authmethod: "
-				"DB(prop#%d:trns#%d):Peer(prop#%d:trns#%d) = "
-				"%s:%s\n",
-				s->prop_no, s->trns_no,
-				p->prop->p_no, p->trns->t_no,
-				s_oakley_attr_v(OAKLEY_ATTR_AUTH_METHOD,
-					s->authmethod),
-				s_oakley_attr_v(OAKLEY_ATTR_AUTH_METHOD,
-					sa.authmethod));
+			    "rejected authmethod\n");
+			continue;
 		}
 		if (sa.hashtype != s->hashtype) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
-				"rejected hashtype: "
-				"DB(prop#%d:trns#%d):Peer(prop#%d:trns#%d) = "
-				"%s:%s\n",
-				s->prop_no, s->trns_no,
-				p->prop->p_no, p->trns->t_no,
-				s_oakley_attr_v(OAKLEY_ATTR_HASH_ALG,
-					s->hashtype),
-				s_oakley_attr_v(OAKLEY_ATTR_HASH_ALG,
-					sa.hashtype));
+			    "rejected hashtype\n");
+			continue;
 		}
 		if (sa.dh_group != s->dh_group) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
-				"rejected dh_group: "
-				"DB(prop#%d:trns#%d):Peer(prop#%d:trns#%d) = "
-				"%s:%s\n",
-				s->prop_no, s->trns_no,
-				p->prop->p_no, p->trns->t_no,
-				s_oakley_attr_v(OAKLEY_ATTR_GRP_DESC,
-					s->dh_group),
-				s_oakley_attr_v(OAKLEY_ATTR_GRP_DESC,
-					sa.dh_group));
+			    "rejected dh_group\n");
+			continue;
 		}
+		plog(PLOG_PROTOERR, PLOGLOC, NULL, "ACCEPTED\n");
 	}
 
 	if (sa.dhgrp != NULL)
