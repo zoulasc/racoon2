@@ -59,8 +59,8 @@ EOD
 	exit 0;
 }
 
-require 'getopts.pl';
-do Getopts('rs:o:di:he:d');
+require Getopt::Std;
+Getopt::Std::getopts('rs:o:di:he:d');
 $output = '-';
 $output = $opt_o if ($opt_o);
 
