@@ -1945,8 +1945,6 @@ responder_ike_sa_auth_recv0(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 	struct ikev2_payload_header *p;
 	int type;
 	struct ikev2_payload_header *id_i = 0;
-	struct ikev2_payload_header *cert = 0;
-	struct ikev2_payload_header *certreq = 0;
 	struct ikev2_payload_header *id_r = 0;
 	struct ikev2payl_auth *auth = 0;
 	struct ikev2_payload_header *sa_i2 = 0;
@@ -2010,10 +2008,8 @@ responder_ike_sa_auth_recv0(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 			 * accept up to four X.509 certificates in support of authentication,
 			 */
 #endif
-			cert = p;
 			break;
 		case IKEV2_PAYLOAD_CERTREQ:
-			certreq = p;
 			break;
 		case IKEV2_PAYLOAD_ID_R:
 			if (id_r)
@@ -2639,7 +2635,6 @@ initiator_ike_sa_auth_recv0(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 	int type;
 	struct ikev2_payload_header *p;
 	struct ikev2_payload_header *id_r = 0;
-	struct ikev2_payload_header *cert = 0;
 	struct ikev2payl_auth *auth = 0;
 	struct ikev2_payload_header *sa_r2 = 0;
 	struct ikev2_payload_header *ts_i = 0;
@@ -2669,7 +2664,6 @@ initiator_ike_sa_auth_recv0(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 			 * accept up to four X.509 certificates in support of authentication,
 			 */
 #endif
-			cert = p;
 			break;
 		case IKEV2_PAYLOAD_AUTH:
 			if (auth)
@@ -2791,7 +2785,6 @@ initiator_ike_sa_auth_cont(struct ikev2_sa *ike_sa, int result, rc_vchar_t *msg,
 	int type;
 	struct ikev2_payload_header *p;
 	struct ikev2_payload_header *cfg = 0;
-	struct ikev2_payload_header *id_r = 0;
 	struct ikev2_payload_header *sa_r2 = 0;
 	struct ikev2_payload_header *ts_i = 0;
 	struct ikev2_payload_header *ts_r = 0;
@@ -2834,7 +2827,6 @@ initiator_ike_sa_auth_cont(struct ikev2_sa *ike_sa, int result, rc_vchar_t *msg,
 		case IKEV2_PAYLOAD_ENCRYPTED:
 			break;
 		case IKEV2_PAYLOAD_ID_R:
-			id_r = p;
 			break;
 		case IKEV2_PAYLOAD_SA:
 			sa_r2 = p;
@@ -4541,7 +4533,9 @@ ikev2_process_delete(struct ikev2_sa *ike_sa, struct ikev2_payload_header *p,
 	int i;
 	uint32_t spi;
 	struct ikev2_child_sa *child_sa;
+#if 0
 	struct rcf_policy *policy;
+#endif
 
 	d = (struct ikev2payl_delete *)p;
 	protocol_id = d->dh.protocol_id;
@@ -4641,7 +4635,9 @@ ikev2_process_delete(struct ikev2_sa *ike_sa, struct ikev2_payload_header *p,
 				break;
 			}
 
+#if 0
 			policy = child_sa->selector->pl;
+#endif
 
 			/* (draft-17)
 			 * If by chance both ends of a set
