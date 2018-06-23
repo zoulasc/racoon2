@@ -378,11 +378,12 @@ static void
 do_daemon(void)
 {
 	pid_t pid;
-	int en;
 
 	openlog("spmd", LOG_PID, LOG_DAEMON);
 	if (daemon(0, 0) < 0) { 
-		en = errno;
+#ifdef __linux__ /* glibc specific ? */
+		int en = errno;
+#endif
 		perror("daemon()"); 
 #ifdef __linux__ /* glibc specific ? */
 		if (en == 0) {
