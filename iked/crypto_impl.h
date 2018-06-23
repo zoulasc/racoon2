@@ -246,7 +246,7 @@ extern int eay_dh_compute (rc_vchar_t *, uint32_t, rc_vchar_t *,
 extern int eay_revbnl (rc_vchar_t *);
 #include <openssl/bn.h>
 extern int eay_v2bn (BIGNUM **, rc_vchar_t *);
-extern int eay_bn2v (rc_vchar_t **, BIGNUM *);
+extern int eay_bn2v (rc_vchar_t **, const BIGNUM *);
 
 extern const char *eay_version (void);
 
