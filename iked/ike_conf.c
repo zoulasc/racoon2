@@ -4025,12 +4025,14 @@ ike_conf_check_sa(struct rcf_sa *sa, int *err, int *warn, int is_default_clause)
 		SA_CONF(comp_alg, sa, comp_alg, 0);
 
 		switch (sa_protocol) {
+#if 0
 		case 0:
 			++*err;
 			plog(PLOG_INTERR, PLOGLOC, 0,
 			     "sa %s does not have sa_protocol field\n",
 			     sa_index);
 			break;
+#endif
 		case RCT_SATYPE_ESP:
 			if (!enc_alg) {
 				++*err;
@@ -4226,12 +4228,14 @@ ike_conf_check_consistency(void)
 		if (!action)
 			POLICY_DEFAULT(action, action, 0);
 		switch (action) {
+#if 0
 		case 0:
 			++error;
 			plog(PLOG_INTERR, PLOGLOC, 0,
 			     "policy %s lacks action field\n",
 			     rc_vmem2str(policy->pl_index));
 			continue;
+#endif
 		case RCT_ACT_AUTO_IPSEC:
 			break;
 		default:
