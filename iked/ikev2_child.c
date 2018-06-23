@@ -1373,7 +1373,9 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 	struct prop_pair *matching_proposal = 0;
 	struct prop_pair *matching_my_proposal = 0;
 	struct prop_pair **new_my_proposal_list = 0;
+#ifdef notyet
 	rc_vchar_t *g_ir;
+#endif
 	int err = 0;
 
 	/* update IPsec SA with received parameter */
@@ -1451,8 +1453,8 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 		       use_transport_mode ? "transport" : "tunnel"));
 	}
 
-	g_ir = 0;
 #ifdef notyet
+	g_ir = 0;
 	/* if (ke_i && ke_r) g_ir = g^i^r */
 #endif
 
