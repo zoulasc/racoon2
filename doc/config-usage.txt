@@ -1,0 +1,1003 @@
+$Id: config-usage.txt,v 1.34 2008/01/11 11:34:43 fukumoto Exp $
+
+This document describes the syntax of the configuration of the racoon2.
+The syntax of the racoon2 configuration is not compatible with
+the synxtax of old racoon.
+Note that this syntax might be changed in the future because the racoon2
+is under construction.
+
+o Structure
+
+	There are ten main directives in the configuration.
+	Details are described at "Directives details".
+
+	setval
+		It defines a constant string value which is unique
+		in the whole configuration file.
+
+	default
+		It defines default values.
+
+	interface
+		It defines interfaces of each protocol.
+
+	resolver
+		It defines the resolver.
+
+	remote
+		It defines parameters for the remote KMP peer.
+
+	selector
+		It defines parameters of a selector.
+
+	policy
+		It defines a behavior when a packet is matched to a selector.
+
+	ipsec
+		It defines a SA or a SA bundle.
+
+	sa
+		It defines parameters of a SA.
+
+	addresspool
+		It defines the address ranges for address pool.
+
+	The following picture shows the relativeness between each directive.
+
+	    setval    default    interface    resolver
+
+     +---(selector_index)--- remote
+     |                         ^
+     |                         |
+     |                   (remote_index)                       +-(sa_index)-> sa
+     v                         |                              |
+selector -+                    |     +-(ipsec_index)-> ipsec -+-(sa_index)-> sa
+          |                    |     |  
+selector -+-(policy_index)-> policy -+-(ipsec_index)-> ipsec ---(sa_index)-> sa
+          |                          |
+selector -+                          +-(ipsec_index)-> ipsec ...
+          :                          :
+
+o Limitiation of string
+
+	a string consts of the following charactoers:
+		0x30-0x39 0-9
+		0x41-0x5a A-Z
+		0x61-0x7a a-z
+		0x25      %
+		0x2a      *
+		0x2d      -
+		0x2e      .
+		0x2f      /
+		0x3a      :
+		0x3f      ?
+		0x40      @
+		0x5f      _
+
+	a non-reserved string must be closed by double-quotations (" : 0x22).
+	when characters is closed by double-quotations, it is distinguished
+	as just a string.
+
+	an index, selector_index for example, should const of alpha-numeric
+	charactors (0-9a-zA-Z).  an index is not required to be closed by ".
+	an IP address and a port number is not required also.
+
+o Representation of IP addresses
+
+	a IPv4 address must consist of numeric charactors (0-9) and periods (.).
+		e.g. 203.178.141.194
+
+	a IPv6 address must consist of hexadecimal-digit (0-9a-fA-F), colons (:)
+	and a percentage-mark (%) if necessary.
+		e.g. 2001:200:0:8002:203:47ff:fea5:3085
+
+	when a port number is required, a string "port" must follow an IP
+	address string, and must be followed by a port number or a service
+	name defined by the platform generally defined by /etc/services.
+	A string "any" means that it will match with all of port numbers.
+		e.g.
+		2001::1 port 80
+		203.178.141.194 port any
+
+	A network prefix is represented by a number delimited by a slash (/).
+		e.g. ::1/0
+
+	A range of addresses is represented by IP addresses delimited by a
+	hyphen (-).  NOTE THAT IT IS NOT IMPLEMENTED YET.
+		e.g. 10.0.0.0-10.1.255.255
+
+	Some reserved strings can be used.
+		MY_IP
+			all of IP addresses assigned to the interfaces.
+		MY_IPV6
+			all of IPv6 addresses assigned to the interfaces.
+		MY_IPV6_GLOBAL
+			all of IPv6 global addresses assigned to the interfaces.
+		MY_IPV6_LINKLOCAL
+			all of IPv6 link-local addresses assigned
+			to the interfaces.
+		MY_IPV4
+			all of IPv4 addresses assigned to the interfaces.
+
+		An interface name can be specified with a percentage-mark (%)
+		followed by the interface name.
+			e.g. MY_IPV6%fxp0
+	
+		The following strings will be implemented.
+			IP_ANY means that :: and 0.0.0.0.
+
+o Representation of bytes
+
+	The following directives are followed by a numeric byte
+	amount specification as its parameter.
+
+		nonce_size
+		max_pad_len
+		max_retry_to_send
+		kmp_sa_lifetime_byte
+		ipsec_sa_lifetime_byte
+
+	The following units can be used.
+		B
+		byte
+		bytes
+		KB
+		MB
+		GB
+
+o Representation of time
+
+	The following directives are followed by a numeric time data.
+
+		interval_to_send
+		times_per_send
+		kmp_sa_lifetime_time
+		kmp_sa_nego_time_limit
+		kmp_sa_grace_period
+		ipsec_sa_nego_time_limit
+		ipsec_sa_lifetime_time
+		dpd_delay
+		dpd_retry
+
+	The following units can be used.
+
+		infinite
+		sec
+		secs
+		second
+		seconds
+		min
+		mins
+		minute
+		minutes
+		hour
+		hours
+		day
+		days
+
+	0 means infinite.
+
+o Cryptographic algorithm and its representation
+
+	The following directives define an algorithm type.
+
+		kmp_enc_alg
+		esp_enc_alg
+		esp_auth_alg
+		ah_auth_alg
+
+	All of them are sent as a proposal, and a receiver evaluates
+	the proposal with logical OR.
+
+	They can define a size of a key and a key if needed.
+
+		(algorithm name)[,(key length)[,(key)]]
+
+	(key) is hexadecimal-digits or string.  A hexadecimal-digits must
+	start with (0x).
+		e.g. 0x0123456789abcdef
+	In the string case, it must be closed by (").
+
+	Note that some algorithm specify length of key.
+
+	If you do not specify size of key, you can define like below:
+	
+		(algorithm name),,(key)
+
+	If you need to specify multiple algorithms, defining an algorithm list
+	for example, you can define it by using (;) as delimiter.
+		e.g.
+		kmp_enc_alg { aes192_cbc,,0x1234; aes192_cbc; 3des_cbc; };
+
+	The following lists cryptographic functions and algorithm names.
+	Note that some algorithms are not implemented.
+
+	kmp_enc_alg directive and esp_enc_alg directive can have one of the
+	following algorithm types.
+
+		des_cbc_iv64
+		des_cbc
+		3des_cbc
+		rc5_cbc
+		idea_cbc
+		cast128_cbc
+		blowfish_cbc
+		3idea_cbc
+		des_cbc_iv32
+		rc4_cbc
+		null_enc
+		rijndael_cbc
+		aes128_cbc
+		aes192_cbc
+		aes256_cbc
+		twofish_cbc
+
+	kmp_hash_alg directive can have one of the following algorithm types.
+
+		md5
+		sha1
+		tiger
+		sha2_256
+		sha2_384
+		sha2_512
+
+	In case of IKEv2, kmp_hash_alg directive is used to specify an
+	integrity check (MAC) algorithm for IKE_SA communication, and
+	the following algorithm types are accepted.
+
+		hmac_md5
+		hmac_sha1
+		sha2_256
+		sha2_384
+		sha2_512
+		aes_xcbc
+		aes_cmac
+
+	kmp_prf_alg directive can have one of the following algorithm types.
+
+		hmac_md5
+		hmac_sha1
+		hmac_sha2_256
+		hmac_sha2_384
+		hmac_sha2_512
+		aes_xcbc
+		aes_cmac
+		des_mac
+		kpdk_md5
+
+	In case of IKEv1, kmp_prf_alg directive is not used.  Instead,
+	HMAC version of hash algorithm specified by kmp_hash_alg is
+	used.
+
+	kmp_dh_group directive can have the group number or one of
+	the following algorithm types.
+
+		1	modp768
+		2	modp1024
+		3	ec2n155
+		4	ec2n185
+		5	modp1536
+		14	modp2048
+		15	modp3072
+		16	modp4096
+		17	modp6144
+		18	modp8192
+
+	kmp_auth_method directive can have one of the following algorithm types.
+
+		psk
+		dss
+		rsasig
+		rsaenc
+		rsarev
+		gssapi_krb
+
+	esp_auth_alg and ah_auth_alg directive can have one of the following
+	algorithm types.
+
+		hmac_md5
+		hmac_sha1
+		aes_xcbc
+		hmac_sha2_256
+		hmac_sha2_384
+		hmac_sha2_512
+		kpdk_md5
+		non_auth
+
+	ipcomp_alg directive can have one of the following algorithm types.
+
+		oui
+		deflate
+		lzs
+
+o Variable substitution
+
+	Environment variables can be referred from configuration files.
+	The form is like $[environment variable].
+		e.g. $[HOME]
+
+	You can also define variables by using setval directives.
+	They are evaluated at once after all configuration
+	files are read.  When there is a duplicate string, it fails and stop
+	evaluation of the configuration file.
+
+	To define a variable, a variable name must be followed by a
+	string:
+
+		(string) (value) ;
+
+	The string must begin with a capical alphabet, followed by
+	alpha-numeric capital characters.  alpha-numeric capital
+	characters are:
+		0x30-0x39 0-9
+		0x41-0x5a A-Z
+		0x5f      _
+
+	To refer the variable, the form is like ${string}.
+		e.g. ${HISNAME}
+
+	setval can have a environment variable referred by $[variable]
+	as its parameter.
+
+o Comments
+
+	when (# 0x23) is found, the following all characters from it to
+	a new line is ignored.
+
+o Directives details
+
+	A directive consts of a string, a value and ";"(semi-colon) like
+		string value ;
+
+	Values can be closed by "{" and "}" like 
+		directive {
+			value ;
+			value ;
+			:
+		};
+
+	A value might be a directive recursively.
+
+	Closing with ({) and (}) must be also end with (;).
+	The word is case-sensitive.
+
+	The following lists the syntax of each directive.
+
+include
+=======
+	include (file) ;
+
+	the parser includes (file).  Note that variables defined by setval
+	is not allowed here.  Environment variables can be used.
+
+setval
+======
+	setval { (definitions) } ;
+
+	It defines a constant string value which is unique
+	in the whole configuration file.
+	It will be basically expanded after the whole configuration
+	files are loaded.  See Variable substitution for detail.
+
+default
+=======
+	default { (directives) } ;
+
+	It defines default values.
+	Each directive can be included.
+	default values are overwritten by each specific value.
+
+interface
+=========
+	interface { (directives) } ;
+
+	It defines interfaces of each protocol.
+
+	sub directives are:
+
+	ike (address) [port (port)] ;
+		It defines port numbers which iked(8) uses.
+
+	kink (address) [port (port)] ;
+		It defines port numbers which kinkd(8) uses.
+
+	spmd unix (file);
+		It defines a file of UNIX domain socket by which spmd(8) makes
+		communication with other KMP daemons.
+
+	spmd (address) [port (port)] ;
+		It defines port numbers by which spmd(8) makes communication
+		with other KMP daemons.
+		Note that it is enabled when --enable-debug options was
+		specified in compiling.
+
+	spmd_password (file) ;
+		It defines the file name which defines the password to be used
+		in spmd(8).
+
+	application_bypass (on|off) ;
+		When on (default) KMP daemons bypass the IPsec policies.
+		When off, they rely on explicit policies but they can run
+		encapsulated into IPsec tunnels for instance.
+		Note the last config can be unsafe when a KMP uses a not
+		privileged port.
+
+resolver
+========
+	resolver { (directives) } ;
+
+	It defines the spmd(8) resolver proxy configuration.
+	sub directives in the resolver directive are the followings.
+
+	resolver (on|off) ;
+		It controls the behavior of spmd(8) as the resolver.
+		When the directive is on, the spmd(8) behaves a resolver.
+		default is off.
+
+	nameserver (address) [port (port)] ;
+		It defines IP addresses of the upper DNS servers.
+		a port number can be defined if needed.
+		default of the port number is 53.
+
+	dns_query (address) [port (port)] ;
+		It defines IP addresses to be listened DNS requests.
+		a port number can be defined if needed.
+		default of the port number is 53.
+
+remote
+======
+	remote (remote_index) { (directives) } ;
+
+	It defines parameters for the remote KMP peer.
+	remote_index is a string value to identify a remote directive.
+	A remote directive is referred from one or more policies
+	by the remote_index.
+	A remote might refer to the selector directive
+	with the selector_index.
+	sub directives in the remote directive are the followings.
+
+	ikev1 { (directives) } ;
+		It defines the IKEv1 configuration.
+
+	ikev2 { (directives) } ;
+		It defines the IKEv2 configuration.
+
+	kink  { (directives) } ;
+		It defines the KINK configuration.
+
+	acceptable_kmp (ikev1|ikev2|kink) ;
+		It defines key management protocols to be used.
+		The list defines the KMPs whom the responder allows to accept.
+		The first protocol in the list defines the mode whom
+		the initiator uses.
+
+	selector_index (selector_index) ;
+		IT IS NOT IMPLEMENTED YET.
+		It has a selector_index to be used in the road warrior case
+		of the responder.
+
+	The following sub directives are for each key management protocol.
+
+	logmode (normal|debug) ;
+		IT IS NOT IMPLEMENTED YET.
+		It defines the logging mode.
+		default is normal.
+
+	logfile (file) ;
+		IT IS NOT IMPLEMENTED YET.
+		It defines the logfile.
+		when the log file is defined here, the log still dumps to
+		the system log or the log file specified by the parameter
+		of each program.
+
+	passive (on|off) ;
+		It controls the behavior of the daemon.  When this directive
+		is on, the daemon acts as responder only.
+		default is off.
+
+	peers_ipaddr (address) [port (port)];
+		It defines the IP addresses of the peer. The port number
+		may be specified if needed. It can be used as the first
+		search key to match with the IKE initial packet from
+		initiator. Omitting this field or writing it as IP_RW
+		requires default directive to handle IKE initial packets.
+
+	verify_id (on|off) ;
+		IT IS NOT TESTED YET.
+		Works only for the responder (the initiator has
+		to configure its peer to authenticate it).
+
+	verify_pubkey (on|off) ;
+		IT IS NOT TESTED YET.
+
+	send_cert (on|off) ;
+		IT IS NOT TESTED YET.
+
+	send_cert_req (on|off) ;
+		IT IS NOT TESTED YET.
+
+	nonce_size (number) ;
+		IT IS NOT TESTED YET.
+
+	initial_contact (on|off) ;
+		IT IS NOT TESTED YET.
+
+	support_proxy (on|off) ;
+		IT WILL BE DONE ANOTHER WAY.
+		It is enabled that the IP addresses delivered by the ID
+		payloads in IKEv1 or the TS payloads in IKEv2 are used
+		as the end point's IP addresses of the SAs in the transport
+		mode case.
+
+	my_id (ipaddr|email|fqdn|keyid|x509_subject) (value) ;
+		They are valid in all KMP directives.
+		It defines identifiers for the local-side entity.
+
+		ipaddr (ip address)
+			IPv4 or IPv6 address
+		fqdn (FQDN)
+			FQDN
+		email (e-mail address)
+			E-Mail address
+		keyid ([file]|tag) (filename|data)
+			A binary data a.k.a KEY-ID.
+			Use a filename (default) or directly the data.
+		x509_subject (filename)
+			Subject Name in the certificate.
+
+	peers_id (ipaddr|email|fqdn|keyid|x509_subject) (value) ;
+		They are valid in all KMP directives.
+		It defines the identifiers for the remote-side entity.
+
+	send_peers_id (on|off) ;
+		It enables the initiator to send the peer's ID.
+		default is off.
+
+	selector_check (obey|exact) ;
+		IT IS NOT IMPLEMENTED YET.
+		It is valid for the ikev2 directive.
+		It defines the way to compare the ID and the TS value.
+
+		obey
+			It means that the policy from the initiator will be
+			installed.
+			It is same as "generate_policy on;" in the IKEv1 case.
+		exact
+			If there is no policy matching with the intiator's one,
+			it is rejected.
+
+		default is obey.
+
+	proposal_check (obey|strict|claim|exact) ;
+		IT IS NOT IMPLEMENTED YET.
+		They are valid for both directives of the ikev1 and ikev2.
+		It defines the way to compare the policies in the responder
+		side.
+
+		obey
+			It means that the initiator's policy will be used.
+		strict
+			It means that the initiator's policy will be used
+			if the lifetime in the policy from the initiator
+			is less than the responder's one, AND the PFS is
+			required.
+			If it is not suitable, it is rejected.
+		claim
+			It is valid for the ikev1 directive.  It means
+			that the responder will use own policy if the
+			specified value is smaller than peer's
+			proposal, and sends a RESPONDER_LIFETIME
+			notification.
+		exact
+			It means that the policy from the initiator exactly
+			matches with the responder's one.
+			If it is not suitable, it is rejected.
+
+		default is obey.
+
+	random_pad_content (on|off) ;
+	padlen_random (on|off) ;
+	max_padlen (number) ;
+		They are valid in all KMP directives.
+		They define the padding.
+
+	max_retry_to_send (number) ;
+	interval_to_send (number) ;
+	times_per_send (number) ;
+		They are valid in all KMP directives.
+		They define the retransmission timer.
+
+	kmp_sa_lifetime_time (number) ;
+	kmp_sa_lifetime_byte (number) ;
+	kmp_sa_nego_time_limit (number) ;
+	kmp_sa_grace_period (number) ;
+	ipsec_sa_nego_time_limit (number) ;
+		They are valid for both directives of the ikev1 and ikev2.
+		They define the lifetime.
+
+	kmp_enc_alg (algorithm) ;
+	kmp_hash_alg (algorithm) ;
+	kmp_prf_alg (algorithm) ;
+	kmp_dh_group (algorithm) ;
+	kmp_auth_method (algorithm) ;
+		They are valid for both directives of the ikev1 and ikev2.
+		They define the algorithms for each function.
+		(algorithm) is described at the cryptographic algorithm
+		and its representation.  For IKEv1, kmp_prf_alg
+		directive is not used.  Instead, HMAC version of hash
+		algorithm specified by kmp_hash_alg is used as prf
+		algorithm.
+
+	exchange_mode (main|aggressive|base|all) ;
+		IT IS NOT IMPLEMENTED YET.
+		It is valid for the ikev1 directive.
+		It defines the exchange modes to be used.
+		The list defines the modes whom the responder allows to accept.
+		The first mode in the list defines the mode whom
+		the initiator uses.
+
+	my_gssapi_id (string) ;
+		IT IS NOT IMPLEMENTED YET.
+		It is valid for the ikev1 directive.
+		It defines the GSSAPI ID.
+		It will be replaced to the my_principal directive.
+
+	cookie_required (on|off);
+		It is valid for the ikev2 directive.
+		It controls whether the responder requires the cookie.
+		default is off.
+
+	need_pfs (on|off) ;
+		It is valid for both directives of the ikev1 and ikev2.
+		It controls to enable PFS or not.
+		The daemon will send a KE payload in the phase 2 of IKEv1.
+		default is off.
+
+	my_public_key (x509pem|pkcs12|ascii) (pubkey) (privkey)
+		IT IS NOT FULLY IMPLEMENTED YET.
+		It is valid for both directives of the ikev1 and ikev2.
+		It defines the file names contained both my public key
+		and my private key.
+
+		the following string specifies the format of the file.
+
+		x509pem
+			X.509 PEM format
+		pkcs12
+			PKCS12 format
+		ascii
+			PGP ASCII ARMORED format
+
+	peers_public_key (x509pem|pkcs12|ascii) (pubkey)
+		IT IS NOT FULLY IMPLEMENTED YET.
+		It is valid for both directives of the ikev1 and ikev2.
+		It defines the file names contained both the peer's public key.
+
+	pre_shared_key (file)
+		It is valid for both directives of the ikev1 and ikev2.
+		It defines the file name contained the pre-shared key.
+
+	my_principal (principal-id)
+		It is valid for the kink directive.
+		It defines my principal identifier to be used.
+		(principal-id) is like "principal@realm".
+
+	peers_principal (principal-id)
+		It is valid for the kink directive.
+		It defines the peer's principal identifier.
+
+	mobility_role (agent|mobile|correspondent)
+		It is valid in all KMP directives.
+		It is used by mobile IPv6 daemons.
+
+	request { (config_request_list) };
+		(available with IKEv2 only)
+		Request Configuration Payload option to peer.
+		config_request_list is an arbitrary list of following:
+		  dns;
+		  ip4_dns;
+		  ip6_dns;
+		  dhcp;
+		  ip4_dhcp;
+		  ip6_dhcp;
+		  application_version;
+		dns is equivalent to specifying both ip4_dns and
+		ip6_dns; dhcp is equivalent to specifying both
+		ip4_dhcp and ip6_dhcp;
+
+	provide { (provide_option_list) } ;
+		(available with IKEv2 only)
+		Provide Configuration Payload option to peer.
+		provide_option_list is a list of following options:
+		  addresspool (addresspool_index) ;
+		  dhcp (address) ;
+		  dns (address) ;
+		  application_version (string) ;
+
+	dpd (boolean) ;
+		(available with IKEv1 only)
+		This option (default on) enables negotiating RFC 3706
+		Dead Peer Detection.
+		For IKEv2, DPD (liveliness check) is always enabled.
+
+	dpd_delay (number) ;
+		(available with IKEv1 or IKEv2)
+		This option activates the DPD and sets the time (in
+		seconds) allowed between 2 proof of liveness requests.
+		For IKEv1, the default value is 0, which disables DPD
+		monitoring, but still negotiates DPD support.  For
+		IKEv2, the default value is 3600 (1 hour).
+	
+	dpd_retry (number) ;
+		(available with IKEv1 only)
+		If dpd_delay is set, this sets the delay (in seconds) to wait
+		for a proof of liveness before considering it failed
+		and sending another request. The default value is 5.
+		For IKEv2, normal retransmission time is used instead.
+
+	dpd_maxfail (number) ;
+		(available with IKEv1 only)
+		If dpd_delay is set, this sets the maximum number of proofs
+		of liveness to request before considering the peer dead.
+		The default value is 5.
+		For IKEv2, normal retransmission algorithm with
+		max_retry_to_send is used instead.
+
+	script { (script_list) } ;
+		(available with IKEv1 or IKEv2)
+
+		defines a list of hook scripts.  script_list is a list
+		of following items.
+		   phase1_up (script_path) ;
+		   phase1_down (script_path) ;
+		   phase2_up (script_path) ;
+		   phase2_down (script_path) ;
+		   phase1_rekey (script_path) ;
+		   phase2_rekey (script_path) ;
+		   migration (script_path) ;
+	
+		Also, ike_sa_up, ike_sa_down, ike_sa_rekey, child_up,
+		child_down, child_rekey are synonymous to phase1_up,
+		phase1_down, phase1_rekey, phase2_up, phase2_down,
+		phase2_rekey, respectively.
+
+		For IKEv1, only the phase1_up and phase1_down are
+		effective.  No other events are available.
+
+		Scripts' argv[1] is equivalent to the event name.
+		Parameters are passed using the environment variables.
+		For phase1_up and phase1_down, following environment
+		variables are defined:
+		    LOCAL_ADDR
+		    LOCAL_PORT
+		    REMOTE_ADDR
+		    REMOTE_PORT
+		For phase2_up and phase2_down:
+		    LOCAL_ADDR
+		    REMOTE_ADDR
+		    SELECTOR_INDEX
+		    IPSEC_MODE
+		    LOCAL_NET_ADDR
+		    LOCAL_NET_PREFIXLEN
+		    LOCAL_NET_PORT
+		    REMOTE_NET_ADDR
+		    REMOTE_NET_PREFIXLEN
+		    REMOTE_NET_PORT
+		    UPPER_LAYER_PROTOCOL (decimal number or any)
+		    INTERNAL_ADDR (only if an address is leased to peer)
+		    INTERNAL_ADDR4 (leased from peer)
+		    INTERNAL_DNS4
+		    INTERNAL_WINS4
+		    INTERNAL_DHCP4
+		    INTERNAL_ADDR6
+		    INTERNAL_DNS6
+		    INTERNAL_DHCP6
+		For migration:
+		    OLD_SRC
+		    OLD_DST
+		    NEW_SRC
+		    NEW_DST
+
+selector
+========
+	selector (selector_index) { (directives) } ;
+
+	It defines parameters of a selector.
+	selector_index is a string value to identical a selector
+	directive.
+	A selector directive refers to the policy directive
+	with the policy_index.
+	sub directives in the selector directive are the followings.
+
+	order (number) ;
+		IT IS NOT IMPLEMENTED YET.
+		It defines the evaluation order in the kernel.
+		It is not required to be unique.
+
+	direction (inbound|outbound);
+		It defines the direction of the packet.
+
+	src (address) [port (port)];
+	dst (address) [port (port)];
+		It defines an IP address to be matched with packets.
+		It can not be listed.
+		a port number can be defined if needed.
+
+	upper_layer_protocol (protocol) [(options)];
+		It defines the last upper layer protocol to be matched
+		with packets.
+		any and strings in /etc/protocols can be used in (protocol).
+		(options) depends on the protocol.
+		for example, ipv6-icmp (type) (code)
+
+	next_header_including (protocol)[:(option)];
+		IT IS NOT IMPLEMENTED YET.
+		IT CAN DEFINE ONLY ONE PORT NUMBER CURRENTLY, NOT LISTED.
+		It defines upper layer protocols in the extention header chain
+		to be matched with packets.
+		any and strings in /etc/protocols can be used in (protocol).
+
+	tagged (pf_tag_name);
+		It overloads at the bootstrap installation the previous
+		selectors by a pf tag. The usual selectors are still
+		taken into account by KMPs but not by the kernel.
+		Dynamic operations have to be done on pf rules, not
+		on the SPD.
+
+	policy_index (policy_index) ;
+		It has policy_index to define a policy.
+
+	reqid (number);
+		It defines the request ID for SA sharing
+		(cf. unique ipsec_level).
+		It is used to support Mobile-IP.
+
+policy
+======
+	policy (policy_index) { (directives) } ;
+
+	It defines a behavior after a packet is matched to a selector.
+	policy_index is a string value to identical a policy directive.
+	A policy is referred from one or more selectors by the
+	policy_index(es).
+	A policy refers to one or more ipsec directives.
+	The ipsec directives will evaluate in logical OR by a KMP daemon.
+	A policy may refers to a remote directive.
+	sub directives in the policy directive are the followings.
+
+	action (auto_ipsec|static_ipsec|discard|none) ;
+		It defines an action of the policy.
+
+		auto_ipsec
+			It means the policy needs a key management.
+		static_ipsec
+			IT IS NOT IMPLEMENTED.
+		discard
+			It means the policy discards packets.
+		none
+			It means the policy bypasses the IPsec stack.
+
+	install (on|off) ;
+		Default is on, it makes possible to only declare
+		the policy.
+
+	remote_index
+		It has a remote_index.
+
+	ipsec_index
+		It has ipsec_index(es) to define proposals of IPsec.
+		it is valid when the action directive is auto_ipsec.
+
+	my_sa_ipaddr (address) ;
+		It defines an IP address of the end points of the SAs
+		on my side.  (address) is an IP address.
+		It must be defined when the action directive is static_ipsec
+		or tunnel.
+
+	peers_sa_ipaddr (address) ;
+		It defines an IP address of the end points of the SAs
+		on the peer's side. Write IP_RW to generate policy
+		dynamically.
+
+	ipsec_level (unique|require|use) ;
+		use
+			NOT IMPLEMENTED
+			when there is no SA for the packet,
+			the kernel sends an acquire for the SA to KMPs,
+			and sends the packet.
+		require
+			when there is no SA for the packet,
+			the kernel sends an acquire for the SA to KMPs,
+			and discards the packet.
+			This SA installed will be used from other policies.
+		unique
+			PARTIALLY IMPLEMENTED, NOT EXPECTED TO WORK
+			In addition to require directive, this SA will not be
+			used from any other policy.
+
+	ipsec_mode (transport|tunnel) ;
+		It defines a IPsec mode.
+
+ipsec
+=====
+	ipsec (ipsec_index) { (directives) } ;
+
+	It defines a SA or a SA bundle.
+	ipsec_index is a string value to identical a ipsec directive.
+	A ipsec directive refers to one or more sa directives with
+	sa_index(es).
+	A ipsec directive is referred from the policy directive by
+	the ipsec_index.
+	sub directives in the ipsec are the followings.
+
+	ipsec_sa_lifetime_time (number) ;
+		It defines a life time of the SA in time.
+
+	ipsec_sa_lifetime_byte (number) ;
+		It defines a life time of the SA in bytes.
+
+	ext_sequence (on|off) ;
+		It enables extended sequence number processing described in
+		the 2401bis.
+		default is off.
+
+	sa_index (sa_index) ;
+		It has sa_index(es) to define an SA bundle.
+		It can have three sa_indexes in maximum.
+		When you want to define multiple SAs as an SA bundle,
+		note that the following patterns are only allowed.
+
+			AH
+			ESP
+			IPCOMP
+			AH_ESP
+			AH_IPCOMP
+			ESP_IPCOMP
+			AH_ESP_IPCOMP
+
+sa
+==
+	sa (sa_index) { (directives) } ;
+
+	It defines parameters of an SA.
+	sa_index is a string value to identical the sa directive.
+	An sa directive is referred from the ipsec directive by the sa_index.
+	sub directives in the sa are the followings.
+
+	sa_protocol (ah|esp|ipcomp) ;
+		It defines a protocol to be used.
+
+	esp_enc_alg (algorithm) ;
+		It defines encryption algorithms to be used.
+		It is valid when the sa_protocol is esp.
+
+	esp_auth_alg (algorithm) ;
+		It defines authentication algorithms to be used.
+		It is valid when the sa_protocol is esp.
+
+	ah_auth_alg (algorithm) ;
+		It defines authentication algorithms to be used.
+		It is valid when the sa_protocol is ah.
+
+	ipcomp_alg (algorithm) ;
+		It defines compresssion algorithms to be used.
+		It is valid when the sa_protocol is ipcomp.
+
+	spi (spi) ;
+		NOTE THAT IT MAY BE OBSOLETE.
+		It defines a SPI for a static SA.
+
+addresspool
+===========
+	addresspool (addresspool_index) { (address_ranges) } ;
+
+	It defines address ranges to make available for remote host.
+
+	For the address range, the first and last IP addresses of the
+	range should be specified, separated with a - (hyphen-minus),
+	followed by a ; (semicolon):
+
+		(address) - (address) ;
+
+	Note: you should put spaces before and after the hyphen, or
+	else it may be parsed as a part of address string.

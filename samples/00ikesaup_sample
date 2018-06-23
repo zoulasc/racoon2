@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# This sample script logs environment variables via syslog(3) 
+# when IKEv2 IKE_SA is established.
+#
+
+logger "ikesa-up(sample) local address[port] = $LOCAL_ADDR[$LOCAL_PORT]"
+logger "ikesa-up(sample) remote address[port] = $REMOTE_ADDR[$REMOTE_PORT]"
+

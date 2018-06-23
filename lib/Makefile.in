@@ -1,0 +1,77 @@
+# $Id: Makefile.in,v 1.35 2007/05/16 11:05:10 fukumoto Exp $
+
+sysconfdir = @sysconfdir@
+
+CC = @CC@
+LEX = @LEX@
+YACC = @YACC@
+AR = @ar_path@
+RANLIB = @RANLIB@
+MKDEP = @MKDEP@
+
+LDFLAGS	= @LDFLAGS@
+CFLAGS	= @CFLAGS@ @CPPFLAGS@ @OPTFLAG@ @DEFS@
+CFLAGS	+=-DSYSCONFDIR=\"${sysconfdir}\"
+CFLAGS	+=-DCF_DEBUG
+# CFLAGS  +=-DSADB_X_MIGRATE
+YFLAGS	+=-d
+
+PROG =	libracoon.a
+C_SRCS =vmbuf.c rc_type.c rc_net.c rc_str.c \
+	if_pfkeyv2.c if_spmd.c \
+	cfsetup.c @SRC_PCAP@ \
+	pidfile.c plog.c safefile.c version.c rbuf.c addresspool.c
+OBJS =	$(C_SRCS:.c=.o) cfparse.o cftoken.o @LIBOBJS@
+YYTEST_OBJS = sample.o
+YYTEST_SRCS = sample.c
+
+all: $(PROG)
+
+$(PROG): $(OBJS)
+	$(AR) cr $(PROG) $(OBJS)
+	$(RANLIB) $(PROG)
+
+strlcat.o: missing/strlcat.c
+	$(CC) $(CFLAGS) -c $<
+
+strlcpy.o: missing/strlcpy.c
+	$(CC) $(CFLAGS) -c $<
+
+atoll.o: missing/atoll.c
+	$(CC) $(CFLAGS) -c $<
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+.y.c:
+	$(YACC) $(YFLAGS) $<
+	mv y.tab.c $*.c
+#	mv y.tab.h $*.h
+
+.l.c:
+	$(LEX) -t $< > $@
+
+sample: sample.o $(PROG)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o sample sample.o $(PROG)
+
+# empty command: current libracoon is NOT expected to be installed.
+install: all
+
+clean:
+	-rm -f $(PROG) *.o *.core
+	-rm -f cfparse.c cftoken.c
+	-rm -f y.tab.h y.output lex.yy.c
+	-rm -f sample
+
+distclean: clean
+	-rm -f Makefile config.cache config.status config.log .depend
+
+depend:
+	$(MKDEP) $(CFLAGS) $(C_SRCS)
+@IF_GMAKE@-include .depend
+# *.h is a bit wasteful, but safe.
+cfparse.o cftoken.o: *.h
+# y.tab.h may not have been generated when the above wildcard is evaluated.
+cftoken.o: y.tab.h
+# y.tab.h has no target rule, so cftoken.c is used as a surrogate.
+y.tab.h: cfparse.c

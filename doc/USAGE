@@ -1,0 +1,661 @@
+$Id: USAGE,v 1.36 2010/02/10 03:16:30 fukumoto Exp $
+
+This document describes the basic usage to run the Racoon2 system.
+
+------------------------------------------------------------
+1.   Recommended system configuration
+2.   spmd(8)
+2-1.   Setting up spmd
+2-2.   Starting spmd
+3.   iked(8)
+3-1.   Setting up iked
+3-2.   Starting iked
+3-3.   How to create certificates
+4.   kinkd(8)
+4-1.   Setting up as a Kerberos5 principal
+4-2.   Setting up racoon2
+4-3.   Starting programs
+4-4.   Quick configuration guide
+5.   Configuration file
+6.   Starting daemons
+------------------------------------------------------------
+
+1. Recommended system configuration
+== ================================
+
+  Both NetBSD and FreeBSD have the kernel state, "net.key.blockacq_count"
+  to setup the behavior how many packet the kernel will block until the
+  suitable SA will be installed.  The state sometimes disturbs
+  retransmission of the key exchange message.  We recommend you to set
+  it to zero.
+
+    # sysctl -w net.key.blockacq_count=0
+
+  And FreeBSD also has the kernel state, "net.key.preferred_old" to use an
+  old SA preferred to a new SA.  The state sometimes disturbs
+  interoperability.  We recommend you to set it to zero.
+
+    # sysctl -w net.key.preferred_oldsa=0
+
+2. spmd(8)
+== =======
+
+2-1. Setting up spmd
+---- ---------------
+
+  spmd(8) operates the SPD (Security Policy Database), and receives
+  various requests from other racoon2 key management daemons.  So you must
+  run spmd(8) before you run other racoon2 key management daemons.
+  If spmd(8) terminates for some reason, other daemons will terminate.
+
+  To setup the configuration of spmd(8), "interface" and "selector"
+  directives are important.
+
+  To specify the I/F between spmd(8) and others daemons, you have to setup
+  "interface" directive like following:
+
+    interface {
+      # specify the I/F
+      spmd { unix "/usr/local/racoon2/run/spmif"; };
+
+      # specify the password file in order to communicate
+      # between spmd(8) and others.
+      # create it by 'pskgen -r -o FILE-NAME' command and
+      # make sure the file permission is 600 and the owner is root.
+      spmd_password "/usr/local/racoon2/etc/racoon2/spmd.psk";
+    };
+
+  The release after racoon2-20061228a automatically generates spmd.psk
+  on the install process.
+
+  To specify a security policy, you have to setup a "selector" directive.
+
+    selector A-B-any {
+      direction outbound;
+      src 10.1.1.1;
+      dst 10.2.2.2;
+      upper_layer_protocol "any";
+      policy_index A-B;
+    };
+    selector B-A-any {
+      direction inbound;
+      src 10.2.2.2;
+      dst 10.1.1.1;
+      upper_layer_protocol "any";
+      policy_index A-B;
+    };
+
+  If you want spmd(8) to behave a DNS proxy in your platform, you have to
+  setup "resolver" section like following:
+
+    resolver {
+      # make spmd(8) as a DNS proxy.
+      resolver on;
+
+      # specify the name server address to be sent the query.
+      nameserver { 203.119.1.1 port 53; };
+
+      # specify the local address and the port to be listened.
+      dns_query { 127.0.0.1 port 53; };
+    };
+
+  and don't forget to edit /etc/resolv.conf to direct queries from
+  applications to spmd(8) like following:
+
+    nameserver	0.0.0.0;
+
+  NOTE: 
+  If you want to add/change the name server IP address dynamically 
+  to spmd(8), please try to use spmdctl(8) command as follows:
+
+  # spmdctl ns add NAME_SERVER_IP_ADDRESS
+
+  For more information, please read the spmdctl(8) man page.
+
+
+2-2. Starting spmd
+---- -------------
+
+  spmd(8) must be started before other daemons are started.
+
+  To run spmd(8), type spmd in command line.  You need a superuser privilege.
+
+  Command line options of spmd(8) are:
+
+    -V  show version number
+    -f  specify config file
+    -d  increase debug level(max ddd)
+    -D  specify debug level(1-3)
+    -F  run foreground
+    -k  kill running spmd
+    -h  show this help
+
+3. iked(8)
+== =======
+
+3-1. Setting up iked
+---- ---------------
+
+o Edit /usr/local/racoon2/etc/racoon2/racoon2.conf
+
+  Minimum required information for iked is (replace [...] with appropriate
+  string):
+
+    interface {
+      ike { [IP_ADDRESSES_LIST_TO_USE_FOR_IKE]; };
+    };
+    remote [REMOTE_SECTION_INDEX_STRING] {
+
+      acceptable_kmp { ikev2; };
+
+      ikev2 {
+        peers_ipaddr	[PEER_IP_ADDRESS];
+        peers_id	[ID_TYPE] [ID_STRING];
+        my_id		[ID_TYPE] [ID_STRING];
+        kmp_enc_alg	{ [ENCR_ALGS]; };	# 3des_cbc, aes128_cbc, aes192_cbc, aes256_cbc
+        kmp_prf_alg	{ [PRF_ALGS]; };	# hmac_md5, hmac_sha1, aes_xcbc
+        kmp_hash_alg	{ [INTEGRITY_ALGS]; };	# hmac_md5, hmac_sha1, aes_xcbc
+        kmp_dh_group	{ [DH_GROUP_NUMBERS]; }; # modp768, modp1024, modp1536,
+						# modp2048, modp3072, modp4096,
+						# modp6144, modp8192
+						# (or corresponding numbers)
+        kmp_auth_method { [AUTHENTICATION_METHOD]; }; # psk, rsasig, dss
+
+        # if kmp_auth_method is psk, specify pre_shared_key
+        pre_shared_key  [PRE_SHARED_KEY_FILE_NAME];
+
+        # if kmp_auth_method is rsasig or dss,
+        # specify my_public_key and peers_public_key
+        my_public_key	   x509pem [X509_PUBKEY_FILE_PATH] [PRIVKEY_FILE_PATH];
+        peers_public_key x509pem [X509_PUBKEY_FILE_PATH] "";
+      };
+    };
+
+  That is a configuration for IKEv2. If you also want to use IKEv1,
+  You need a configuration for IKEv1. It is similar to the configuration
+  of IKEv2. You can configure it by replacing "ikev2" directive to "ikev1".
+  But contents of kmp_hash_alg are different. IKEv2 needs
+  "hmac_sha1" or "hmac_md5". On the other hand, IKEv1 needs "sha1" or "md5".
+
+  You can write configurations for each key exchange protocols.  It depends
+  on acceptable_kmp directive that which key exchange protocol is selected.
+
+    remote {
+      acceptable_kmp { ikev2; ikev1; kink};
+      ...
+    };
+
+  Please refer to "acceptable_kmp" directive in doc/config-usage.txt.
+
+  Also other sections (selector, policy, ipsec, sa) in racoon2.conf
+  should be written appropriately.
+
+  Currently, iked cannot handle FQDN for any IP address fields.  You
+  can, though, use "fqdn" for peers_id or my_id fields, since they are
+  handled as opaque strings.
+
+o Create pre-shared key file for IKE authentication (if necessary)
+
+  If you specified psk for kmp_auth_method, you need to store
+  pre-shared key in a file and specify the file name in pre_shared_key
+  field of racoon2.conf.  You have to set completely identical keys as
+  the pre-shared key at both the ends.  Note that the whole data is used
+  as the pre-shared key.  In particular, you should take attention to a
+  newline in the file.  Also It is important that only superuser can
+  access to this file.  You have to specify the file in full path.
+
+  For example, 
+
+    ikev2 {
+      kmp_auth_method { psk; };
+      pre_shared_key "${PSKDIR}/psk_with_peer";
+    };
+
+  whereas ${PSKDIR} is defined in the setval directive.
+
+o Set up certificates and private keys for IKE authentication (if necessary)
+
+  If you specified rsasig or dss for kmp_auth_method, you need to
+  specify both certificates and private key in my_public_key and
+  peers_public_key fields of each remote directive.  You need to
+  specify the file in full path.  For example,
+
+    ikev2 {
+      kmp_auth_method { rsasig; };
+      peers_public_key x509pem "${CERTDIR}/peers.pem" "";
+      my_public_key x509pem "${CERTDIR}/yours.pem" "${CERTDIR}/yourpriv.pem";
+    };
+
+  whereas ${CERTDIR} is defined in the setval directive.
+
+  Currently, there are following limitations.
+
+    - Only x509pem type certificate can be used.
+    - Certificate Payload is not supported.
+
+  See also section 3-3. How to create certificates.
+
+o Using NAT-T for IKEv2 (if necessary)
+
+  If you want to use NAT-T for IKEv2, you have to specify the port 4500
+  in "interface" directive as follows.
+
+    interface {
+      ike {
+        MY_IP port 500;
+        MY_IP port 4500;
+      };
+    };
+
+o Using policy generation functionality for IKEv2 (if necessary)
+
+  If you want to generate policy dynamically for IKEv2 responder,
+  specify peer addresses as follows.
+
+    remote remote-rw {
+      acceptable_kmp { ikev2; };
+      ikev2 {
+        peers_ipaddr IP_RW;
+        ...
+      };
+    };
+
+    policy policy-rw {
+      action auto_ipsec;
+      remote_index remote-rw;
+      peers_sa_ipaddr IP_RW;
+      ...
+    };
+
+  Note that the "default" directive is required too, for policy
+  generation to work.
+
+3-2. Starting iked
+---- -------------
+
+  spmd must be started before iked.
+
+  To run iked, type iked in command line.  You need a superuser
+  privilege.
+
+  Command line options of iked are:
+
+    -f [file]	specifies the configuration file path.
+    -p [num]	specifies the port number of isakmp socket.
+    -4		restricts to IPv4 only.
+    -6		restricts to IPv6 only.
+    -I [addr]	immediately initiate to the address specified.
+    -S [string]	immediately initiate using the selector specified.
+    -d		increases debugging flag
+    -D [num]	specifies debugging flag
+    -F		foreground mode
+    -v		specifies to output log messages to standard error in
+                addition to syslog
+    -l [file]	specifies to output log messages to the file instead of
+                syslog
+    -h		outputs the list of command line options to standard error,
+                and exits
+    -V		outputs the version number to standard error
+
+  If the iked is compiled with --enable-debug (default) and
+  --enable-pcap configuration options, packet capture is enabled by
+  specifying -P command line option.  You can investigate the captured
+  packets using tcpdump or ethereal.
+    -P [file]	specifies the file to output captured packet
+
+  The parameter for -D option is a number, where each bit represents
+  debugging flag as following:
+    1		specifies to log debugging messages
+    2		specifies to log internal tracing messages
+    4		specifies to log configuration parser debugging message
+    8		specifies not to call kernel PF_KEY
+
+  Each of command line option -d is equivalent to increasing a debug
+  flag from LSB.  For example, -ddd is equivalent to -D 7
+
+3-3. How to create certificates
+---- --------------------------
+
+  This section briefly describes that the way to create your certificate
+  by using OpenSSL(http://www.openssl.org).  Unfortunately, depending on
+  your platform, there are several way to configure it.  So you also have
+  to consult the manual page on your platform.
+
+3-3-1. Making a certificate request form
+
+  You have to make a PKCS#10 request for getting your certificate, which
+  will be sent to a CA.  For example, the following command will generate
+  both your private key of RSA 1024 bits and new request with SHA1 as
+  the signature algorithm:
+
+    % openssl req -new -nodes -newkey rsa:1024 -sha1 -keyform PEM -keyout privkey.pem -outform PEM -out request.pem
+    Using configuration from /usr/local/openssl/openssl.cnf
+    Generating a 1024 bit RSA private key
+    .........................+++++
+    ........+++++
+    writing new private key to 'privkey.pem'
+    -----
+    You are about to be asked to enter information that will be incorporated
+    into your certificate request.
+    What you are about to enter is what is called a Distinguished Name or a DN.
+    There are quite a few fields but you can leave some blank
+    For some fields there will be a default value,
+    If you enter '.', the field will be left blank.
+    -----
+    Country Name (2 letter code) [AU]:JP
+    State or Province Name (full name) [Some-State]:Kanagawa
+    Locality Name (eg, city) []:Fujisawa
+    Organization Name (eg, company) [Internet Widgits Pty Ltd]:WIDE Project
+    Organizational Unit Name (eg, section) []:KAME Project
+    Common Name (eg, YOUR name) []:Shoichi Sakane
+    Email Address []:sakane@ydc.co.jp
+
+    Please enter the following 'extra' attributes
+    to be sent with your certificate request
+    A challenge password []:
+    An optional company name []:
+
+  After this operation, you will get a PEM file of your private key and
+  a PEM file of a PKCS#10 request file in the current directory.
+
+3-3-2. Getting your certificate
+
+  You have to send the PKCS#10 request to your CA.  Then retrieve your
+  certificate authorized by the CA.
+
+  Alternatively, you can sign your certificate by yourself if your peer
+  will accept it.  For example,
+
+    % openssl x509 -req -in request.pem -signkey privkey.pem -out cert.pem
+
+  request.pem is the PKCS#10 request file which you made before.
+
+  And then you have to store your certificate into your certificate
+  repository.
+
+3-3-3. Storing issuers' certificates
+
+  You have to put the set of the certificates of the issuers into your
+  certificate directory.  In OpenSSL, It is a little special method.
+  For example, suppose ca1.pem is the file name of the certificate.
+  You have to type the following magic command at the directory.
+
+    % ln -s ca1.pem `openssl x509 -noout -hash -in ca1.pem`.0
+
+4. kinkd(8)
+== ========
+
+  This document assumes you have some knowledge on Kerberos and
+  you have a working Kerberos environment.  Otherwise you should
+  consult the documentations of the Kerberos system you are using.
+
+4-1. Setting up as a Kerberos5 principal
+---- -----------------------------------
+
+  [This section is beyond the scope of this document and the examples here
+  is just for your convenience.  Please refer the manuals of your
+  Kerberos5 system.]
+
+o Prepare /etc/krb5.conf. (on all your hosts including KDCs)
+
+  sample /etc/krb5.conf:
+
+    [libdefaults]
+      default_realm = EXAMPLE.ORG
+
+    [realms]
+      EXAMPLE.ORG = {
+        kdc = yourkdc.example.org
+      }
+
+o Prepare a working Kerberos5 environment and a KDC.
+
+  example with Heimdal (on your KDC host):
+
+  1. create a database and stash file, and set the master key
+    # kstash
+
+  2. initialize a realm named EXAMPLE.ORG
+    # kadmin -l
+    kadmin> init EXAMPLE.ORG
+
+  3. add admin principal
+    # kadmin -l
+    kadmin> add root/admin
+    # echo "root/admin@EXAMPLE.ORG all" >> /var/heimdal/kadmind.acl
+
+  example with MIT krb5 (on your KDC host):
+
+  1. create a database and stash file
+    # kdb5_util create -r EXAMPLE.ORG
+    (you will be asked master password)
+    # kdb5_util stash
+
+  2. edit access control list (the file is specified in your kdc.conf)
+    # echo "*/admin@EXAMPLE.ORG *" >> /etc/krb5kdc/kadm5.acl
+    Note: this permits the principals of */admin to do everything.
+
+  3. add administrative principal
+    # kadmin.local
+    kadmin.local: addprinc admin/admin@EXAMPLE.ORG
+
+o Prepare a principal and a shared key for KINK
+
+  example with Heimdal (on host1.example.org, on which kinkd will run):
+
+    # kadmin -a yourkdc.example.org
+    kadmin> add --random-key kink/host1.example.org
+    kadmin> ext kink/host1.example.org
+
+  example with MIT krb5 (on host1.example.org):
+
+    # kadmin -p admin/admin -s kdc.example.org
+    kadmin: addprinc -randkey kink/host1.example.org
+    kadmin: ktadd kink/host1.example.org
+
+4-2. Setting up racoon2
+---- ------------------
+
+o /usr/local/racoon2/etc/racoon2/racoon2.conf
+
+  Copy racoon2/samples/racoon2.conf to an appropriate directory
+  (default is /usr/local/racoon2/etc/racoon2).
+
+  Global settings
+
+  - Your own principal name
+    Specify your principal name in default{remote{kink{my_principal}}}.
+    If your realm matches the default realm specified in krb5.conf,
+    realm name can be omitted.
+
+  - Your recursive DNS resolver
+    Specify your recursive DNS resolver in resolver{nameserver}.
+
+  Per-peer settings
+
+  - Traffic selectors
+    Specify them in selector{src} and selector{dst}.
+    You usually need two selectors, one for inbound SA and one for
+    outbound SA.
+
+  - KINK peer's principal name.
+    Specify peer's principal name in remote{kink{peers_principal}}.
+    If (1) its FQDN is specified in selectors, (2) its form is
+    "kink/f.q.d.n", and (3) its realm is the default realm,
+    then remote{kink{peers_principal}} can be omitted.
+
+  - selector_index in remote
+    If you are the KINK responder, you have to specify a corresponding
+    selector_index in remote section.
+
+o /etc/resolv.conf
+
+  Point nameserver to spmd. (specified in resolver{dns_query} section in
+  racoon2.conf).
+  This change should be performed just before starting spmd, or
+  your applications may fail to resolve names.
+
+4-3. Starting programs
+---- -----------------
+
+o spmd (Security Policy Management Daemon)
+
+  spmd must be started by root.
+  spmd must be started before other key management daemons.
+
+o kinkd (KINK Daemon)
+
+  kinkd must be started by root.
+  kinkd must be started after spmd.
+  kinkd is terminated by SIGINT or SIGTERM.
+  kinkd will reload racoon2.conf by SIGHUP.
+
+4-4. Quick configuration guide
+---- -------------------------
+
+ ***************************************************************
+  SECURITY WARNING
+ ***************************************************************
+  Don't use the configuration type "C) With DNS FQDN names",
+  unless you know what you are doing and accept security risks.
+  There is some situations where even DNSSEC is _not_ enough to
+  be safe. (even if spmd supported DNSSEC)
+ ***************************************************************
+
+A) With (numeric) IP addresses
+
+  - resolver{resolver off;}.
+  - Specify numeric IP addresses in selector{}.
+  - Specify peer's principal name in remote{}.
+  - Specify one of corresponding selector indexes in remote{} in the
+    responder's config.
+
+B) With static FQDN names
+
+  - Add your FQDNs in /etc/hosts.
+  - resolver{resolver off;}.
+  - Specify FQDNs in selector{}.
+  - Specify one of corresponding selector indexes in remote{} in the
+    responder's config.
+
+C) With DNS FQDN names
+
+  - Make your FQDNs resolvable via DNS.
+  - Specify a recursive DNS server in resolver{nameserver;}.
+  - Add IP addresses, on which spmd serves as a DNS proxy,
+    to resolver{dns_query}, and specify them in /etc/resolv.conf.
+  - resolver{resolver on;}.
+  - Specify FQDNs in selector{}.
+  - Specify one of corresponding selector indexes in remote{} in the
+    responder's config.
+
+5. Configuration file
+== ==================
+
+  All of daemons can use a identical configuration file.  The following is
+  supposes that a initiator A (IP address is 10.1.1.1) will try to setup SAs
+  to communicate with a responder B (IP address is 10.2.2.2) by using IKEv2,
+  and the SAs is ESP transport mode.
+
+  A sample at the A is:
+
+    interface {
+      # specify the I/F.
+      # make sure the directory permission is 700 and the owner is root.
+      spmd { unix "/var/run/racoon/spmif"; };
+
+      # specify the password file in order to communicate
+      # between spmd(8) and others.
+      # create it by 'pskgen -r -o FILE-NAME' command and
+      # make sure the file permission is 600 and the owner is root.
+      spmd_password "/usr/local/racoon2/etc/racoon2/spmd.pwd";
+
+      # listen to all addresses.
+      ike { MY_IP; };
+    };
+
+    selector slt-A-B-any {
+      direction outbound;             # set "inbound" at B
+      src 10.1.1.1;
+      dst 10.2.2.2;
+      upper_layer_protocol "any";
+      policy_index policy-A-B;
+    };
+    selector slt-B-A-any {
+      direction inbound;              # set "outbound" at B
+      src 10.2.2.2;
+      dst 10.1.1.1;
+      upper_layer_protocol "any";
+      policy_index policy-A-B;
+    };
+
+    remote remote-B {
+      acceptable_kmp { ikev2; };
+
+      # ikev2 configuration
+      ikev2 {
+        peers_ipaddr    10.2.2.2;               # 10.1.1.1 at B
+        peers_id        ipaddr 10.2.2.2;        # 10.1.1.1 at B
+        my_id           ipaddr 10.1.1.1;        # 10.2.2.2 at B
+        kmp_enc_alg     { aes192_cbc; 3des_cbc; };
+        kmp_prf_alg     { hmac_sha1; hmac_md5; };
+        kmp_hash_alg    { hmac_sha1; hmac_md5; };
+        kmp_dh_group    { 2; 1; };
+        kmp_auth_method { psk; };
+
+        # make sure the file permission is 600 and the owner is root.
+        pre_shared_key  "/usr/local/racoon2/etc/racoon2//psk/AB.psk";
+      };
+    };
+
+    policy policy-A-B {
+      action auto_ipsec;
+      remote_index remote-B;
+      ipsec_mode transport;
+      ipsec_index { ipsec-esp-a-b; };
+      ipsec_level require;
+      peers_sa_ipaddr 10.2.2.2;       # 10.1.1.1 at B
+      my_sa_ipaddr 10.1.1.1;          # 10.2.2.2 at B
+    };
+
+    ipsec ipsec-esp-a-b {
+      sa_index { sa-esp-1; };
+    };
+
+    sa sa-esp-1 {
+      sa_protocol esp;
+      esp_enc_alg { aes128_cbc; 3des_cbc; };
+      esp_auth_alg { hmac_sha1; hmac_md5; };
+    };
+
+6. Starting daemons
+== ================
+
+  To run the daemons (for example, spmd and iked), just type as follows.
+
+    # spmd
+    # iked
+
+  Or you can run racoon2 daemons via start-stop scripts.
+  For example, 
+
+  on Linux system:
+
+    # /usr/local/racoon2/etc/init.d/spmd start
+    # /usr/local/racoon2/etc/init.d/iked start
+
+  on BSD system:
+
+    # /usr/local/racoon2/etc/rc.d/spmd start
+    # /usr/local/racoon2/etc/rc.d/iked start
+
+  The program commands look terminating silently.  You can show information
+  in the system log, typically /var/log/messages.
+
+    # tail -f /var/log/messages
+
+  If you want to show more information, you should use the -d option and
+  the -F option (for more information, please read '-h' option output).
+
+    # spmd -ddd -F
+    # iked -ddd -F

@@ -1,0 +1,73 @@
+The iked of Racoon2 supports Configuration Payload in IKEv2 protocol.
+This memo describes how to use it with iked.
+
+1. Introduction
+
+   The Configuration payload is used to exchange configuration 
+   information between IKE peers. There are several kinds of information
+   to be exchanged with CP in RFC4306. The current implementation
+   however supports only these informations.
+	- INTERNAL_IP4_DNS
+	- INTERNAL_IP4_NBNS
+	- INTERNAL_IP4_DHCP
+	- APPLICATION_VERSION
+	- INTERNAL_IP6_DNS
+	- INTERNAL_IP6_NBNS
+	- INTERNAL_IP6_DHCP
+   The Configuration payload has two types of exchange. one is
+   request/reply and the other is set/ack. The current specification
+   only defines the request/reply usage. The iked support only request/reply
+   exchange accrodingly.
+
+2. How iked works.
+
+   The iked of an initiator side sends a request to the responder and it
+   receives the reply. Then it parses the reply and validates.
+   The iked exports the information from the Configuration Payload as 
+   environment variables and call the scripts in the configuration files.
+   An administrator can use the information to configure callback scripts.
+
+   The iked of a responder side receives a request from the initiator.
+   It looks up the configuration and send the reply. There is no callback
+   interface which the responder calls in the process of the Configuration
+   payload.
+
+3. Configuration
+
+3.1 Initiator side
+
+    There are two directives to configure the Configuration payload.
+    One is "requst" and the ohter is "script". They are in the "ikev2"
+    directive in the "remote" directive.
+
+    The "request" is used to configure what information will be requested.
+    For example:
+	request { ip4_dns; application_version; };
+    It specifes that the iked will requests INTERNAL_IP4_DNS and APPLICATION_VERSIONS.
+
+    "script" is used to configure the callback scripts of the Configuration payload
+    exchange. To use the Configuration payload, we should configure child_up and child_rekey.
+    For example:
+	script {
+		child_up "/usr/local/racoon2/etc/racoon2/hook/child-up";
+		child_rekey "/usr/local/racoon2/etc/racoon2/hook/child-rekey";
+	};
+    In child-up and child-rekey, the information from the Configuration payload
+    are available as the environment valiables corresponding to the information.
+    For example, the environment valiable INTERNAL_DNS4 stores INTERNAL_IP4_DNS.
+
+3.2 Responder side
+
+    There are a directive to configure the Configuration paylaod.
+    The "proviede" specifies the information that will be provided to the initiators.
+    The directive is in the "ikev2" directive in the "remote" directive.
+    For example:
+	provide {
+		dhcp { 192.168.39.10; };
+		application_version "Racoon2";
+	};
+    It specifies that the iked can provide "192.168.39.10" as a INTERNAL_IP4_DNS and
+    "Racoon2" as a APPLICATION_VERSION.
+
+
+Please see the "config-usage.txt" and the samples for more information.

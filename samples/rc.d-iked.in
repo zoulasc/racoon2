@@ -1,0 +1,32 @@
+#! /bin/sh
+# $Id: rc.d-iked.in,v 1.3 2005/10/28 06:33:16 kamada Exp $
+# iked rc.d script for NetBSD
+#
+
+# PROVIDE: ike
+# REQUIRE: isdnd kdc ppp
+# BEFORE:  SERVERS
+# REQUIRE: spmd
+
+. /etc/rc.subr
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+name="iked"
+rcvar=$name
+command="@sbindir@/${name}"
+extra_commands="reload"
+required_vars="spmd"
+pidfile="/var/run/${name}.pid"
+required_files="@sysconfdir@/racoon2.conf"
+reload_cmd="iked_reload"
+
+iked_reload()
+{
+	echo "Restarting ${name} because reloading is not yet implemented."
+	$0 `echo $rc_arg | sed s/reload/restart/`
+}
+
+load_rc_config $name
+run_rc_command "$1"

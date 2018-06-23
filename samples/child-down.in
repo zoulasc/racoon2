@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the child-down.d directory when CHILD_SA is removed
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./child-down.d

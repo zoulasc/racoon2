@@ -1,0 +1,180 @@
+.\" $Id: iked.8,v 1.5 2007/12/06 13:02:14 fukumoto Exp $
+.\"
+.\" Copyright (C) 2004-2006 WIDE Project.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the project nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd August 18, 2006
+.Dt IKED 8
+.Os RACOON2
+.\" ----------------------------------------------------------------
+.Sh NAME
+.Nm iked
+.Nd Internet Key Exchange protocol daemon
+.\" ----------------------------------------------------------------
+.Sh SYNOPSIS
+.Nm
+.Op Fl 46hvFV
+.Op Fl f Ar configfile
+.Op Fl l Ar logfile
+.Op Fl p Ar port
+.Op Fl I Ar peer-address
+.Op Fl S Ar selector-index
+.Op Fl d
+.Op Fl D Ar level
+.Op Fl P Ar outfile
+.\" ----------------------------------------------------------------
+.Sh DESCRIPTION
+.Nm
+is a key management daemon, which supports
+the Internet Key Exchange (IKE) protocol version 1 (RFC2409) and
+version 2 (RFC4306).
+It is driven by upcalls from the kernel via the PF_KEYv2 interface or
+by negotiation requests from remote peers,
+and manages IPsec SAs according to
+.Pa racoon2.conf .
+.Pp
+The following options are available:
+.Bl -tag -width "indent"
+.It Fl 4
+Use IPv4 addresses only for local sockets.
+.It Fl 6
+Use IPv6 addresses only for local sockets.
+.It Fl d
+Increase the debugging level.
+This flag may occur multiple times.
+.It Fl f Ar configfile
+Read configurations from the specified file.
+.It Fl I Ar peer-address
+Immediately initiate to the peer specified.
+.It Fl S Ar selector_index
+Immediately initiate using the selector specified.
+.It Fl h
+Show simple help messages.
+.It Fl l Ar logfile
+Output log to logfile instead of syslog.
+.It Fl p Ar portnum
+Specify default port number for IKE sockets.
+.It Fl v
+Output log to stdout in addition to syslog.
+.It Fl D Ar num
+Set debug flag.
+.It Fl F
+Run in the foreground.
+.Nm
+does not detach itself from the terminal and does not become a daemon.
+Logs are output to the stderr.
+.It Fl P Ar outfile
+Record unencrypted IKE communication packets to the file.
+This option is available only if 
+.Nm
+was compiled with --enable-pcap configuration option.
+.It Fl V
+Show the version.
+.El
+.Pp
+Upon receiving SIGINT or SIGTERM,
+.Nm
+shuts down IKEv2 IKE_SAs with peer nodes by sending Informational
+exchange with Delete payload, deletes relevant IPsec SAs, and then
+exits.  Upon receiving SIGHUP,
+.Nm
+similarly shuts down IKEv2 IKE_SAs and deletes relevant IPsec SAs,
+then reloads the configuration file.
+.Pp
+IPsec policies are managed by
+.Xr spmd 8 ,
+thus it must be started before
+.Nm .
+When
+.Xr spmd 8
+restarts,
+.Nm
+needs to be reloaded to reconnect with it.
+.\" ----------------------------------------------------------------
+.Sh FILES
+.Bl -tag -width "/var/run/iked.pid" -compact
+.It Pa @sysconfdir@/racoon2.conf
+The default configuration file for racoon2.
+.It Pa /var/run/iked.pid
+The PID file of the current instance of the daemon.
+.El
+.\" ----------------------------------------------------------------
+.Sh SEE ALSO
+.Xr racoon2 7 ,
+.Xr racoon2.conf 5 ,
+.Xr spmd 8 ,
+.Xr kinkd 8 ,
+.Xr ipsec 4
+.Rs
+.%T "The Internet Key Exchange (IKE)"
+.%R RFC2409
+.%D November 1998
+.Re
+.Rs
+.%T "Internet Key Exchange (IKEv2) Protocol
+.%R RFC4306
+.%D December 2005
+.Re
+.\" ----------------------------------------------------------------
+.Sh HISTORY
+The
+.Nm
+command was developed for racoon2 in 2004-2005.
+.\" ----------------------------------------------------------------
+.Sh AUTHORS
+.Nm
+was written and is maintained by
+.An WIDE/racoon2 project
+.Aq http://www.racoon2.wide.ad.jp/
+.\" ----------------------------------------------------------------
+.Sh ACKNOWLEDGEMENTS
+Part of the codes are derived from ipsec-tools racoon daemon, which
+was derived from KAME racoon daemon.
+.\" ----------------------------------------------------------------
+.Sh BUGS
+"default" clause of configuration file is used for two purposes:
+to provide default values for individual field for other sections
+of configuration, and to specify default kmp configuration when
+the responder received a message from unknown peer.  In latter
+case, when "default" clause lacks some necessary fields, error
+message may be cryptic, since it is not checked by configuration
+check routine of iked. (Probably it will result in "no proposal
+chosen".)
+.Pp
+On FreeBSD/NetBSD, when IPsec SA expires by IPsec SA lifetime,
+kernel does not notify iked about the sa expiration.  To remedy
+this, iked maintains its own expiration timer for each IPsec SA.
+Since the iked can't know how much bytes used for the SA,
+lifetime_bytes in the configuration are ignored for now.
+.Pp
+SA bundles (e.g. AH+ESP) does not conform to protocol spec.
+.Pp
+After rekeying IKE_SA, iked may spit some warning messages, if
+the rekey negotiation or delete request was started from both
+ends at once.
+.\"
+.\" EOF

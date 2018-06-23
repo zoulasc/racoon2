@@ -1,0 +1,129 @@
+.\" Copyright (C) 2004, 2005 WIDE Project.
+.\" All rights reserved.
+.\" 
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the project nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\" 
+.\" THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd Jul 14, 2005
+.Os RACOON2
+.Dt PSKGEN 8
+.\" ----------------------------------------------------------------
+.Sh NAME
+.Nm pskgen
+.Nd Pre-shared key generater and converter for IKE
+.\" ----------------------------------------------------------------
+.Sh SYNOPSIS
+.Nm pskgen
+.Fl r
+.Op Fl s Ar length
+.Op Fl o Ar file
+.Op Fl d
+.Nm
+.Fl i Ar file
+.Op Fl h
+.Op Fl o Ar file
+.Op Fl d
+.Nm
+.Fl e Ar file
+.Op Fl o Ar file
+.Op Fl d
+.\" ----------------------------------------------------------------
+.Sh DESCRIPTION
+.Nm
+creates a pre-share key file for the iked of the Racoon2 system.
+There are three modes.  The first is that it will create a randomized key.
+The second is that it will create the key from the input file.
+Note that the Racoon2 only uses the first line of the input file
+that is plain text format except the case when the
+.Fl h
+option is not specified.
+.Nm
+ignores the second line of the file specified and more than that.
+The third is that it will convert the key file to the format of the
+.Fl h
+option.
+.
+.Ss "Randomized key mode"
+.Bl -tag -width "xxxxx" -compact -offset indent
+.It Fl r
+output random bytes.
+.It Fl s
+specify the byte length of the key.
+the default is $default_keysize bytes.
+.It Fl o
+specify the output file.
+.It Fl d
+debug mode.
+no harm to any file.
+.El
+.
+.Ss "File specific mode"
+.Bl -tag -width "xxxxx" -compact -offset indent
+.It Fl i
+specify the input file.
+.Ql -
+means the standard input.
+.It Fl h
+assumed that the input file is writted by the following syntax:
+0x leading one or two of hexadecimal number separated space
+characters.  For example:
+.Dl 0x72 0x61 0x63 0x6f 0x6f 0x6e
+.It Fl o
+specify the output file.
+.It Fl d
+debug mode.
+no harm to any file.
+.El
+.
+.Ss "Export Mode"
+.Bl -tag -width "xxxxx" -compact -offset indent
+.It Fl e
+export the key file.
+the format is like the option
+.Fl h
+defined.
+.It Fl o
+specify the output file.
+.It Fl d
+debug mode.
+no harm to any file.
+.El
+.\" ----------------------------------------------------------------
+.\" Sh FILES
+.\" ----------------------------------------------------------------
+.\" Sh COMPATIBILITY
+.\" ----------------------------------------------------------------
+.Sh SEE ALSO
+.Xr racoon2 7 ,
+.Xr racoon2.conf 5 ,
+.Xr iked 8
+.\" ----------------------------------------------------------------
+.\" Sh HISTORY
+.\" ----------------------------------------------------------------
+.\" Sh AUTHORS
+.\" ----------------------------------------------------------------
+.\" Sh BUGS
+.\" ----------------------------------------------------------------
+.\" EOF
+

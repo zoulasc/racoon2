@@ -1,0 +1,452 @@
+タグの説明
+==========
+
+RC_LOG_INFO
+	[INFO]
+	一般的な情報
+RC_LOG_PROTO_ERR
+	[PROTO_ERR]
+	IKEやKINK等のワイヤに流れるプロトコルのエラー
+		フォーマットがおかしい
+		チェックサムがおかしい
+		認証に失敗
+RC_LOG_PROTO_WARN
+	[PROTO_WARN]
+	ワイヤに流れたプロトコルのエラーで処理を中断しない時
+RC_LOG_INTERNAL_ERR
+	[INTERNAL_ERR]
+	PF_KEYやsystem call等の内部処理に関するエラー
+		PF_KEYのエラー
+		mallocに失敗
+		プロトコル的には正しいがDBにエントリーがない
+RC_LOG_INTERNAL_WARN
+	[INTERNAL_WARN]
+	内部処理に関するエラーで処理を中断しない時
+RC_LOG_DEBUG
+	[DEBUG]
+	デバッグ
+RC_LOG_CRITICAL
+	[CRITICAL]
+	exit(-1)する状態
+
+個別のメッセージの説明(例)
+======================
+
+[INTERNAL_ERR]
+	ikev2.c:1656:initiator_state1_send(): failed to create IKE_AUTH message
+	=> my_id or peers_id mismatch or not exist.
+
+[INTERNAL_ERR]
+	ike_conf.c:86:ike_readfile(): 0:? - ?:0x0:file /home/sakane/work/ipsec/ipsecng/racoon2/tmp/hayato.tera.ics.keio.ac.jp.psk is not safe (code 3)
+	=> pre share key file permission, 600 owner root
+
+[PROTO_ERR]
+	ikev2.c:2272:initiator_ike_sa_auth_recv(): 1:2001:200:0:8001:20c:29ff:fe0c:4a0e[500] - 2001:200:0:6802::201[500]:0x809bda0:message lacks expected payload
+	=>
+
+[PROTO_ERR]
+	ike_conf.c:2459:ikev2_proposal_to_ipsec(): 1:? - ?:0x0:negotiated Extended Sequence Number is YES, but it is unsupported
+	=>
+
+[INTERNAL_ERR]
+	ike_pfkey.c:163:log_rcpfk_error(): 0:? - ?:0x0:sadb_poll: error at the kernel on UPDATE, No such file or directory
+
+
+=======================
+= SPMD
+=======================
+{cache.c}:
+[SPMD_L_ERR]
+	"Can't open hosts file:%s"
+	=> can not oepn /etc/hosts maybe permission problem?
+	"Failed to convert into canonical address:%s"
+	=> can not convert canonical numeric address by getaddrinfo()
+[SPMD_L_WARNING]
+	"continuously CNAME: fatal (invalid DNS packet content?)"
+	=> received dns query response pcket is broken?
+	   or parse error.
+[SPMD_L_NOTICE]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+	"[FQDN cache]added(cname:%s):%s"
+	"[FQDN cache]added:%s",
+	"[FQDN cache]updated(cname:%s):%s"
+	"[FQDN cache]search failed"
+	"[FQDN cache]already exists"
+	"[FQDN cache]updated:%s"
+	=> display internal FQDN cache status
+	"[FQDN cache]already exists"
+	"[FQDN list]resolved:(cname:%s):%s=[%s]"
+	"[FQDN list]resolved:%s=[%s]"
+	"[FQDN list]resolved:(cname:%s):%s=[%s]"
+	=> display internal FQDN list status
+[SPMD_L_DEBUG2]
+	"[Cache Address]=%s", addr
+	"+-->%s", l->fqdn
+	=> display internal FQDN cache status
+
+{dns.c}:
+[SPMD_L_ERR]
+	"No registered DNS servers"
+	=> not specified DNS server in your configuration file,
+	   or parsing configuration file error.
+	"Can't setup DNS server socket:%s"
+	=> can not create DNS server socket
+	"Failed to parse DNS packet:%s", strerror(errno)
+	=> can not parse DSN query response packet
+[SPMD_L_DEBUG2]
+	"[DNS Packet Dump]"
+	"     ID:%#hx", dd->id
+	"     QR:%s", qr_str(dd->qr)
+	" OPCODE:%s", opcode_str(dd->opcode)
+	"     AA:%s <%#hhx>", 
+	"     TC:%s <%#hhx>", dd->tc ? "Truncated" : "Not Truncated", dd->tc
+	"     RD:%s <%#hhx>", 
+	"     RA:%s <%#hhx>", 
+	"  RCODE:%s", rcode_str(dd->rcode)
+	"QDCOUNT:%hu", dd->qdcount
+	"ANCOUNT:%hu", dd->ancount
+	"NSCOUNT:%hu", dd->nscount
+	"ARCOUNT:%hu", dd->arcount
+	"Queries:"
+	"   Name:%s", rr->name
+	"   Type:%s", type_str(rr->type)
+	"  Class:%s", class_str(rr->class)
+	"    TTL: %u", rr->ttl
+	" Length:%hu", rr->rdlen
+	"Answers:"
+	"   Name:%s", rr->name
+	"   Type:%s", type_str(rr->type)
+	"  Class:%s", class_str(rr->class)
+	"    TTL: %u", rr->ttl
+	" Length:%hu", rr->rdlen
+	"   Data:%s", buf
+	"   Data:%s", rr->rdata
+	"   Data:<raw>"
+	"Authoritative Nameservers:"
+	"   Name:%s", rr->name
+	"   Type:%s", type_str(rr->type)
+	"  Class:%s", class_str(rr->class)
+	"    TTL: %u", rr->ttl
+	" Length:%hu", rr->rdlen
+	"   Data:%s", buf
+	"   Data:%s", rr->rdata
+	"   Data:<raw>"
+	"Additional records:"
+	"   Name:%s", rr->name
+	"   Type:%s", type_str(rr->type)
+	"  Class:%s", class_str(rr->class)
+	"    TTL: %u", rr->ttl
+	" Length:%hu", rr->rdlen
+	"   Data:%s", buf
+	"   Data:%s", rr->rdata
+	"   Data:<raw>"
+	=> display snooped DNS packet(above all)
+[SPMD_L_WARNING]
+[SPMD_L_NOTICED]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+
+{fqdn_query.c}:
+[SPMD_L_ERR]
+	"Failed to DNS Query packet: FQDN lenght is too long (>= 63?)"
+	=> given FQDN string is too long (not less than  63 characters)
+	"Configuration Error?: Can't get addresses for DNS query"
+	=> no DNS address specified in your configuration file
+	"Unknown Address Family (DNS proxy address)"
+	=> local DNS proxy address not specified in your configuration file
+[SPMD_L_WARNING]
+[SPMD_L_NOTICED]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+
+{main.c}:
+[SPMD_L_ERR]
+	"Failed to initilize internal buffer(rbuf)"
+	=> can not initilize libracoon rbuf
+	"Failed to parse configuration file:%s"
+	=> just parsing error 
+	"Failed to initialze IPsec Security Poicy(PF_KEY)"
+	=> can not initilize PF_KEY and add initilal Policy
+	"Can't get DNS server address(check your %s)"
+	=> you should specify DNS server address in your configuration file
+	"DNS server address must be numeric(ignore)"
+	=> DNS server address in your configuration file must numeric string (don't use FQND etc)
+	"No available DNS server address"
+	"Failed to read %s"
+	=> can not read /etc/nsswitch.conf file
+	"Can't setup DNS socket"
+	"DNS server is not specified, check your %s"
+	"Can't get local query addresses in %s"
+	"Can't setup local resolver socket"
+	"Can't prepare initial FQDN queries"
+	"Can't initialize spmd interface"
+	"Fatal error in main loop"
+	=> spmd main operation function is break, please restart with -D6 and report bug.
+	"Failed to unlink file '%s' : %s"
+	=> can not delete PID file
+	"Can't read pidfile"
+	"Device file /dev/null may not be a character device with the expected major and minor numbers, check please");
+	"Can't write pid file"
+	"Spmd already running? <pid=%d>", read_pid(SPMD_PID_FILE)
+	=> another spmd is running or remain crashed spmd's pid file
+[SPMD_L_NOTICE, ]
+	"Racoon Spmd - Security Policy Management Daemon - Started"
+	"Spmd Version: %s", rc_version()
+	"Exit"
+[SPMD_L_INFO]
+	"\'files\' found in nsswitch.conf hosts line, we will read hosts file"
+	"\'dns\' found in nsswitch.conf hosts line, we will start dns proxy service"
+	"\'%s\' found in %s",
+	"Can't open %s file. we will read only hosts file."
+	=> can not open /etc/nsswitch.conf file, so parse /etc/hosts file only
+	"\'file\' found in %s lookup line, we will read hosts file"
+	"\'bind\' found in %s lookup line, we will start dns proxy service"
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+
+{query.c}:
+[SPMD_L_ERR]
+	"Out of memory"
+	"Argument msg or sa is NULL"
+	=> fatal error, report bug
+	"Can't add this query to the query list"
+	"Can't send query, length=%d",
+	"Can't change DNS server"
+	=> no other available DNS server address in your configuration
+	"Invalid query response packet, length=%d"
+	"Can't forward query response to resolver (sendto:n=%d)"
+	=> can not forward query response (from DNS server) to Resolver(Application)
+[SPMD_L_WARNING]
+	"Invalid query packet, length=%d,(%s)", 
+	"Unknown Query:id=%#hx",id
+	=> this DNS query packet is unknown (aleady expired ID?)
+[SPMD_L_NOTICE]
+	"Change DNS server and resend query"
+	=> current using DNS server is not stable, change another one and resend query packet
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+	"id = %#x already exists, ignore it"
+	"id=%#hx expired, remove it."
+[SPMD_L_DEBUG2]
+	"[DNS Query Queue]"
+	" [%02d]{%p} id=%#hx, expiration=%d, next=%p, pre=%p", 
+	"DNS Query Queue: flushed"
+
+{shell.c}:
+[SPMD_L_ERR]
+	"Can't setup spmd interface socket:%s"
+	"Failed: setsockopt(IPV6_V6ONLY):%s"
+	"Failed: setsockopt(SO_REUSEADDR):%s"
+	"Failed: bind():%s"
+	"Failed: listen():%s"
+	"Failed: setsockopt(SO_REUSEADDR):%s"
+	"Faild: bind():%s"
+	"Failed: listen():%s"
+	"Argument path is NULL"
+	"Out of memory"
+	"%s:parent directory is not safe, code %d"
+	"%s is too long", path
+	"Can't setup spmd interface socket:%s"
+	"Failed: bind():%s", strerror(errno)
+	"Failed: listen():%s", strerror(errno)
+	"Can't get spmd interface password"
+	"No spmd interface definition, check your configuration file"
+	"%s", gai_strerror(gai_err)
+	"Can't initialize spmd interface"
+	"Can't open /dev/urandom"
+	"Failed: accept():%s", strerror(errno)
+	"Failed: setsockopt(SO_KEEPALIVE):%s"
+	"Failed: setsockopt(TCP_NODELAY):%s"
+	"Can't generate login challenge"
+	"Can't read spmd interface socket=%d"
+	"Can't find Hash function"
+	"Can't get seed for authentication"
+	"Failed to initilize Message Digest function"
+	"Failed to hash Seed"
+	"Failed to get Message Digest value"
+	"Message Digest length is not enough"
+	"Failed to cleanup Message Digest context"
+	"Out of memory(len=%d)", challenge_len
+	"Can't get password for spmd interface"
+	"Failed: Login authentication"
+	"Can't get authentication data (internal error?)"
+	"Can't write message to client via spmd interface"
+	"Can't write message to client via spmd interface"
+[SPMD_L_WARNING]
+	"%s is not local address, ignore it"
+	"Can't setup spmd interface %s, skip"
+	"Get empty line from client"
+[SPMD_L_NOTICE]
+	"EPIPE on write():maybe connection closed"
+	"Can't display banner on spmd interface"
+	"EPIPE:maybe connection closed"
+[SPMD_L_INFO]
+	"Spmd interface closed(fd=%d)"
+[SPMD_L_DEBUG]
+	"Failed to process spmd interface command"
+	"SPMD Interface Command=>s"
+	"Seed=%s"
+	"Password=%s"
+	"Spmd interface Login Password=>%s"
+	"Spmd interface Login Challenge=>%s"
+	"Spmd interface Login Hash=>%s"
+	"Spmd interface connected(fd=%d)"
+[SPMD_L_DEBUG2]
+
+{signal.c}:
+[SPMD_L_ERR]
+[SPMD_L_WARNING]
+[SPMD_L_NOTICE]
+	"Singnal(%d) received, Start exit processing."
+	"Failed to unlink pid file '%s' : %s",
+	"Restart task_init"
+	"Restart spmd_init_udp_sock"
+	"Restart: dnsl_init"
+	"Restart: cfg_get_dns"
+	"Restart: dnsl_add"
+	"Restart: spmd_add_dns_task"
+	"Restart: cfg_get_fqdn"
+	"Restart: hosts_cache_update"
+	"Restarting done"
+[SPMD_L_INFO]
+	"PID=%d terminated", pid
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+
+{spmd_pfkey.c}:
+[SPMD_L_ERR]
+	"Can't initialize libracoon(PF_KEY part)"
+	"Can't get Selector list in your configuration file"
+	"Can't get Selector list"
+	"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
+	"Can't set suitable SA mode, check your configuration file (selector=%.*s)",
+	"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
+	"Unknown address type in my_sa_ipaddr, check your configuration file (policy=%.*s)",
+	"No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+	"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
+	"Unknown address type in peers_sa_ipaddr, check your configuration file (policy=%.*s)",
+	"No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
+	"IP_ANY macro is not supported in selector source address (selector=%.*s)", 
+	"FQDN macro is not supported in selector source address (selector=%.*s)", 
+	"Unknown address macro in selector source address (selector=%.*s)", 
+	"No selector source address (selector=%.*s)", sl->sl_index->l, sl->sl_index->v
+	"FQDN macro is not supported in selector dstination address (selector=%.*s)", 
+	"Unknown address macro in selector dstination address (selector=%.*s)", 
+	"No selector destination address (selector=%.*s)", sl->sl_index->l, sl->sl_index->v
+	"Can't set upper layer protocol, check your configuration(selector=%.*s)",
+	"Can't set direction, check your configuration (selector=%.*s)",
+	"Failed: getnameinfo(src):%s", strerror(errno)
+	"Failed: getnameinfo(dst):%s", strerror(errno)
+	"No selector"
+	"No policy found, check your configuration file (selector=%.*s)", 
+	"No IPsec info, check your configuration file (selector=%.*s)", 
+	"Unknown SA type"
+	"No selector"
+	"No policy found, check your configuration file (selector=%.*s)", 
+	"No selector"
+	"No selector"
+	"Unknown macro in policy, check config!"
+	"Unknown macro in policy, check config!"
+	"Unknown address family, check your configuration file (selector=%.*s)", 
+	"Unknown address family, check your configuration file (selector=%.*s)", 
+	"Unknown address family, check your configuration file (selector=%.*s)", 
+	"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
+	"Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
+	"No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+	"No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
+	"Can't set upper layer protocol, check your configuration(selector=%.*s)",
+	"Can't set direction, check your configuration (selector=%.*s)",
+	"Invalid argument: seq and/or spid is/are 0"
+	"Can't find spid entry for seq(%u)", seq
+	"Can't find spid entry, spid list is nothing"
+	"Already bound slid(%s) to spid(%u), could not bind slid to new spid(%u)",
+	"Failed to update slid<->spid matching"
+	"spid lookup failed"
+	"spid already exists"
+	"Out of memory"
+	"Out of memory"
+	"No such a selector"
+	"Can't get selector list in your configuration file (selector=%.*s)",
+	"Can't get policy in your configuration file (selector=%.*s)", 
+	"Can't get IPsec info in your configuration file (policy=%.*s)",
+	"Can't get selector suitable for spid(%u) in your configuration file", spid
+	"Can't delete IPsec Security Policy: spid=%u", sd->spid
+[SPMD_L_WARNING]
+[SPMD_L_NOTICE]
+[SPMD_L_INFO]
+	"Flushing Security Policies..."
+	"spid=%u", sd->spid
+	"...Done."
+[SPMD_L_DEBUG]
+	"[SP UPDATE] SRC=[%s]:%s DST=[%s]:%s", shost, sserv, dhost, dserv
+	"Updated: slid=%s, spid=%u", slid, rc->slid
+	"Updated: slid=%s, spid=%u", slid, rc->slid
+	"Delete: slid=%s, spid=%u", slid, rc->slid
+	"Delete: slid=%s, spid=%u", slid, rc->slid
+	"spid=%u mapped to slid=%s. (seq=%u)", spid, sd->slid, seq
+[SPMD_L_DEBUG]
+	"Can't found spid_data (by spid)"
+	"spid data: no spid<->selector_index"
+	"spid data: dumping spid<->selector_index entries..."
+	"{spid=%u, selector_index=%s}", sd->spid, sd->slid
+	"spid data: done"
+	"No flushing Security Policy"
+
+{task.c}:
+[SPMD_L_ERR]
+	"Out of memory"
+	"Out of memory"
+	"Arguement task or task list is NULL"
+	"Failed: select:%s", strerror(errno)
+[SPMD_L_WARNING]
+[SPMD_L_NOTICE]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+	"=== ALLOC TASK: %p", t
+	"=== %s:FREE TASK: %p",t
+	"=== ADD TASK: %p", t
+	"=== DEL TASK: %p",t
+	"Failed to exec handler"
+	"[READ Queue][%02d]:%p:%p", i++,t, t->func
+	"[WRITE QUEUE][%02d]:%p:%p", i++,t, t->func
+	"[RUN Queue][%02d]:%p:%p", i++,t, t->func
+	"=== TASK RUN"
+	"[=READ Queue][%02d]:%p:%p", i++,t, t->func
+	"[=WRITE Queue][%02d]:%p:%p", i++,t, t->func
+
+{udp.c}:
+[SPMD_L_ERR]
+	"Argument rshead is NULL"); 
+	"Resolver address must be numeric"
+	"Can't setup IPv6 udp resolver socket(%s)", host
+	"Can't setup IPv4 udp resolver socket(%s)", host
+	"Unknown address family"
+	"Argument sa is NULL"
+	"Argument sa is not AF_INET6"
+	"Can't setup udpv6 socket:%s", strerror(errno)
+	"Failed: setsockopt(IPV6_V6ONLY):%s", strerror(errno)
+	"Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno)
+	"Failed: bind():%s", strerror(errno)
+	"Argument sa is NULL"
+	"Argument sa is not AF_INET"
+	"Can't setup udpv4 socket:%s", strerror(errno)
+	"Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno)
+	"Failed: bind():%s", strerror(errno)
+[SPMD_L_WARNING]
+[SPMD_L_NOTICE]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]
+
+{utils.c}:
+[SPMD_L_ERR]
+[SPMD_L_WARNING]
+	"Log format string is NULL"
+[SPMD_L_NOTICE]
+[SPMD_L_INFO]
+[SPMD_L_DEBUG]
+[SPMD_L_DEBUG2]

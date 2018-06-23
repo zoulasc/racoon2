@@ -1,0 +1,178 @@
+$Id: iked-memo.ja.txt,v 1.13 2007/05/16 08:26:24 fukumoto Exp $
+
+racoon2 iked 実装現況について
+
+
+IKEv2スペックに対して
+‐CERT、 CERTREQ ペイロード取扱の未実装（受信すると無視またはエラー）
+   Implementations MUST be capable of being configured to send and
+   accept up to four X.509 certificates in support of authentication,
+   and also MUST be capable of being configured to send and accept the
+   first two Hash and URL formats (with HTTP URLs).  Implementations
+   SHOULD be capable of being configured to send and accept Raw RSA
+   keys.  If multiple certificates are sent, the first certificate MUST
+   contain the public key used to sign the AUTH payload. The other
+   certificates may be sent in any order.
+‐HTTP_CERT_LOOKUP_SUPPORTED、NON_FIRST_FRAGMENTS_ALSO 対応無し（受信すると無視）
+‐RSASIGのハッシュは SHA1
+‐CREATE_CHILD_SAで、 DHネゴシエーションで IKE SA と異なる DHが正しく扱えない（bug）
+‐オプショナルな機能で、ikedではサポートしない／最低限サポートのもの
+	‐ EAP 無し（同）
+	‐ window は minimum （1）
+‐相手が NO_ADDITIONAL_SAS を返してきた時の処理が無い
+‐トランスフォームネゴシエーション、 ID=0の対応が無し
+      If the
+      initiator wishes to make use of the transform optional to
+      the responder, it includes a transform substructure with
+      transform ID = 0 as one of the options.
+‐IPCOMP_SUPPORTEDの取扱無し（SADB_REGISTERの返値を iked から見えるよ
+  うにすることが必要）
+
+
+
+racoon2スペックに対して
+‐proposal_check 未実装（指定にかかわらず obey）
+‐selector_check が IDの選択に反映されない。TSの選択は exact のみ（これはスペックどおり）
+	racoon2-spec.txt では：
+			ikedは、TSはexactly matchしかサポートしない
+	racoon2-config.txtでは：
+			selector_check (obey|exact) ;
+			responder側のIDやTSの比較処理を定義する。
+			相互接続性のためにデフォルトは obey
+
+
+‐padlen_random, max_padlen の動作はracoon1 とかえてあります
+	max_padlen == 0, random_padlen == false:	最小のパディング
+	max_padlen != 0, random_padlen == true:		0..max_padlenの乱数長
+	max_padlen == 0, random_padlen == true:		max_padlen = 255, random_padlen=trueと同じ
+	max_padlen != 0, random_padlen == false:	max_padlen以下の最大パディング
+
+
+‐TSペイロードの扱い
+  
+
+
+‐オプショナルなペイロードの詳細
+
+IKE_SA_INIT request
+HDR, SAi1, KEi, Ni [N(NAT_DET_SRC), N(NAT_DET_DST)] 
+
+     request send (initiator)
+     [N(NAT_DETE_SRC), N(NAT_DET_DST)] nat_traversalがonなら送る（default）
+
+     request recv (responder)
+     [N(NAT_DETE_SRC), N(NAT_DET_DST)] 規定どおり処理する
+
+
+IKE_SA_INIT response
+HDR, SAr1, KEr, Nr, [N(NAT_DET_SRC), N(NAT_DET_DST),] [CERTREQ] 
+
+     response send (responder)
+     [N(NAT_DETE_SRC), N(NAT_DET_DST)] nat_traversalがonなら送る（default）
+     [CERTREQ]  送らない
+     N(COOKIE)  cookie_required であるか、half open sa が一定値より多いとき返す
+
+
+     response recv (initiator)
+     [CERTREQ]  無視する
+     N(COOKIE)  規定どおり処理
+     N(INVALID_KE_PAYLOAD)  規定どおり処理
+
+
+IKE_AUTH request
+HDR, SK {IDi, [CERT,] [CERTREQ,] [IDr,], AUTH, SAi2, TSi, TSr}
+
+     request send (initiator)
+     [CERT]  送らない
+     [CERTREQ]  送らない
+     [IDr]  peer_id が指定されていれば送る
+     [N(INITIAL_CONTACT)]  初めて使われるremoteならば付ける
+     [N(IPCOMP_SUPPORTED)]  付けない
+     [N(SET_WINDOW_SIZE)]  付けない
+     [N(USE_TRANSPORT_MODE)]  トランスポートモードならば付ける
+     [N(HTTP_CERT_LOOKUP_SUPPORTED)]  付けない
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  付けない
+
+     EAP使用時のメッセージフォーマット対応なし
+
+
+     request recv (responder)
+     [CERT]  無視する
+     [CERTREQ]  無視する
+     [IDr]  有るならば my_id と一致するか確認する。しなければ AUTHENTICATION_FAILED
+     [N(INITIAL_CONTACT)]  無視する
+     [N(IPCOMP_SUPPORTED)]  無視する
+     [N(SET_WINDOW_SIZE)]  無視する
+     [N(USE_TRANSPORT_MODE)]  有ればSAをトランスポートモードとする。（注意：NotifyペイロードのSPIを無視する）
+     [N(HTTP_CERT_LOOKUP_SUPPORTED)]  無視する
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  無視する
+
+     EAP、IRASのメッセージの対応なし
+
+
+IKE_AUTH response 
+HDR, SK {IDr, [CERT,] AUTH, SAr2, TSi, TSr}
+
+     response send (responder)
+     [CERT]  送らない
+     [N(INITIAL_CONTACT)]  初めて使われるremoteならば付ける
+     [N(IPCOMP_SUPPORTED)]  付けない
+     [N(SET_WINDOW_SIZE)]  付けない
+     [N(USE_TRANSPORT_MODE)]  トランスポートモードならば付ける
+     [N(HTTP_CERT_LOOKUP_SUPPORTED)]  付けない
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  付けない
+     
+
+     response recv (initiator)
+     [CERT]  無視する
+     [N(SINGLE_PAIR_REQUIRED)]  無視する
+     [N(NO_PROPOSAL_CHOSEN)]  child sa はアボートし、ike sa は成立（clarification draft)
+     [N(INTERNAL_ADDRESS_FAILURE)]  child sa はアボートし、ike sa は成立（clarification draft)
+     [N(FAILED_CP_REQUIRED)]  child sa はアボートし、ike sa は成立（clarification draft)
+     [N(TS_UNACCEPTABLE)]  child sa はアボートし、ike sa は成立（clarification draft)
+
+
+CREATE_CHILD_SA request
+HDR, SK {SA, Ni, [KEi], TSi, TSr}
+or (rekey IKE_SA)
+HDR, SK {SA(proposal proto=IKE), Ni, KEi}
+or (rekey CHILD_SA)
+HDR, SK {N(REKEY_SA), SA, Ni, [KEi]}
+
+     request send (initiator)
+     [N(REKEY)]  child sa のrekey の時は付ける
+     [KEi]  child sa 作成時は、need_pfs が指定されたとき付く。 rekey ikesa の時は必須で付く
+     [N(USE_TRANSPORT_MODE)]  トランスポートモードならば付ける
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  常に付ける
+     [N(IPCOMP_SUPPORTED)]  付けない
+
+
+     request recv (responder)
+     [KEi]  
+     [N(USE_TRANSPORT_MODE)]  有ればSAをトランスポートモードとする。（注意：NotifyペイロードのSPIを無視する）
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  無視する
+     [N(IPCOMP_SUPPORTED)]  無視する
+
+
+CREATE_CHILD_SA response
+HDR, SK {SA, Nr, [KEr], TSi, TSr}
+or (rekey IKE_SA)
+HDR, SK {SA, Nr, KEr}
+
+     response send (responder)
+     [KEr]  need_pfsの時は付ける。 rekey ike_sa の時は必須で付ける。
+     [N(SINGLE_PAIR_REQUIRED),]  付けない
+     [N(ADDITIONAL_TS_POSSIBLE)]  付けない
+     [N(USE_TRANSPORT_MODE)]  トランスポートモードならば付ける
+     [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  常に付ける
+     [N(IPCOMP_SUPPORTED)]  付けない
+
+
+     response recv (initiator)
+     [N(ADDITIONAL_TS_POSSIBLE)]  無視する
+     [N(SINGLE_PAIR_REQUIRED)]  child_sa をアボート。（本来は適切に処理すべき）
+     [N(NO_ADDITIONAL_SAS)]  child_sa をアボート。（本来は適切に処理すべき）
+     [N(INVALID_KE_PAYLOAD)]  need_pfs ならば指定の dh group で createchildを再実行。そうでなければエラーとして child_sa をアボート
+     [N(NO_PROPOSAL_CHOSEN)]  child_sa をアボート
+     [N(FAILED_CP_REQUIRED)]  child_sa をアボート
+     [N(TS_UNACCEPTABLE)]  child_sa をアボート

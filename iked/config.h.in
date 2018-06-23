@@ -1,0 +1,167 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+#undef size_t
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#undef TIME_WITH_SYS_TIME
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* Define if you have the daemon function.  */
+#undef HAVE_DAEMON
+
+/* Define if you have the getaddrinfo function.  */
+#undef HAVE_GETADDRINFO
+
+/* Define if you have the getnameinfo function.  */
+#undef HAVE_GETNAMEINFO
+
+/* Define if you have the getopt_long function.  */
+#undef HAVE_GETOPT_LONG
+
+/* Define if you have the setprogname function.  */
+#undef HAVE_SETPROGNAME
+
+/* Define if you have the timegm function.  */
+#undef HAVE_TIMEGM
+
+/* Define if you have the <inttypes.h> header file.  */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the <limits.h> header file.  */
+#undef HAVE_LIMITS_H
+
+/* Define if you have the <net/pfkeyv2.h> header file.  */
+#undef HAVE_NET_PFKEYV2_H
+
+/* Define if you have the <netdb.h> header file.  */
+#undef HAVE_NETDB_H
+
+/* Define if you have the <netinet/in.h> header file.  */
+#undef HAVE_NETINET_IN_H
+
+/* Define if you have the <netinet6/ipsec.h> header file.  */
+#undef HAVE_NETINET6_IPSEC_H
+
+/* Define if you have the <netipsec/ipsec.h> header file.  */
+#undef HAVE_NETIPSEC_IPSEC_H
+
+/* Define if you have the <openssl/aes.h> header file.  */
+#undef HAVE_OPENSSL_AES_H
+
+/* Define if you have the <openssl/evp.h> header file.  */
+#undef HAVE_OPENSSL_EVP_H
+
+/* Define if you have the <openssl/idea.h> header file.  */
+#undef HAVE_OPENSSL_IDEA_H
+
+/* Define if you have the <openssl/opensslv.h> header file.  */
+#undef HAVE_OPENSSL_OPENSSLV_H
+
+/* Define if you have the <openssl/pem.h> header file.  */
+#undef HAVE_OPENSSL_PEM_H
+
+/* Define if you have the <openssl/pkcs12.h> header file.  */
+#undef HAVE_OPENSSL_PKCS12_H
+
+/* Define if you have the <openssl/rc5.h> header file.  */
+#undef HAVE_OPENSSL_RC5_H
+
+/* Define if you have the <openssl/rsa.h> header file.  */
+#undef HAVE_OPENSSL_RSA_H
+
+/* Define if you have the <openssl/x509.h> header file.  */
+#undef HAVE_OPENSSL_X509_H
+
+/* Define if you have the <stdarg.h> header file.  */
+#undef HAVE_STDARG_H
+
+/* Define if you have the <stddef.h> header file.  */
+#undef HAVE_STDDEF_H
+
+/* Define if you have the <stdint.h> header file.  */
+#undef HAVE_STDINT_H
+
+/* Define if you have the <stdlib.h> header file.  */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <string.h> header file.  */
+#undef HAVE_STRING_H
+
+/* Define if you have the <sys/param.h> header file.  */
+#undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/socket.h> header file.  */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define if you have the <sys/time.h> header file.  */
+#undef HAVE_SYS_TIME_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the pcap library (-lpcap).  */
+#undef HAVE_LIBPCAP
+
+/* path to the pid file */
+#undef IKED_PID_FILE
+
+/* define to enable IKEv1 protocol support */
+#undef IKEV1
+
+/* define to enable IKEv2 protocol support */
+#undef IKEV2
+
+/* define to listen PF_ROUTE socket */
+#undef WITH_RTSOCK
+
+/* define optaining CoA from netlink xfrm messages */
+#undef WITH_PARSECOA
+
+/* window size of IPsec SA created by IKEv2 */
+#undef IKEV2_IPSEC_WINDOW_SIZE
+
+/* define to enable NAT Traversal support */
+#undef ENABLE_NATT
+
+/* define if __func__ macro is available */
+#undef HAVE_FUNC_MACRO
+
+/* define if struct sockaddr has sa_len field */
+#undef HAVE_SA_LEN
+
+/* define if IPv6 is enabled */
+#undef INET6
+
+/* define if IPv6 advanced API is available */
+#undef ADVAPI
+
+/* define to use ADVAPI for glibc2 */ 
+#undef _GNU_SOURCE
+
+/* define to use OpenSSL ENGINE */
+#undef WITH_OPENSSL_ENGINE
+
+/* define if public key encryption is available */
+#undef HAVE_SIGNING_C
+
+/* recent versions of openssl declares argument with 'const' */
+#undef BPP_const
+
+/* define if openssl has SHA2 support */
+#undef HAVE_OPENSSL_SHA2
+
+/* define if SHA2 can be used */
+#undef WITH_SHA2
+

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the ikesa-up.d directory when IKE_SA is established
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./ikesa-up.d

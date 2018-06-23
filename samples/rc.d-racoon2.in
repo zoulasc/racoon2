@@ -1,0 +1,50 @@
+#! /bin/sh
+# $Id: rc.d-racoon2.in,v 1.2 2005/10/28 06:33:16 kamada Exp $
+# racoon2 rc.d script for NetBSD
+#
+
+# KEYWORD: nostart
+
+# This script is for human users and *not* started by /etc/rc.
+# Each module of racoon2 is controlled by rc.conf(5).
+#
+# Example) If you want to use only IKEv2, put the following lines into
+# /etc/rc.conf.
+#        spmd=YES
+#        iked=YES
+#        kinkd=NO
+# When the system is booting, spmd and iked are started by /etc/rc.
+# When you want start/stop manually, use /etc/rc.d/racoon2 start (or stop).
+
+. /etc/rc.subr
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+rcd_dir=`dirname $0`
+
+MODULES_FWD="spmd iked kinkd"
+MODULES_REV="kinkd iked spmd"
+
+name="racoon2"
+required_files="@sysconfdir@/racoon2.conf"
+extra_commands="reload status"
+start_cmd="do_fwd"
+stop_cmd="do_rev"
+reload_cmd="do_fwd"
+status_cmd="do_fwd"
+
+do_fwd()
+{
+	for mod in $MODULES_FWD; do
+		$rcd_dir/$mod $rc_arg
+	done
+}
+
+do_rev()
+{
+	for mod in $MODULES_REV; do
+		$rcd_dir/$mod $rc_arg
+	done
+}
+
+run_rc_command "$1"

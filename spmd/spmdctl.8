@@ -1,0 +1,128 @@
+.\" Copyright (C) 2004, 2005 WIDE Project.
+.\" All rights reserved.
+.\" 
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\" notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\" notice, this list of conditions and the following disclaimer in the
+.\" documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the project nor the names of its contributors
+.\" may be used to endorse or promote products derived from this software
+.\" without specific prior written permission.
+.\" 
+.\" THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.TH "spmdctl" "8" "20050624" "" ""
+.SH "NAME"
+.LP 
+\fBspmdctl\fR \- Control spmd 
+.SH "SYNOPSIS"
+.LP 
+\fBspmdctl\fR [\fIoption\fR] \fICOMMAND\fR
+.SH "DESCRIPTION"
+.LP 
+\fBspmdctl\fR connects to the spmd interface which is specified in racoon2 configuration file, and requests operation\fI\fR to spmd.
+.br 
+Available operations are:
+.IP 
+set, get, and delete DNS server address(es) for spmd DNS proxy function.
+.IP 
+add IPsec Policy.
+.IP 
+get spmd statistics.
+.\".SH "OPTIONS"
+.\".LP 
+.TP 
+The following options are available:
+.TP 
+\fB\-d\fR
+Display all messages which exchanged with spmd.
+.TP 
+\fB\-f FILE\fR
+Specify racoon2 configuration file name \fBFILE\fR.
+.\".SH "COMMANDS"
+.\".LP 
+.TP 
+The following \fBCOMMAND\fRs are available:
+.TP 
+\fBns add ADDRESS\fR
+.IP 
+Add DNS server address \fBADDRESS\fR to spmd DNS server list.
+
+.TP 
+\fBns delete ADDRESS\fR
+.IP 
+Delete DNS server address \fBADDRESS\fR from spmd DNS server list. 
+
+.TP 
+\fBns list\fR
+.IP 
+Show DNS server address(es) in spmd DNS Server list.
+Top line is currently used.
+
+.TP 
+\fBpolicy add SELECTOR_INDEX LIFETIME {transport|tunnel| SP_SRC_IPADDR SP_DST_IPADDR [SA_SRC_IP_ADDR SA_DST_IPADDR]\fR
+.IP 
+Request spmd to add IPsec Security Policy to in\-kernel IPsec Security Policy DataBase(SPD).
+.IP 
+\fBSELECTOR_INDEX\fR is a selector index string which described in racoon2 configuration file.
+.IP 
+\fBLIFETIME\fR is the lifetime duration(sec) for this IPsec Security Policy.
+.IP 
+\fBtransport|tunnel\fR
+\fBtransport\fR means this IPsec Security Policy is transport mode.
+\fBtunnel\fR means tunnel mode.
+.IP 
+\fBSP_SRC_IPADDR\fR is the source IP address for this IPsec Security Policy.
+.IP 
+\fBSP_DST_IPADDR\fR is the destination IP address for this IPsec Security Policy.
+.IP 
+\fBSA_SRC_IPADDR\fR is the IPsec SA source IP address associated with this IPsec Security Policy. This is only required in tunnel mode.
+.IP 
+\fBSA_DST_IPADDR\fR is the IPsec SA destination IP address associated with this IPsec Security Policy. This is only required in tunnel mode.
+
+.TP 
+\fBpolicy delete SELECTOR_INDEX\fR
+.IP 
+Request spmd to delete IPsec Security Policy to in\-kernel IPsec Security DataBase(SPD).
+.IP 
+\fBSELECTOR_INDEX\fR is a selector index string which described in racoon2 configuration file.
+
+.TP 
+\fBpolicy show\fR
+.IP 
+Dump IPsec Security Policies. 
+If 'selector=' field is empty in a displayed IPsec Security Policy entry, this Policy is out of racoon2 management.  
+
+.TP 
+\fBinteractive\fR
+Connect to spmd and just login. You can talk to spmd directly.
+This command is available when you compiled spmdctl with DEBUG_SPMD.
+
+.TP 
+\fBstatus\fR
+Show spmd statistics.
+.SH "FILES"
+.LP 
+\fIracoon2.conf\fP 
+.SH "AUTHORS"
+.LP 
+WIDE Project, racoon2 project <http://www.racoon2.wide.ad.jp/>
+.SH "BUGS"
+.LP 
+\fBpolicy add\fR command currently doesn't support tunnel mode.
+.SH "SEE ALSO"
+.LP 
+spmd(8) racoon2.conf(5) racoon2(7).

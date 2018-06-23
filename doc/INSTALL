@@ -1,0 +1,277 @@
+$Id: INSTALL,v 1.70 2010/05/25 16:20:17 mk Exp $
+
+The Racoon2 installation guide
+==============================
+
+1. Make sure your platform and libraries before you will build and install
+   the racoon2.
+
+o Platform requirement
+	Linux (kernel 2.6)
+	FreeBSD 5.5-STABLE or later
+	NetBSD 3.0 or later
+	Mac OS X (experimental support)
+
+o Note
+
+  In this release,
+
+- We changed the default location of the configuration file 
+  from /usr/local/racoon2/etc to /usr/local/racoon2/etc/racoon2.
+
+- IKEv2 Configuration Payload is still experimental.
+  For more information, please read the doc/cfg-usage.txt.
+
+- IKEv2 NAT-T only tested on Linux, and on FreeBSD 6.2 with NAT-T patch.
+  NAT-T patches can be obtained from:
+  (http://ipsec-tools.cvs.sourceforge.net/ipsec-tools/htdocs/)
+  (http://vanhu.free.fr/FreeBSD/)
+
+- IKEv1 NAT-T only tested on Linux, and is still very experimental.
+
+- Linux specific Note that if your kernel enables NAT-T AND if you do not 
+  specify both "peers_sa_ipaddr" and "my_sa_ipaddr" in the configuration
+  of the racoon system, then iked(8) can not install the pair of SAs
+  into the kernel.
+
+- If you are using NetBSD, please disable IPSEC_NAT_T kernel option.
+  (--disable-natt option to the configure script is not enough.)
+
+- We roughly checked racoon2 on Mac OS X 10.4. It was compiled
+  with xcode 2.4.1. The tested platform is Power PC G4 (mac mini).
+
+o Environment requirement
+
+Before installing racoon2, you must install required tools and libraries.
+
+- basic developer's tools
+	GNU Compiler Collection 3.x/4.x
+	GNU make (gmake) or pmake
+
+	For Ubuntu (not sure that other Linux base platforms need them),
+	you have to install below packages,
+		libc6-dev
+		bison
+		flex
+		libssl-dev
+
+	For Mac OS X please use xcode, which you can obtain from the Apple
+	web site. (http://developer.apple.com/tools/xcode/)
+
+- OpenSSL (http://www.openssl.org/)
+	Recent environments have OpenSSL installed by default so
+	you don't have to install it by yourself.  Otherwise,
+	install it via your package system or from the source code.
+
+	OpenSSL 0.9.7c or upper version is recommended.
+
+- Kerberos5 library, if you need kinkd
+
+  Heimdal (http://www.pdc.kth.se/heimdal/)
+	Use version 0.6.x to 0.8.x.  Newer/older versions will not work.
+	FreeBSD and NetBSD have integrated Heimdal so you don't need to
+	install it by yourself.  For Debian GNU/Linux and Ubuntu users,
+	install 'heimdal-dev' package.  'heimdal-clients' may also help
+	you.
+
+  MIT krb5 (http://web.mit.edu/kerberos/)
+	Use version 1.4.x or 1.5.x.  Newer/older versions will not work.
+	For Debian GNU/Linux and Ubuntu users, install 'libkrb5-dev'
+	packages.
+
+- libpcap
+
+  Racoon2 has a tweak which dumps all of packets.  Messages are stored by
+  PCAP format before encrypting a message in sending, or after decrypting
+  a message in receiving.  It is for debugging purpose.  So it is not
+  available by default.  If you want to use it, you have to specify the
+  configure option --enable-pcap when you launch the configure script.
+
+  For Ubuntu and Debian, install 'libpcap-dev' package.
+  For Fedora, install 'libpcap-devel' package.
+
+  On Mac OS X, we did not test it.
+
+2. You have to enable IPsec on your platform.
+
+o Linux (kernel 2.6)
+
+  There are some distributions which supports IPsec by default.
+  At least, following distributions match this condition.
+
+     Ubuntu 7.04 Desktop Edition (or later)
+     Debian GNU/Linux 4.0 (or later)
+     Fedora 8 (or later)
+
+  We did not check other distribution.  When the following modules exist
+  on your system, IPsec probably works on your kernel without re-building.
+
+    af_key.ko
+    ah4.ko
+    esp4.ko
+    xfrm4_tunnel.ko
+    xfrm4_mode_transport.ko
+    xfrm4_mode_tunnel.ko
+
+  For cryptographic algorithms
+
+    aes.ko
+    sha1.ko
+
+  It depends on your use.  If you want to use DES, des.ko is required.
+
+  For IPv6 IPsec
+
+    ah6.ko
+    esp6.ko
+    xfrm6_tunnel.ko
+    xfrm6_mode_transport.ko
+    xfrm6_mode_tunnel.ko
+
+  You maybe need to rebuild your kernel unfortunately.  the following
+  configuration items set to either 'Y' or 'M' at kernel compilation.
+
+  CONFIG_NET_KEY
+  CONFIG_INET_AH
+  CONFIG_INET_ESP
+  CONFIG_INET_IPCOMP
+  CONFIG_XFRM
+  CONFIG_XFRM_USER
+
+  additionally these items are also set on later version of Linux-2.6.18
+  CONFIG_INET_XFRM_MODE_TRANSPORT
+  CONFIG_INET_XFRM_MODE_TUNNEL
+
+  ** If you have the IPv6 and you want to use IPsec on it,
+     you additionally need these items.
+
+     CONFIG_INET6_AH
+     CONFIG_INET6_ESP
+     CONFIG_INET6_IPCOMP
+
+     additionally these items are also set on later version of Linux-2.6.18
+     CONFIG_INET6_XFRM_MODE_TRANSPORT
+     CONFIG_INET6_XFRM_MODE_TUNNEL
+
+
+  and at least set the following Cryptographic options
+
+  CONFIG_CRYPTO
+  CONFIG_CRYPTO_HMAC
+  CONFIG_CRYPTO_NULL
+  CONFIG_CRYPTO_MD5
+  CONFIG_CRYPTO_SHA1
+  CONFIG_CRYPTO_DES
+  CONFIG_CRYPTO_AES(_586)
+  CONFIG_CRYPTO_DEFLATE
+
+  for more information about building kernel, 
+  please refer to "Linux Kernel Source Directory"/README.
+
+o FreeBSD 5.5-RELEASE
+
+- install FreeBSD 5.5-RELEASE to your PC.
+  for detail to install it, please refer to
+    http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/install.html
+
+- enable your kernel to support IPsec.
+  the following lines to your kernel configuration file.
+
+	options IPSEC
+	options IPSEC_ESP
+
+  rebuild your kernel.
+
+	# make buildkernel KERNCONF=YOURKERNEL
+	# make installkernel KERNCONF=YOURKERNEL
+
+  for more detail to make your kernel, please refer to
+    http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig.html
+
+o NetBSD 3.0
+
+- Build your custom kernel with IPsec support enabled.
+
+  Add the following lines to your kernel configuration file.
+	options IPSEC
+	options IPSEC_ESP
+
+  Rebuild your kernel.
+	% config YOURKERNEL
+	% cd ../compile/YOURKERNEL
+	% make depend
+	% make
+	# make install
+
+  For more information to make a custom kernel, please refer to
+    http://www.netbsd.org/guide/en/chap-kernel.html
+
+3. Build and install the Racoon2.
+
+First you have to run the configure script at the top directory
+of the racoon2 kit that you expanded to your system.  Just type:
+
+	% ./configure
+
+The programs will be installed to the directory under /usr/local/racoon2
+as the default.  If you want to change the directory to $NEWDIR,
+you have to type like the following:
+
+	% ./configure --prefix=$NEWDIR
+
+If you want to install the programs with a specific owner, then you can
+define it like the following:
+
+	% ./configure --with-install-opts="-o root -g wheel"
+
+Available options to the configure script besides standard ones are:
+	--with-krb5=<kerberos 5 directory>
+	--disable-iked
+	--disable-kinkd
+	--enable-pcap
+
+If you use racoon2 on Mac OS X, please use these options.
+	--disable-kinkd
+	--disable-natt
+
+	kinkd uses unexported symbols from the krb5 library.
+	On others, they are available. But they are not on Mac OS X.
+	kinkd is not available on it.
+
+	We aren't sure whether Mac OS X supports NAT-T or not.
+	However with our test, it did not work so that please
+	disable NATT.
+
+After you run the configure script, you have to make all programs.
+
+	% make
+
+NOTE:
+       You may meet the compile error related to struct in6_pktinfo 
+       at iked/sockmisc.c on Linux. In this case rerun the configure 
+       script at the top racoon2 directory as described below:
+
+       % make distclean
+       % CFLAGS=-D_GNU_SOURCE ./configure
+       % make
+
+       If you meet the error again, check whether the both ADVAPI line 
+       and _GNU_SOURCE line are defined (== 1) in iked/config.h.
+
+Then if you want to install them, just type the following:
+
+	# make install
+
+If you did not change the default install directory, you can see
+the following tree.
+
+	/usr/local/racoon2/
+	   |
+	   +-- sbin/
+	   |      daemon programs and utilities
+	   +-- etc/racoon2/
+	   |      starting scripts and a sample configuration
+	   +-- man/
+		  manual pages of the programs
+
+4. See doc/USAGE for the next step.

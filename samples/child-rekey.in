@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the child-rekey.d directory when CHILD_SA is rekeyed
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./child-rekey.d

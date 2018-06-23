@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the ikesa-down.d directory when IKE_SA is removed
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./ikesa-down.d

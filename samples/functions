@@ -1,0 +1,58 @@
+#!/bin/sh 
+# 
+# run_hook(), run_hookdir(), are derived from dhcp3-client script 
+# (debian etch dhcp3-client 3.0.4-13).
+# The original notice is attached below:
+# dhclient-script for Linux. Dan Halbert, March, 1997.
+# Updated for Linux 2.[12] by Brian J. Murrell, January 1999.
+# Modified for Debian.  Matt Zimmerman and Eloy Paris, December 2003
+# Modified to remove useless tests for antiquated kernel versions that
+# this doesn't even work with anyway, and introduces a dependency on /usr
+# being mounted, which causes cosmetic errors on hosts that NFS mount /usr
+# Andrew Pollock, February 2005
+# Modified to work on point-to-point links. Andrew Pollock, June 2005
+# Modified to support passing the parameters called with to the hooks. Andrew Pollock, November 2005
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export PATH
+LC_ALL=C
+export LC_ALL
+
+[ -x /bin/ls ] || exit 0
+
+list="/bin/ls"
+
+run_hook() {
+    local script="$1"
+    local exit_status
+    shift	# discard the first argument, then the rest are the script's
+
+    if [ -f $script ]; then
+    	logger -t "Racoon2" "call script $script"
+        . $script "$@"
+	exit_status=$?
+    fi
+
+    if [ -n "$exit_status" ] && [ "$exit_status" -ne 0 ]; then
+        logger -p daemon.err -t "Racoon2" "$script returned non-zero exit status $exit_status"
+    fi
+
+    return $exit_status
+}
+
+run_hookdir() {
+    local dir="$1"
+    local exit_status
+    shift	# See run_hook
+
+    if [ -d "$dir" ]; then
+    	cd "$dir"
+        for script in $($list .); do
+            run_hook $script "$@" || true
+            exit_status=$?
+        done
+    fi
+
+    return $exit_status
+}
+

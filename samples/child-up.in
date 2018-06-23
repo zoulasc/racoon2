@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the child-up.d directory when CHILD_SA is established
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./child-up.d

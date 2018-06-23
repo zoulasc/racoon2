@@ -1,0 +1,207 @@
+/* $Id: kinkd-install.ja.txt,v 1.2 2005/07/20 09:30:51 inoue Exp $ */
+
+	kinkd (of racoon2) Installation Guide
+
+
+1. 必要な環境
+=============
+
+  OS (以下のいずれか)
+	- KAME IPsec を有効にした
+	  FreeBSD 4.x/5.x, NetBSD 1.6.x/2.0 (OpenBSD は未サポート)
+	- IPsec/PF_KEY を有効にした
+	  Debian GNU/Linux (sarge) with Linux 2.6.x kernel
+	  (Debian 以外でも動かせると思うが、未確認)
+	  (Red Hat でも動いた)
+
+  ライブラリ (以下すべて)
+	- Kerberos5 library (どちらか)
+	  (MIT ではほとんどテストしていないので、現状では Heimdal がお勧め)
+	   + Heimdal-0.6.x
+	   + MIT libkrb5 1.3.4
+	- OpenSSL-0.9.[67]
+	- libracoon
+
+
+2. Kerberos5 環境の設定
+=======================
+
+2.1. KDC の設定
+===============
+
+	省略
+
+
+2.2. Kerberos client (or application client/server) としての設定
+================================================================
+  (kinkd は Kerberos client の一種である。)
+
+  /etc/krb5.conf を作成
+	例)
+		[libdefaults]
+		        default_realm = KINK.HONGO.WIDE.AD.JP
+		[realms]
+		        KINK.HONGO.WIDE.AD.JP = {
+		                kdc = styx.hongo.wide.ad.jp
+		        }
+
+	プライベートアドレスで動かしたい/NAT される場合は、
+	例えば、
+		[appdefaults]
+		        no-addresses = true
+
+  各ホストに principal を割り当て、共有秘密鍵を生成する。
+	例: 各ホストで)
+		# kadmin -a <KDCのホスト名>
+		kadmin> add --random-key kink/mitana.nanohz.org
+		kadmin> ext kink/mitana.nanohz.org
+
+	メモ: add コマンドで KDC 上に principal name と鍵を生成。
+	      ext コマンドで鍵を手元に export。
+
+
+3. kinkd のコンパイルと設定
+===========================
+
+3.1. kinkd のソースコードの取得
+===============================
+
+	略
+
+
+3.2. libracoon のコンパイル
+===========================
+
+	Linux でコンパイルする場合は、
+	付録 A を先に見る方が幸せになれる。← 重要
+
+	% cd racoon2/lib
+	% ./configure
+
+	今のところ kinkd に static link するので、
+	インストールする必要はない。
+
+
+3.3. kinkd のコンパイル & インストール
+======================================
+
+	% cd racoon2/kinkd
+	% ./configure
+		* Heimdal/MIT-krb5 が標準以外のパスにある場合は、
+		  --with-krb5=/path/to/krb5-prefix を指定する。
+	% make
+	# cp kinkd /path/to/somewhere
+	# cp -i example/racoon2.conf /etc
+	# $EDITOR /etc/racoon2.conf
+
+
+3.4 kinkd の設定
+================
+
+  /etc/racoon2.conf
+	→ racoon2.conf 節へ。
+
+  FQDN とアドレスの対応
+	/etc/hosts に指定する。
+	通常通り
+		2001:240:2:0:202:8aff:fefa:bec0		mitana.nanohz.org
+	のように書けばよい。
+
+  kinkd をデバッグメッセージモードで起動するには
+	起動時に -d オプションをつける。
+	-F をつけると daemon 化しない。
+
+
+4. racoon2.conf
+===============
+
+  自分の principal 名
+	default{remote{kink{my_principal}}} に、自分の principal 名を
+	指定する。krb5.conf でデフォルト realm を設定している場合は、
+	realm 名は省略できる。
+
+  remote{kink{peers_principal}
+	responder の場合は、今のところ、相手の (すなわち initiator の)
+	principal 名を必ず指定する必要がある。
+	また、今のところ realm 名は省略できない。
+
+  remote{selector_index}
+	responder の場合は、今のところ、必ず指定する必要がある。
+
+  selector, policy, ipsec, sa
+	これらは、kinkd specific な制約はないはずなので、
+	通常通り記述する。
+
+
+5. kinkd の起動/終了
+====================
+
+  起動
+	-d オプションをつけるとデバッグメッセージモードで起動する。
+	   (ただし syslog の方も LOG_DEBUG レベルを出力するように
+	   設定していないと、全然出力が変化しないので注意)
+	-F オプションをつけると syslog の替わりに標準出力に
+	   出力する。また、daemon 化しない。
+
+	例) /usr/local/sbin/kinkd -d
+
+  終了
+	SIGTERM/SIGINT で終了。
+
+	例) pkill kinkd
+	      または
+	    kill `cat /var/run/kinkd.pid`
+
+
+付録 A: Linux-2.6.x + Debian sarge でのヒント
+=============================================
+
+  kernel
+	- PFKEY socket
+	- AH
+	- ESP
+	- AH for IPv6
+	- ESP for IPv6
+	を有効にして 2.6.x カーネルを構築する。
+	(最近はデフォルトで有効かも)
+
+  Heimdal
+	Debian: heimdal-dev パッケージを入れる。
+	RedHat: ?
+
+  libracoon のコンパイル
+	/usr/include/linux に必要なヘッダファイルをインストールしていない
+	場合は、./configure のあと、
+	Makefile の CFLAGS に -I/path/to/linux-2.6.x/include を追加する。
+
+	Heimdal を手動でインストールしている場合、
+	Makefile の CFLAGS に -I/path/to/heimdal/include を追加する。
+
+  kinkd のコンパイル
+	/usr/include/linux に必要なヘッダファイルをインストールしていない
+	場合は、configure 時に、
+		% env CPPFLAGS=-I/path/to/linux-2.6.x/include ./configure
+	のように指定してやる。
+
+  その他
+	SPD の設定を行なうために setkey コマンドが欲しいなら、
+	ipsec-tools <http://ipsec-tools.sourceforge.net/>
+	をインストールするとよい。
+	Debian/RedHat ともパッケージがあるようだ。
+
+
+付録 B: FreeBSD 4.10, NetBSD 2.0 でのヒント
+===========================================
+
+  kernel
+	- IPSEC
+	- IPSEC_ESP
+	- IPSEC_DEBUG
+	オプションをつけて再構築する。
+
+  Heimdal
+	FreeBSD 4.x (と確認していないがおそらく NetBSD 1.6.x) の場合、
+	ついてくる Heimdal のバージョンが古いので、
+	自分で 0.6.x をインストールする必要がある。
+
+	FreeBSD 5.x, NetBSD 2.0 の場合は、ついてくるやつで OK。

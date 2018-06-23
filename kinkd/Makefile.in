@@ -1,0 +1,73 @@
+# $Id: Makefile.in,v 1.39 2010/05/07 18:42:30 kamada Exp $
+
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+mandir=@mandir@
+CC	=@CC@
+OPTFLAG	=@OPTFLAG@
+CPPFLAGS=@CPPFLAGS@ @DEFS@ -DRACOON2_CONFIG_DIR=\"$(sysconfdir)\"
+LDFLAGS	=@LDFLAGS@
+LIBS	=@LIBS@
+CFLAGS	=@CFLAGS@ $(OPTFLAG)
+INSTALL =@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+MKDEP	=@MKDEP@
+
+PROG=kinkd
+SRCS=main.c \
+	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_@KRB5_TYPE@.c \
+	session.c base.c dpd.c peer.c handle.c \
+	algorithm.c crypto_openssl.c oakley.c \
+	ipsec_doi.c isakmp.c isakmp_quick.c isakmp_inf.c proposal.c \
+	strnames.c \
+	sockmisc.c \
+	pfkey.c kink_conf.c rct_ipsecdoi.c \
+	etchosts.c \
+	sched_select.c utils.c
+OBJS=$(SRCS:.c=.o) @ADDOBJS@
+MAN=kinkd.8
+
+all: $(PROG)
+
+$(PROG): $(OBJS)
+	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LIBS)
+
+# override default .c.o rule in case it doesn't include CPPFLAGS (FreeBSD)
+.c.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
+
+# missing
+#libipsec_pfkey.o: $(srcdir)/missing/libipsec_pfkey/libipsec_pfkey.c
+#	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+
+# manual dependencies
+$(PROG): ../lib/libracoon.a
+../lib/libracoon.a:		# check its timestamp only when there is.
+
+install: all
+	$(INSTALL) -d $(sbindir)
+	$(INSTALL_PROGRAM) $(PROG) $(sbindir)
+	$(INSTALL) -d $(mandir)/man8
+# not friendly with -n  :-(
+	sysconfdir="$$(echo '$(sysconfdir)' | sed 's/%/\\\%/g')"; \
+	for f in $(MAN); do \
+		sed -e s%\@sysconfdir\@%"$$sysconfdir"%g < $$f > $${f}.tmp; \
+		$(INSTALL_DATA) $${f}.tmp $(mandir)/man$${f##*.}/$$f; \
+		rm $${f}.tmp; \
+	done
+
+depend:
+	$(MKDEP) $(CPPFLAGS) $(SRCS)
+
+clean:
+	-rm -f $(PROG) *.o *.core *~
+
+distclean: clean
+	-rm -f Makefile config.cache config.status config.log .depend
+
+.PHONY: .depend
+@IF_GMAKE@-include .depend

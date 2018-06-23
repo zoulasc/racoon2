@@ -1,0 +1,39 @@
+#! /bin/sh
+# $Id: rc.d-spmd.in,v 1.5 2007/07/11 00:59:30 kamada Exp $
+# spmd rc.d script for NetBSD
+#
+
+# PROVIDE: spmd
+# REQUIRE: isdnd ppp
+# BEFORE:  SERVERS
+
+. /etc/rc.subr
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+name="spmd"
+rcvar=$name
+command="@sbindir@/${name}"
+extra_commands="reload"
+pidfile="/var/run/${name}.pid"
+required_files="@sysconfdir@/racoon2.conf"
+start_precmd="spmd_precmd"
+start_postcmd="sleep 1"			# Wait until spmif is bound.
+reload_cmd="spmd_reload"
+
+spmd_precmd()
+{
+	mkdir -p -m 700 /var/run/racoon2
+
+	# XXX check owner and mode
+}
+
+spmd_reload()
+{
+	echo "Restarting ${name} because reloading is not yet implemented."
+	$0 `echo $rc_arg | sed s/reload/restart/`
+}
+
+load_rc_config $name
+run_rc_command "$1"

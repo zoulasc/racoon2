@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# This sample script logs environment variables via syslog(3) 
+# when IKEv2 CHILD_SA is established.
+#
+
+logger "child-up(sample) application version=$APPLICATION_VERSION"
+logger "child-up(sample) local address[port]=$LOCAL_ADDR[$LOCAL_PORT]"
+logger "child-up(sample) remote address[port]=$REMOTE_ADDR[$REMOTE_PORT]"
+logger "child-up(sample) selector index=$SELECTOR_INDEX, mode=$IPSEC_MODE, ul_proto=$UPPER_LAYER_PROTOCOL"
+logger "child-up(sample) local net=$LOCAL_NET_ADDR/$LOCAL_NET_PREFIXLEN[$LOCAL_NET_PORT]"
+logger "child-up(sample) remote net=$REMOTE_NET_ADDR/$REMOTE_NET_PREFIXLEN[$REMOTE_NET_PORT]"
+logger "child-up(sample) internal address=$INTERNAL_ADDR"
+logger "child-up(sample) internal address4=$INTERNAL_ADDR4"
+logger "child-up(sample) internal dns4=$INTERNAL_DNS4"
+logger "child-up(sample) internal wins4=$INTERNAL_WINS4"
+logger "child-up(sample) internal dhcp4=$INTERNAL_DHCP4"
+logger "child-up(sample) internal address6=$INTERNAL_ADDR6"
+logger "child-up(sample) internal dns6=$INTERNAL_DNS6"
+logger "child-up(sample) internal dhcp6=$INTERNAL_DHCP6"
+

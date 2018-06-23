@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the ph1-down.d directory when ISAKMP SA is removed
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./ph1-down.d

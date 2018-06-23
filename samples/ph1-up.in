@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the ph1-up.d directory when ISAKMP SA is established
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./ph1-up.d

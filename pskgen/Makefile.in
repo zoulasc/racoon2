@@ -1,0 +1,32 @@
+# $Id: Makefile.in,v 1.11 2007/12/12 07:12:22 mk Exp $
+
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+mandir=@mandir@
+
+INSTALL =@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+INSTALL_DATA=@INSTALL_DATA@
+
+PROG=pskgen
+
+all:
+
+install: all
+	$(INSTALL) -d $(sbindir)
+	$(INSTALL_SCRIPT) $(PROG) $(sbindir)
+	$(INSTALL_DATA) $(PROG).8 $(mandir)/man8
+	$(INSTALL) -d $(prefix)/etc/racoon2
+	sh ./autogen.spmd.pwd
+
+depend:
+
+clean:
+
+distclean: clean
+	-rm -f $(PROG) autogen.spmd.pwd
+	-rm -f Makefile config.cache config.status config.log .depend

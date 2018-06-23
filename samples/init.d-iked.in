@@ -1,0 +1,43 @@
+#!/bin/sh
+# $Id: init.d-iked.in,v 1.2 2005/10/28 02:35:23 miyazawa Exp $
+# iked startup script
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+NAME=iked
+DAEMON=@sbindir@/$NAME
+PIDFILE=/var/run/$NAME.pid
+
+test -x $DAEMON || exit 0
+
+set -e
+
+case "$1" in
+start)
+	echo -n "Starting $NAME"
+	$DAEMON
+	echo "."
+	;;
+stop)
+	echo -n "Stopping $NAME"
+	read pid junk < $PIDFILE && kill $pid
+	echo "."
+	;;
+restart)
+	$0 stop
+	$0 start
+	;;
+reload)
+	echo -n "Reloading $NAME"
+	read pid junk < $PIDFILE && kill -HUP $pid
+	echo "."
+	;;
+*)
+	echo "usage: $0 {start|stop|restart|reload}"
+	exit 1
+	;;
+esac
+
+exit 0

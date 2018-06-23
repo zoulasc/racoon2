@@ -1,0 +1,14 @@
+--- dhclient-script.org	2003-12-03 10:39:44.000000000 +0900
++++ dhclient-script	2003-12-03 10:40:11.000000000 +0900
+@@ -33,9 +33,9 @@
+ }
+ 
+ make_resolv_conf() {
+-  echo search $new_domain_name >/etc/resolv.conf
++  echo search $new_domain_name >/etc/resolv.conf.dhcp
+   for nameserver in $new_domain_name_servers; do
+-    echo nameserver $nameserver >>/etc/resolv.conf
++    echo nameserver $nameserver >>/etc/resolv.conf.dhcp
+   done
+ }
+ 

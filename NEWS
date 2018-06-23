@@ -1,0 +1,278 @@
+$Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
+
+2009-09-05  KAMADA Ken'ichi
+
+	* kinkd: a bug was fixed that addresses in ID payloads were used as
+	SA endpoint addresses.
+
+2009-09-01  KAMADA Ken'ichi
+
+	* kinkd: fixed non_auth in esp_auth_alg.
+
+2008-02-07 KANDA Mitsuru
+
+	* convert function definitions K&R style to ANSI style.
+
+2008-02-06 KANDA Mitsuru
+
+	* replace u_*_t to standart type u*_t.
+	  remove __P() macro.
+
+2007-12-26 KANDA Mitsuru
+
+	* spmd: supoort prefixlen for dynamic policy generation.
+
+2007-12-19 FUKUMOTO Atsushi
+
+	* iked: add configuration option to change IKEv2_IPSEC_WINDOW_SIZE
+	(default: 32 on linux, 64 on other systems).
+
+2007-12-12 KANDA Mitsuru
+
+	* add up/down scripts for Configuration Payload.
+
+2007-12-12 KANDA Mitsuru
+
+	* changed the default location of the configuration file
+	  from /usr/local/racoon2/etc to /usr/local/racoon2/etc/racoon2.
+
+2007-12-11 FUKUMOTO Atsushi
+
+	* iked: add hook script interface for Configuration Payload.
+
+2007-11-28 KAMADA Ken'ichi
+
+	* fix inclusion of pfkeyv2.h and ipsec.h for GNU/Linux.
+
+2007-07-28 SAKANE Shoichi
+
+	* rcctl: Introduce a tiny configuration generator.
+
+2007-07-26 MIYAZAWA Kazunori
+
+	* create debian package.
+
+2007-07-24 INOUE Satoshi
+
+	* iked: support IP_RW for IKEv1 (still experimental).
+
+2007-07-24 FUKUMOTO Atsushi
+
+	* iked: support dead-peer detection for IKEv1 (based on 
+	patch provided by Scott Lamb).
+
+2007-07-20
+
+	* racoon2-20070720a was released.
+
+2007-06-27  KAMADA Ken'ichi
+
+	* kinkd: fixed a bug that uses a wrong checksum type
+	when the combination of MIT krb5 and des-cbc-md5 is used.
+
+2007-06-26  KAMADA Ken'ichi
+
+	* kinkd: Heimdal 0.8.x was supported.
+
+2007-04-04  KAMADA Ken'ichi
+
+	* The configuration file parser was changed to accept CR+LF newlines.
+
+2007-02-07  FUKUMOTO Atsushi
+
+	* iked: support macro usage in my_sa_ipaddr.
+
+2007-02-07  INOUE Satoshi
+
+	* iked: improve IKEv2 NAT-T initiator behaviour on BSD variants.
+
+2007-02-07  INOUE Satoshi
+
+	* iked: experimental support of NAT-Traversal(RFC) for IKEv1,
+	configurable by using nat_traversal on/off in ikev1 directive,
+	in racoon2.conf.
+
+2007-01-22  KAMADA Ken'ichi
+
+	* kinkd: fixed AES support detection (with Heimdal).
+
+2006-12-28
+
+	* racoon2-20061228a was released.
+
+2006-12-22  INOUE Satoshi
+
+	* iked: properly handle SPIi overlapped IKEv2 initiators.
+
+2006-12-14  FUKUMOTO Atsushi
+
+	* iked: fix Notify payload creation. (reported via racoon2-users)
+
+2006-10-04  FUKUMOTO Atsushi
+
+	* iked: add support of AES-XCBC-MAC-96 for AH/ESP auth alg to IKEv1.
+
+2006-09-13  FUKUMOTO Atsushi
+
+	* iked: Upon termination by SIGINT/SIGTERM, iked sends DELETE
+	IKE_SA to IKE_SA peers, and deletes relevant IPsec SAs.
+
+2006-09-13  KAMADA Ken'ichi
+
+	* kinkd: fixed a problem of failure to use ESP_NULL.
+
+2006-09-07  INOUE Satoshi
+
+	* fix NAT-T handling for NetBSD. Hopefully this should work.
+
+2006-07-20  FUKUMOTO Atsushi
+
+	* iked: IKEv1 code was merged to cvs main trunk.
+
+2006-07-14
+
+	* racoon2-20060712a was released.
+
+2006-06-18  INOUE Satoshi
+
+	* support dynamic policy generation for IKEv2. transport mode
+	support and generating selectors are out of scope, currently.
+
+2006-01-24  INOUE Satoshi
+
+	* iked: support NAT-Keepalive for IKEv2, keepalive interval is
+	fixed to 20 seconds, i.e. no config yet.
+
+2006-01-13  INOUE Satoshi
+
+	* iked: support NAT-Traversal for IKEv2, configurable by using
+	nat_traversal on/off in ikev2 directive, in racoon2.conf.
+
+2006-01-11  KAMADA Ken'ichi
+
+	The kinkd_catchup09_20050830 branch was merged.  Now, kinkd is based
+	on draft-11 and not interoperable with racoon2-20051102a's one.
+
+	2006-01-10
+	* Key usage numbers were assigned.
+
+	2005-11-28
+	* Codes for aes128-cts-hmac-sha1-96 and aes256-cts-hmac-sha1-96
+	(RFC 3962) were	added.
+
+	2005-11-15
+	* The wrong prfconstant of Simplified Profile, introduced on Sep. 02,
+	was fixed.
+
+	2005-11-15
+	* The KINK next payload types were updated to the values of draft-10.
+
+	2005-10-24
+	* The semantics of DELETE payload was clarified in the spec and
+	the behavior of kinkd was also changed.  Only inbound SPIs are
+	sent in ISAKMP Delete.
+
+	2005-09-02
+	* update prf routines from draft-ietf-krb-wg-crypto-07 to RFC 3961.
+
+	2005-08-30
+	* update KINK_ENCRYPT format (reverting some parts of
+	bbkk_heimdal.c rev1.44 and bbkk_mit.c rev1.21).
+	* change the header format.
+	* change the location of the Cksum field.  How to calculate/verify it
+	is also changed.
+
+	2005-08-30
+	* kinkd_catchup09_20050830 branch to catch-up to the -09 draft.
+
+2005-12-16  KAMADA Ken'ichi  <kamada@nanohz.org>
+
+	* kinkd: ISAKMP debug logging, which was inherited from racoon, was
+	revived.
+
+2005-11-29  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: add --enable-updateifaddr configuration option
+	to monitor PF_ROUTE socket and reopen isakmp sockets upon 
+	any change of interface addresses.
+
+2005-11-08  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: add ike_sa soft expiration
+
+2005-11-08  KAMADA Ken'ichi
+
+	* UNSECURE_MODE was merged into ENABLE_SECURE, which is enabled by
+	default and can be disabled by --disable-secure.  --enable-debug
+	will no longer affect this.
+
+2005-11-02
+
+	* racoon2-20051102a was released.
+
+2005-10-28  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: fixed rekeying bug related to timer memory handling, which
+	was causng occasional crash after rekeying.
+
+2005-10-03  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: Responder-side TS matching rule change.  Previously,
+	TS were required to be exactly equal to a selector in
+	configuration.  New rule allows the initiator's TS proposal to
+	be wider than responder's configured selector.  Responder
+	replies with a TS which is narrowed to its own selector.
+
+2005-09-30  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: New configuration option --enable-pcap (on by default)
+	enables decrypted packet dump output to a file specified by
+	new command line option -P.  It is effective only if
+	--enable-debug is on (on by default).
+        Specify --disable-pcap in an environment libpcap.a is not available.
+
+2005-09-20  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked: ike_sa rekeying code was merged in but still buggy.
+
+2005-09-07  KAMADA Ken'ichi
+
+	* kinkd: The interpretation of the ctime in the KRB-ERROR was fixed.
+	The stime contains the server's time and ctime/cusec is copied from
+	the AP-REQ.
+
+2005-09-06  KAMADA Ken'ichi  <kamada@nanohz.org>
+
+	* kinkd: PID file is now overwritten if it can be flock()ed.
+
+2005-09-02  KAMADA Ken'ichi  <kamada@nanohz.org>
+
+	* kinkd: The rekeying-forever problem on Linux was fixed by checking
+	sadb_lifetime::sadb_lifetime_allocations on soft expire messages.
+
+2005-08-31  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
+
+	* iked/{ikev2_child.c,ike_conf.c,ike_pfkey.c}: Linux PF_KEY
+	generates soft-expire regardless the SA was used or not.  Now
+	iked checks lft_current_alloca (sadb_lifetime_allocations) and
+	start rekeying only if it is not zero.  On FreeBSD/NetBSD,
+	kernel does not generate hard lifetime expiration.  To remedy
+	this, iked maintains its own expiration timer for each IPsec
+	SA.  Since the iked can't know how much bytes used for the SA,
+	lifetime_bytes in the configuration are ignored for now.
+
+2005-08-03  KAMADA Ken'ichi  <kamada@nanohz.org>
+
+	* kinkd/kink_conf.c (match_saddr_with_config): Deleted.
+	(get_kink_if_list): New function.
+	kinkd/session.c (update_addrs): Use get_kink_if_list().
+	kinkd now uses rcs_extend_addrlist() to get KINK I/F addresses
+	instead of doing that by itself.  Thus, unusable (detached, etc)
+	addresses will not be tried any longer.
+
+2005-08-02 Mitsuru KANDA <mk@isl.rdc.toshiba.co.jp>
+
+	* lib/if_pfkeyv2.c lib/if_pfkeyv2.h lib/racoon.h 
+	lib/rc_type.c lib/rc_type.h: Support 'SADB_X_SPDDUMP'.
+	* spmd/Makefile.in spmd/spmdctl.8 spmd/spmdctl.c:
+	Introduce 'spmdctl policy show'.

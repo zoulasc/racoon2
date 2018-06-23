@@ -1,0 +1,803 @@
+$Id: libracoon.ja.txt,v 1.43 2006/08/21 12:39:55 mk Exp $
+
+このドキュメントは racoon2の共通ライブラリ libracoon.aについて記述する。
+
+o 共通ライブラリ概要 (libracoon)
+
+	共通ライブラリ libracoonは、鍵管理デーモンの実装を容易にするために
+	カーネルとのインターフェイスや設定ファイルの解読などの共通処理を
+	ライブラリ関数として提供する。
+
+	共通ライブラリは、主に以下のモジュールに分けられる。
+
+		- SADB/SPDB管理インターフェイス
+		- 設定ファイル操作
+		- spmdインターフェイス
+		- ログ出力
+		- 汎用バッファ rbuf に関するユーティリティ
+		- ネットワークに関するユーティリティ
+		- その他ユーティリティ
+
+o RCT形式
+
+	libracoonでは、暗号アルゴリズムや各タイプの定数の実装による違いを
+	吸収するために中間形式(RCT形式)を定義している。ライブラリでの定数は全て
+	RCT形式で扱い、カーネルとの入出力や各鍵管理プロトコルに従って定数を
+	変換する。
+	以下はRCT形式のうち、特別な数字が予約されているリストである。
+
+	固定な値
+		RCT_BOOL_OFF   = 0
+		RCT_BOOL_ON    = 1
+		RCT_ADDR_INET  = 0x1000
+		RCT_ADDR_FQDN  = 0x2000
+		RCT_ADDR_MACRO = 0x4000
+		RCT_ADDR_FILE  = 0x8000
+
+o SADB/SPDB管理インターフェイス
+
+	libracoonは、SADBやSPDBを管理するAPIを提供している。
+	これら関数はカーネルとのインターフェイスとしてPF_KEYv2を使っていて、
+	それらを利用する関数を用意している。
+	カーネルからの戻り値は、それぞれのメッセージに対応したコールバック関数
+	を定義することで、アプリケーションが利用できるようにしている。
+	また、アプリケーションとパラメータの受渡しは構造体 rcpfk_msgを使う。
+
+	struct rcpfk_msg {
+		int so;
+		char errstr[RCPFK_ERRSTRBUFSIZE];
+		int eno;
+
+		u_int32_t seq;
+		struct sockaddr *sa_src;
+		struct sockaddr *sa_dst;
+		u_int32_t spi;
+		u_int32_t reqid;
+		u_int8_t satype;
+		u_int8_t samode;
+		u_int8_t enctype;
+		u_int8_t authtype;
+		size_t enckeylen;
+		size_t authkeylen;
+		caddr_t enckey;
+		caddr_t authkey;
+		u_int64_t lft_hard_time;
+		u_int64_t lft_hard_bytes;
+		u_int64_t lft_soft_time;
+		u_int64_t lft_soft_bytes;
+		u_int8_t expired;
+		u_int8_t wsize;
+		u_int32_t saflags;
+		u_int32_t flags;
+
+		u_int32_t slid;
+		struct sockaddr *sp_src;
+		struct sockaddr *sp_dst;
+		u_int8_t pref_src;
+		u_int8_t pref_dst;
+		u_int8_t ul_proto;
+		u_int8_t dir;
+	};
+
+	以下で各パラメータの説明する。
+
+	so
+		PF_KEYで使うソケット
+	errstr
+		エラーを説明する文字列
+	eno
+		エラー番号
+	seq
+		PE_KEYで使う sequence number
+	sa_src
+		SAの送信元アドレス
+	sa_dst
+		SAの受信先アドレス
+	spi
+		SPI (network order)
+	reqid
+		SAに付けられた番号
+	satype
+		SAのタイプ
+	samode
+		SAのモード
+	enctype
+		符号化アルゴリズムのタイプ
+	authtype
+		認証アルゴリズムのタイプ
+	enckeylen
+		符号化アルゴリズムの鍵長
+	authkeylen
+		認証アルゴリズムの鍵長
+	enckey
+		符号化アルゴリズムの鍵
+	authkey
+		認証アルゴリズムの鍵
+	lft_hard_time
+		hard lifetime of time
+	lft_hard_bytes
+		hard lifetime of bytes
+	lft_soft_time
+		soft lifetime of time
+	lft_soft_bytes
+		soft lifetime of bytes
+	expired
+		SAが失効しているかどうかのフラグ
+	wsize
+		duplication check のための window size
+	saflags
+		PF_KEYで使うSAのフラグ
+	flags
+		APIで使うフラグ
+		rcpfk_init()で設定する。
+	slid
+		セレクタ―インデックス
+	sp_src
+		送信元アドレスセレクタ
+	sp_dst
+		受信先アドレスセレクタ
+	pref_src
+		受信先プレフィクス長
+	pref_dst
+		送信先プレフィクス長
+	ul_proto
+		上位プロトコル番号
+	dir
+		パケットの向き
+
+	以降、この構造体は rc で参照する。
+
+	PFKEY API の返り値として、sa_src, sa_dst, sp_src, sp_dst に値が
+	返される場合、これらのポインタは rcpfk_msg 内のバッファを指して
+	いる。次の rcpfk 呼び出しをこえて値を利用したい場合は、
+	呼出側でコピーしておく必要がある。
+
+	以下に、このAPIの関数を示す。なお特に明記する必要がない場合は、
+	各パラメータの説明は省略する。
+
+	int rcpfk_init __P((struct rcpfk_msg *rc, struct rcpfk_cb *cb));
+		このAPIを使う場合は必ず最初にコールしなければならない。
+		PF_KEYソケットのオープンと各PF_KEYメッセージのcallback関数を
+		定義する。 NULLは、コールバックしないことを意味する。
+
+		callback関数定義構造体
+		struct rcpfk_cb {
+			int (*cb_getspi) __P((struct rcpfk_msg *));
+			int (*cb_update) __P((struct rcpfk_msg *));
+			int (*cb_add) __P((struct rcpfk_msg *));
+			int (*cb_expire) __P((struct rcpfk_msg *));
+			int (*cb_acquire) __P((struct rcpfk_msg *));
+			int (*cb_delete) __P((struct rcpfk_msg *));
+			int (*cb_spdupdate) __P((struct rcpfk_msg *));
+			int (*cb_spdadd) __P((struct rcpfk_msg *));
+			int (*cb_spddelete) __P((struct rcpfk_msg *));
+			int (*cb_spdexpire) __P((struct rcpfk_msg *));
+			int (*cb_spdget) __P((struct rcpfk_msg *));
+		};
+
+		入力:
+			rc.flags
+				PFK_FLAG_NOHARM
+				PFK_FLAG_DEBUG
+			callback関数を設定したcb
+
+		戻り値: 0 or -1
+		出力: rc.so
+
+	int rcpfk_clean(struct rcpfk_msg *rc);
+		終了処理
+
+	int rcpfk_handler(struct rcpfk_msg *rc)
+		プロトコルデーモンから呼び出すPF_KEY I/Fのメインルーチン
+
+	各メッセージの送信関数
+		戻り値
+			 0: 正常終了
+			-1: 異常終了
+				rc->estr
+				rc->eno
+
+	int rcpfk_send_getspi(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		seq
+			acquireメッセージで得られた rc->seq
+		satype
+		samode
+		reqid
+			常に 0
+		sa_src
+		pref_src
+			sa_src.sa_len
+		sa_dst
+		pref_dst
+			sa_dst.sa_len
+		ul_proto
+			常に 0
+
+	int rcpfk_send_update(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		seq
+			acquireメッセージで得られた rc->seq
+		satype
+		spi
+		wsize
+		authtype
+		enctype
+		saflags
+		samode
+		reqid
+			常に 0
+		lft_soft_time
+		lft_soft_bytes
+		lft_hard_time
+		lft_hard_bytes
+		sa_src
+			ポート番号 (sin_port, sin6_port) は通常0。
+			UDP encapsulated ESPを設定する場合のみは、UDPの
+			ポート番号を設定する。
+		pref_src
+			sa_src.sa_len
+		sa_dst
+			sa_srcと同様。
+		pref_dst
+			sa_dst.sa_len
+		ul_proto
+			常に 0
+		enctype
+		enckey
+		enckeylen
+		authtype
+		authkey
+		authkeylen
+
+	int rcpfk_send_add(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		seq
+			常に 0
+		satype
+		spi
+		wsize
+		authtype
+		enctype
+		saflags
+		samode
+		reqid
+			常に 0
+		lft_soft_time
+		lft_soft_bytes
+		lft_hard_time
+		lft_hard_bytes
+		sa_src
+			ポート番号 (sin_port, sin6_port) は通常0。
+			UDP encapsulated ESPを設定する場合のみは、UDPの
+			ポート番号を設定する。
+		pref_src
+			sa_src.sa_len
+		sa_dst
+			sa_srcと同様。
+		pref_dst
+			sa_dst.sa_len
+		ul_proto
+			常に 0
+		enctype
+		enckey
+		enckeylen
+		authtype
+		authkey
+		authkeylen
+
+	int rcpfk_send_delete(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		seq
+		eno
+			kernelへ渡すエラーコード
+		satype
+		spi
+		sa_src
+		pref_src
+		sa_dst
+		pref_dst
+
+	int rcpfk_send_acquire(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		seq
+			常に 0
+		satype
+
+	int rcpfk_send_register(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		satype
+
+	int rcpfk_send_spdadd(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		slid
+			kernel内で管理されている policy_id
+		satype
+		samode
+		lft_hard_time
+		lft_hard_bytes
+		sa_src
+		sa_dst
+		sp_src
+		pref_src
+		sp_dst
+		pref_dst
+		ul_proto
+			常に 0
+
+	int rcpfk_send_spddelete2(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		slid
+			kernel内で管理されている policy_id
+
+	int rcpfk_supported_auth(int algtype);
+	int rcpfk_supported_enc(int algtype)
+		カーネルがサポートしているアルゴリズムの検査
+		※IPCOMPに関してはPF_KEYでサポートしていないので検査不可能
+
+	int rcpfk_send_spdupdate(struct rcpfk_msg *rc)
+		so
+			rcpfk_init()で設定された so
+		slid
+			kernel内で管理されている policy_id
+		satype
+		samode
+		lft_hard_time
+		lft_hard_bytes
+		sa_src
+		sa_dst
+		sp_src
+		pref_src
+		sp_dst
+		pref_dst
+		ul_proto
+			常に 0
+
+	int rcpfk_send_spdadd(struct rcpfk_msg *rc)
+	    設定が必要な引数rcのメンバは以下
+	    satype        : RCT_SATYPE_*
+	    lft_hard_time : ポリシーライフタイム
+	    flags         : 現状 0
+	    sa_src        : SAのsrcアドレス(tunnelモード時のみ指定すればよい)
+	    sa_dst        : SAのdstアドレス(tunnelモード時のみ指定すればよい)
+	    slid          : kernel内で管理されている policy_id
+	    sp_src        : ポリシーのsrcアドレス
+	    pref_src      : sp_srcのprefix長
+	    sp_dst        : ポリシーのdstアドレス
+	    pref_dst      : sp_dstのprefix長
+	    ul_proto      : 上位プロトコル
+	    dir           : 方向
+
+            tunnelモードのときはsa_src/sa_dstにはtunnel端点のアドレス、
+	    sp_src/sp_dstにアドレスレンジ(selector)を設定する。
+	    transportモードのときはsp_src/sp_dstに両端点のアドレスを設定し、
+	    sa_src/sa_dstは設定する必要はない。
+
+	int rcpfk_send_spddelete(struct rcpfk_msg *rc)
+	    設定が必要な引数rcのメンバはrcpfk_send_spdadd()と同じ。
+
+o 設定ファイル操作
+
+	racoon2では設定の煩わしさを軽減させるために設定ファイルを共通化して
+	各デーモンが同じファイルを読み込む。このために libracoonは、各デーモン
+	が設定ファイルを操作し、設定を参照するためのAPIを提供している。
+
+	以下に、このAPIの関数を示す。
+
+	int rcf_read(const char *file, int flag)
+		設定ファイルをパースしてメモリに保存する。
+		各設定は以下の変数名で参照できる。
+		また個別の関数でも参照することができる。
+
+		struct rcf_setval *rcf_setval_head;
+		struct rcf_default *rcf_default_head;
+		struct rcf_interface *rcf_interface_head;
+		struct rcf_resolver *rcf_resolver_head;
+		struct rcf_remote *rcf_remote_head;
+		struct rcf_selector *rcf_selector_head;
+
+		flag
+			RCF_PARSE_DEBUG
+				デバッグ時に設定する
+
+		OUT:
+			0:正常終了 or -1:異常終
+
+		rcf_read() は、(rcf_clean() を呼び出すことなく) 連続して
+		呼び出すことができる。二度目以降に呼ばれた場合は、
+		設定ファイルから設定を読み直す。
+		- パース中にエラーが発生しなかった場合、以前の設定は
+		  解放される。
+		- パース中にエラーが発生した場合、以前の設定がそのまま
+		  保持される。
+
+	int rcf_clean(void)
+		設定を保存してあるメモリを解放する。
+
+	int rcf_get_remotebyindex(vchar_t *rm_index, struct rcf_remote **rm)
+		rm_indexと設定の remote_indexを比較してマッチした
+		rcf_remoteのコピーを返す。
+		解放するには rcf_free_remote()を呼ばなければならない。
+
+	int rcf_get_remotebyaddr(struct sockaddr *peers_ipaddr,
+	    rcf_type kmp_type, struct rcf_remote **rm)
+		相手のIPアドレスと設定の各peers_ipaddrを比較してマッチした
+		rcf_remoteのコピーを返す。
+		解放するには rcf_free_remote()を呼ばなければならない。
+
+	int rcf_get_remotebypeersid(rc_type id_type, vchar_t *id_val,
+	    rcf_type kmp_type, struct rcf_remote **rm, rc_type kmp_type)
+		相手のIDと設定の各peers_idを比較してマッチした
+		rcf_remoteのコピーを返す。
+		解放するには rcf_free_remote()を呼ばなければならない。
+
+	void rcf_free_remote(struct rcf_remote *rm)
+		rcf_remoteを開放する。
+
+	int rcf_get_selectorlist(struct rcf_selector **sl)
+		selectorのリストのコピーを返す。
+		解放するには rcf_free_selector()を呼ばなければならない。
+
+	int rcf_get_selector(int sl_index, struct rcf_selector **sl)
+		sl_indexと設定の selector_indexを比較してマッチした
+		selectorのリストのコピーを返す。
+		解放するには rcf_free_selector()を呼ばなければならない。
+
+	void rcf_free_selector(struct rcf_selector *sl)
+		rcf_selectorを開放する。
+
+	int rcf_spmd_resolver(void)
+		設定の resolver_enableを返す。
+			1: resolverとして動く
+			0: resolverとして動かない
+
+	int rcf_get_resolvers(struct rc_addrlist **addrlist)
+		設定の nameserverのコピーを返す。
+		解放するには rcs_free_addrlist()を呼ばなければならない。
+
+	int rcf_get_dns_queries(struct rc_addrlist **addrlist)
+		queryを受け付けるアドレスのリストを設定ファイルから取得する。
+		設定の dns_queryのコピーを返す。
+		解放するには rcs_free_addrlist()を呼ばなければならない。
+
+	int rcf_get_spmd_interfaces(struct rc_addrlist **addrlist)
+		spmd I/Fに使うアドレスのリストを取得する
+
+o spmdインターフェイス
+
+	racoon2では、各デーモンはセキュリティポリシーの設定や削除等を
+	spmdに依頼する。libracoonは、このAPIを提供している。
+
+	コールバック関数を渡せる場合、NULLは、コールバックしないことを意味する。
+	コールバック関数からの返値は、現在無視される。
+	XXX 現在 file scope static 変数を使っているので、複数のspmd
+	インターフェイスをオープンすることはできない。
+	XXX spmdに対するwriteはブロックしないと言う前提のインターフェイス
+	になっている…
+
+	int spmif_init(void);
+		spmdインターフェイスの内部状態を初期化し spmdに接続する。
+		すべてのspmdインターフェイス関数群に先立って、
+		この関数を呼ばなければならない。
+
+		戻り値:
+			>=0: 正常終了 (spmdインターフェイスのdescriptor)
+			-1:  異常終了
+
+		XXX configからのパスワードの取得はまだ実装されていない。
+
+	void spmif_clean(int fd);
+		fdで与えられるspmdインターフェイスソケットを閉じ、
+		内部状態を解放する。
+		QUITコマンドの送信は「行なわない」。
+
+	int spmif_post_policy_add(int fd,
+	    int (*callback)(void *, int), void *tag,
+	    uint32_t spid, time_t lifetime, rc_type samode,
+	    struct sockaddr *sp_src, struct sockaddr *sp_dst,
+	    struct sockaddr *sa_src, struct sockaddr *sa_dst);
+		spmdにPOLICY ADDコマンドを送信する。
+		sp_src/sp_dstやsa_src/sa_dstは、spidで指定される
+		セレクタのdirectionにあわせる必要がある。
+		返信を受信するためのコールバック関数を設定する。
+		callback 第1引数: tag
+			 第2引数: 成功=0, 失敗=-1
+
+	int spmif_post_fqdn_query(int fd, int (*callback)(void *, const char *),
+	    void *tag, struct sockaddr *sa);
+		spmdにFQDN QUERYコマンドを送信し、
+		返信を受信するためのコールバック関数を設定する。
+		callback 第1引数: tag
+			 第2引数: FQDN文字列 (失敗=NULL)
+
+	int spmif_post_slid(int fd, int (*callback)(void *, int),
+	    void *tag, u_int32_t spid);
+		spmdにSLIDコマンドを送信し、
+		返信を受信するためのコールバック関数を設定する。
+		callback 第1引数: tag
+			 第2引数: selector index (失敗=-1)
+
+	int spmif_post_quit(int fd);
+		spmdにQUITコマンドを送信する。
+		この関数を呼び出した後は、spmif_clean()以外の関数を
+		呼ぶべきではない。
+
+	void spmif_cancel_callback(void *tag);
+		未コールバックの返信のうち、tagの一致するものの
+		コールバックをキャンセルする。
+		(コマンドの送信自体がキャンセルされるわけではない)
+
+	int spmif_handler(int fd);
+		プロトコルデーモンから呼び出すspmdインターフェイスの
+		ハンドラ。
+		spmdからの返信を受信し、対応するコールバック関数が
+		設定されていれば呼び出す。
+
+o ログ出力 plog
+
+	libracoonはログ出力のための共通関数群 plogを提供している。
+	plogは指定したメッセージはメモリダンプを、syslog()を使用して出力したり、
+	ファイルや標準出力へ出力したりできる。また個別に出力先を変更できる。
+
+	内部で汎用バッファ rbuf(後述)を使っているために、
+	まずrbuf_init()をコールしなければならない。
+
+	void plog_setmode(int logmode, char *logfile, char *progname,
+	    int need_output, int f_stdout)
+		logmode:  デバッグモードかそうじゃないか
+			RCT_LOGMODE_DEBUG
+			RCT_LOGMODE_NORMAL (デフォルト)
+		logfile:  ログファイルを指定。省略化
+			NULLの時は syslog()を使う。(デフォルト)
+			syslog()の場合、常に以下のフラグを使って出力される。
+				logopt = LOG_NDELAY
+				facility = LOG_DAEMON
+		progname: 呼出元のプログラム名。省略化
+		need_output: plog()の挙動を定義
+			0: メッセージを作るだけ (デフォルト)
+			1: 指定された出力先に出力する
+		f_stdout: ログを標準出力にも出すかどうか
+			need_output == 1 の時にのみ有効
+			0: 出さない (デフォルト)
+			1: 出す
+
+	const char *plog(int tag, const char *location, struct rc_log *plog,
+	    const char *msg, ...)
+	const char *plogv(int tag, const char *location, struct rc_log *plog,
+	    const char *msg, va_list)
+	const char *plogdump(int tag, const char *location, struct rc_log *plog,
+	    void *ptr, size_t len)
+		ログに出力するメッセージを生成して返す。
+		plog_init()の need_outputにより挙動を変えられる。
+
+		tag
+			RC_LOG_INFO
+				[INFO]
+				一般的な情報
+			RC_LOG_PROTO_ERR
+				[PROTO_ERR]
+				IKEやKINK等のワイヤに流れるプロトコルのエラー
+					フォーマットがおかしい
+					チェックサムがおかしい
+					認証に失敗
+			RC_LOG_PROTO_WARN
+				[PROTO_WARN]
+				ワイヤに流れたプロトコルのエラーで処理を
+				中断しない時
+			RC_LOG_INTERNAL_ERR
+				[INTERNAL_ERR]
+				PF_KEYやsystem call等の内部処理に関するエラー
+					PF_KEYのエラー
+					mallocに失敗
+					DBにエントリーがない
+			RC_LOG_INTERNAL_WARN
+				[INTERNAL_WARN]
+				内部処理に関するエラーで処理を中断しない時
+			RC_LOG_DEBUG
+				[DEBUG]
+				デバッグ
+			RC_LOG_CRITICAL
+				[CRITICAL]
+				exit(-1)する状態
+
+		location
+			タグに続く文字列を定義する。
+			NULLは省略を意味する。
+			ソースコードの場所を示すマクロPLOGLOCが用意されている。
+
+		plog
+			ログの出力先を指定する。
+			NULLの場合は plog_init()に従う。
+
+		msg
+			文字列を定義する。
+
+o 汎用バッファ rbuf に関するユーティリティ
+
+	libracoonは、固定で割り当てられたバッファ領域を順次使用する関数 rbufを
+	提供している。
+	rbufは、２つの固定サイズバッファを１つの可変長バッファから構成され、
+	初期化時にそのサイズと個数を設定する。
+	使用する時に必要なバッファサイズに応じた関数を呼び出し、
+	使用後は free()する必要はなく順次再利用される。
+	従って同時に使用される個数を予め見積もっておく必要がある。
+
+	int rbuf_init(int snum, int slen, int lnum, int llen, int vnum)
+		small, lerge, variableバッファを割り当てる
+		snum: smallバッファの数
+		slen: smallバッファの長さ
+		lnum: largeバッファの数
+		llen: largeバッファの長さ
+		vnum: 可変長バッファの数
+
+	void rbuf_clean(void)
+		終了処理をする
+
+	vchar_t *rbuf_getsb()
+		smallバッファのポインタを返す。
+
+	vchar_t *rbuf_getlb()
+		largeバッファのポインタを返す。
+
+	vchar_t *rbuf_getvb(int len)
+		可変長バッファのポインタを返す
+
+o ネットワークに関するユーティリティ
+
+	libracoonは、ネットワークに関する関数を提供している。
+	racoon2では、インターフェイスについたアドレスを表現するマクロを
+	用意している。また、このマクロやインターネットアドレス、FQDNを
+	一元処理するために rc_addrlist構造体を使っている。
+
+	以下は rc_addrlist構造体である。
+
+		struct rc_addrlist {
+			struct rc_addrlist *next;
+			rc_type type;
+			int port;
+			int prefixlen;
+			union {
+				struct sockaddr *ipaddr;
+				vchar_t *vstr;
+			} a;
+		};
+
+		type
+			RCT_ADDR_INET
+				IPアドレスまたはネットワークアドレス
+			RCT_ADDR_FQDN
+				文字列
+			RCT_ADDR_MACRO
+				使用できるマクロは以下の通り
+				MY_IP
+				MY_IPV6
+				MY_IPV6_GLOBAL
+				MY_IPV6_LINKLOCAL
+				MY_IPV4
+
+				以上は '%'を挟んでインターフェイス名を指定できる
+					例. MY_IP%(interface name)
+
+				MY_HOA: ※未実装
+				IP_ANY: :: と 0.0.0.0 が帰る
+
+			RCT_ADDR_FILE
+				UNIXドメインのファイル名
+		port
+			type == RCT_ADDR_INET の時に a.ipaddrの
+			ポート番号がコピーされる
+
+		RCT_ADDR_INETの時は a.ipaddrで参照できる。
+		typeがそれ以外の時は a.vstrで参照できる。
+
+	int rcs_is_addrmacro(vchar_t *macro);
+		macroがIPアドレスマクロかチェックする。
+		IPアドレスマクロなら 1 を返す。
+
+	int rcs_getaddrlistbymacro(vchar_t *macro, struct rc_addrlist **alist);
+		macroを展開してIPアドレスのリストを返す
+
+	void rcs_free_addrlist(struct rc_addrlist *alist);
+		rc_addrlistを解放する。
+		
+	int rcs_getifaddrlist(struct rc_addrlist **alist);
+		インターフェイスについている使えそうなアドレスを全て取得する。
+
+		使えそうなアドレスは以下のフラグが立っていないアドレスである。
+			IN6_IFF_DUPLICATED
+			IN6_IFF_DETACHED
+			IN6_IFF_ANYCAST
+
+	int rcs_getaddrlist(char *addr, char *port, rc_type flag,
+	    struct rc_addrlist **alist);
+		flag =:
+			RCT_ADDR_INET or 0
+				アドレスに展開して addrlistを返す。
+			RCT_ADDR_FQDN
+				addrを展開しないでセットし addrlistを返す。
+			RCT_ADDR_MACRO
+				addrを展開しないでセットし addrlistを返す。
+				MACROでなければエラーを返す。
+
+	int rcs_extend_addrlist(struct rc_addrlist *src, struct rc_addrlist *dst);
+		srcにMACROが含まれる場合は展開してからdstにコピーする。
+
+	struct sockaddr *rcs_sadup(struct sockaddr *);
+		sockaddr * のコピーを返す
+
+	int rcs_getsaport(struct sockaddr *);
+		sockaddr * からポート番号をhost byte orderで取り出す。
+
+	int rcs_getsalen(struct sockaddr *);
+		sockaddr * から sa_lenに相当する値を取り出す。
+
+		#ifdef HAVE_SA_LEN
+		#define SA_LEN(sa) ((sa)->sa_len)
+		#else
+		#define SA_LEN(sa) (rcs_getsalen(sa))
+		#endif
+
+	const char *rcs_sa2str(struct sockaddr *);
+		sockaddr *を "ipaddress[port]"文字列に変換する。
+		返した文字列を解放する必要はない。
+
+	int rcs_cmpsa_wop(struct sockaddr *, struct sockaddr *);
+		sockaddr * のポート番号以外を比較してマッチすれば 1 を返す。
+
+	int rcs_cmpsa(struct sockaddr *, struct sockaddr *);
+		sockaddr * を比較してマッチすれば 1 を返す。
+
+	int ike_rcfpolicy2sapayload(struct rcf_policy *pl, vchar_t **)
+		rcf_policy構造体から IKE SAペイロードを作る
+		※未実装
+
+	int ike_sapayload2rcfpolicy(vchar_t *, struct rcf_policy **pl)
+		IKE SAペイロードから rcf_policy造体を作る
+		※未実装
+
+	int ike_checksapayload(struct rcf_policy *pl1, struct rcf_policy *pl2)
+		2つのrcf_policyを比較する
+		※未実装
+
+o pidfile 操作ユーティリティ
+
+	int rc_make_pidfile(const char *filename)
+		filename という pidfile を作成し、flock() ことができれば、
+		その時点での pid を書き込み、0 を返す。
+		flock() に失敗すると、他の instance が動作中だと見なし、
+		-1 を返して失敗する。
+
+	int rc_make_pidfile_on_dir(const char *dirname, const char *progname)
+		dirname/progname.pid という pidfile を作成すること以外は、
+		rc_make_pidfile() と同じ。
+
+	void rc_cleanup_pidfile(void)
+		rc_make_pidfile() によって作成された pidfile を削除する。
+
+	int rc_read_pidfile(pid_t *pid, const char *filename);
+		filename で指定される pidfile から pid を読み込む。
+
+o その他ユーティリティ
+
+	const char *rc_version(void)
+		racoon2のバージョンを文字列で返す
+
+	const char *rc_startmsg(void)
+		起動時に使うメッセージを文字列で返す
+
+	int rc_pcap_init(char *fname, char *fmode)
+		pcap形式でダンプするファイルを指定する。
+		fmode[0] == 'w' ならばファイルを初期化する。
+
+	void rc_pcap_push(struct sockaddr *src, struct sockaddr *dst,
+	    vchar_t *data)
+		pcap形式で rc_pcap_init()で指定されたファイルに書き込む。
+		data->v は UDPのペイロードへのポインタ

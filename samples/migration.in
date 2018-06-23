@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# run scripts in the migration.d directory when MIP6 MIGRATE is issued
+#
+
+cd @prefix@/etc/racoon2/hook
+
+. ./functions
+
+run_hookdir ./migration.d

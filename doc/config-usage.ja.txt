@@ -1,0 +1,685 @@
+$Id: config-usage.ja.txt,v 1.74 2006/10/04 08:16:42 fukumoto Exp $
+
++ 設定ファイル (racoon.conf)
+
+	racoon2の設定ファイルの文法に関して記述する。
+
+o 注意: racoon1 との違い
+	ステートメントの終了は ";" になった。 { } の終了も ";" で終らせる
+
+o 構造
+
+	設定ファイルは以下の9つのディレクティブに分類される。
+
+	setval
+		設定ファイル全体で一意な文字定数を定義する。
+		ファイル全体を読み込んだあとに評価される。
+
+	default
+		デフォルトの値を定義する
+		それぞれのディレクティブの定義により上書きされる。
+
+	interface
+		各プロトコルのインターフェイスを定義する。
+
+	resolver
+		resolverの設定する。
+
+	remote
+		鍵交換する相手の定義する。
+		1つ以上のpolicyからremote_indexで参照される。
+		1つのselectorをselecor_indexで参照することがある。
+
+	selector
+		セレクタを定義する。
+		selector_indexは設定ファイル全体で一意な
+		＊1から0x7fffffffまでの数値＊。
+		1つのpolicyをpolicy_indexで参照する。
+		注: selector_index はカーネルでも使うので数値にした。
+
+	policy
+		セレクタにマッチしたパケットの挙動を定義する。
+		IPsecする場合にはSAのアドレスやレベルも定義する。
+		1つ以上のipsecをipsec_indexで参照する。
+		1つ以上のselectorからpolicy_indexで参照される。
+		1つの remoteをremote_indexで参照する。
+
+	ipsec
+		SAバンドルを定義する。
+		1つ以上のsaをsa_indexで参照する。
+		1つのpolicyからipsec_indexで参照される。
+
+	sa
+		1つのSAを定義する。
+		1つのipsecからsa_indexで参照される。
+
+	各ディレクティブの関係は以下の通りである。
+
+	    setval    default    interface    resolver
+
+     +---(selector_index)--- remote
+     |                         ^
+     |                         |
+     |                   (remote_index)                       +-(sa_index)-> sa
+     v                         |                              |
+selector -+                    |     +-(ipsec_index)-> ipsec -+-(sa_index)-> sa
+          |                    |     |  
+selector -+-(policy_index)-> policy -+-(ipsec_index)-> ipsec ---(sa_index)-> sa
+          |                          |
+selector -+                          +-(ipsec_index)-> ipsec ...
+          :                          :
+
+o ディレクティブ
+	ディレクティブは１つのstringと1以上のvalueで構成される。
+
+	ディレクティブに値を設定するには
+		directive value ;
+
+	一つのディレクティブに複数の値を設定するには
+		directive {
+			value ;
+			value ;
+			:
+		};
+
+	valueは、更にディレクティブになる場合がある。
+
+	以下のディレクティブには
+		remote
+		selector
+		policy
+		ipsec
+		sa
+	設定ファイル全体で一意な１つの indexを定義しなければならない。
+	indexはそれぞれ
+		remote_index
+		selector_index
+		policy_index
+		ipsec_index
+		sa_index
+	のディレクティブで参照される。
+
+o 使用できる文字
+
+	" (0x22)で括ると文字列として扱われる。
+	予約されていない文字列は " (0x22) で括らなければならない。
+	indexは [0-9a-zA-Z_] のみ使用でき特に括る必要はない。
+	IPアドレスやポートも括る必要はない。
+
+	" (0x22) で括らずに使える予約された文字列は以下の文字で構成される。
+		0x30-0x39 0-9
+		0x41-0x5a A-Z
+		0x61-0x7a a-z
+		0x25      %
+		0x2a      *
+		0x2d      -
+		0x2e      .
+		0x2f      /
+		0x3a      :
+		0x3f      ?
+		0x40      @
+		0x5f      _
+
+o IPアドレス表記方法
+	IPv4アドレスは 0-9 .
+		203.178.141.194
+
+	IPv6アドレスは 0-9a-fA-F : %
+		2001:200:0:8002:203:47ff:fea5:3085
+
+	FQDNは全て展開される。
+		www.kame.net
+
+	ポート番号を定義する場合は port (port) をIPアドレスの後ろに定義する。
+		MY_IP port 80
+		203.178.141.194 port any
+	文字列 any は全てのポート番号にマッチする。
+	10進数表記
+		注意: 0 の扱いはシステムによって異なる。(かもしれない)
+	portには /etc/servicesで定義される文字列も使える。
+
+	プレフィクスは / (number) で表現される。
+		::1/0
+
+	アドレス範囲は - で区切る。
+		XXX 未実装
+		10.0.0.0-10.1.255.255
+
+	複数定義する場合は他のディレクティブと同様に定義する。
+		src {
+			10.2.0.1;
+			10.2.0.2;
+		};
+
+	使用できるマクロは以下の通り
+		MY_IP
+		MY_IPV6
+		MY_IPV6_GLOBAL
+		MY_IPV6_LINKLOCAL
+		MY_IPV4
+
+		以上は '%'を挟んでインターフェイス名を指定できる
+			例. MY_IP%(interface name)
+	
+		MY_COA: ※未実装
+		IP_ANY: :: と 0.0.0.0 が帰る
+
+o バイト数の表記方法
+	引数にバイト数を取るディレクティブ
+		nonce_size
+		max_pad_len
+		max_retry_to_send
+		kmp_sa_lifetime_byte
+		ipsec_sa_lifetime_byte
+	使える単位
+		B,byte,bytes
+		KB
+		MB
+		GB
+
+o 時間の表記方法
+	引数に時間を取るディレクティブ
+		interval_to_send
+		times_per_send
+		kmp_sa_lifetime_time
+		kmp_sa_nego_time_limit
+		ipsec_sa_nego_time_limit
+		ipsec_sa_lifetime_time
+	使える単位
+		infinite
+		sec,secs,second,seconds
+		min,mins,minute,minutes
+		hour,hours
+		day,days
+	時間 0 は infiniteを意味する。
+
+o アルゴリズムの表記方法
+	kmp_enc_alg
+	esp_enc_alg
+	esp_auth_alg
+	ah_auth_alg
+	は以下のように鍵長と鍵を定義できる。
+
+		(algorithm名)[,(鍵長)[,(鍵)]]
+
+	鍵の16進表記は連続した16進数の列の 0xを先頭につける。
+	鍵長はアルゴリズムにより決められている。
+
+	algorithm名と鍵だけを定義したい場合は以下のようにする。
+	
+		(algorithm名),,(鍵)
+
+	複数指定するには ';' で区切り列挙する。
+		kmp_enc_alg { aes192_cbc,,0x1234; aes192_cbc; 3des_cbc; };
+
+	kmp_enc_alg, esp_enc_alg
+		des_cbc_iv64
+		des_cbc
+		3des_cbc
+		rc5_cbc
+		idea_cbc
+		cast128_cbc
+		blowfish_cbc
+		3idea_cbc
+		des_cbc_iv32
+		rc4_cbc
+		null_enc
+		rijndael_cbc
+		aes128_cbc
+		aes192_cbc
+		aes256_cbc
+		twofish_cbc
+
+	kmp_hash_alg
+		md5
+		sha1
+		tiger
+		sha2_256
+		sha2_384
+		sha2_512
+
+	In case of IKEv2, kmp_hash_alg directive is used to specify an
+	integrity check (MAC) algorithm for IKE_SA communication, and
+	the following algorithm types are accepted.
+
+		hmac_md5
+		hmac_sha1
+		aes_xcbc
+		aes_cmac
+
+
+	kmp_prf_alg
+		hmac_md5
+		hmac_sha1
+		hmac_sha2_256
+		hmac_sha2_384
+		hmac_sha2_512
+		aes_xcbc
+		aes_cmac
+		des_mac
+		kpdk_md5
+
+	kmp_dh_groupに指定できるグループ番号または名前のどちらかで指定する。
+		1	modp768
+		2	modp1024
+		3	ec2n155
+		4	ec2n185
+		5	modp1536
+		14	modp2048
+		15	modp3072
+		16	modp4096
+		17	modp6144
+		18	modp8192
+
+	kmp_auth_methodに使えるアルゴリズム名
+		psk
+		dss
+		rsasig
+		rsaenc
+		rsarev
+		gssapi_krb
+
+	esp_auth_alg, ah_auth_alg
+		hmac_md5
+		hmac_sha1
+		aes_xcbc
+		hmac_sha2_256
+		hmac_sha2_384
+		hmac_sha2_512
+		kpdk_md5
+		non_auth
+
+	ipcomp_alg
+		oui
+		deflate
+		lzs
+
+o 設定ファイル内で評価される定数
+	設定ファイル全体を読み込んだあとに1回だけ評価される。
+	文字列として評価される箇所に使える。
+	重複した場合はエラーになり設定ファイルの評価を終了する。
+
+	環境変数
+		設定ファイル内では $[string] で参照する。
+
+	setval ディレクティブでの定義
+		設定ファイル内では ${string} で参照する。
+			string value ;
+		の形式で定義する。
+		setvalで定義する右辺(value)には環境変数のみが評価される。
+
+		stringとして使えるのは以下の文字だけである。
+			最初の文字は A-Zに限る。
+			0x30-0x39 0-9
+			0x41-0x5a A-Z
+			0x5f      _
+
+o コメント
+	# (0x23) 以降はコメントとして扱われ無視される。
+
+o include
+	include (file) ;
+
+	他の設定ファイルを読み込む
+
+	(file)に記述された文字列のうち、setvalで定義したマクロは展開されない。
+	環境変数は展開される。
+
+o setval
+	setval { (directives) } ;
+
+	設定ファイル全体で一意な定数を定義する。
+
+	(string) (value) ;
+		stringに valueを設定する。
+
+o default
+	default { (directives) } ;
+
+	デフォルトの値を定義する
+	あらゆるディレクティブを設定できる(予定)
+	それぞれのディレクティブの定義により上書きされる。
+
+o interface
+	interface { (directives) } ;
+
+	各プロトコルのインターフェイスを定義する。
+	directives は以下の通り。
+
+	ike (address) [port (port)] ;
+		IKEデーモンが使うポートを定義する。(複数可)
+
+	kink (address) [port (port)] ;
+		KINKデーモンが使うポートを定義する。(複数可)
+
+	spmd (address) [port (port)] ;
+		鍵交換デーモンとspmdの通信で用いるポートを定義する。(複数可)
+		デバッグ用。(--enable-debug されたときのみ使用可)
+
+	spmd unix (file);
+		鍵交換デーモンとspmdのインターフェイスが
+		UNIX-domainソケットの場合の定義方法。
+
+o spmd
+	spmd { (directives) } ;
+
+	spmdの設定する。
+	directives は以下の通り。
+
+	resolver (on|off) ;
+		spmdのresolverとしての挙動を抑制する
+		デフォルト off
+
+	nameserver (address) [port (port)] ;
+		上位のDNSサーバアドレスを設定する。(複数可)
+		portのデフォルトは 53
+
+	dns_query (address) [port (port)] ;
+		queryを受け付けるアドレスを設定する。(複数可)
+		portのデフォルトは 53
+
+o password (file) ;
+	spmdとの接続パスワードを格納したファイル名。
+
+o remote
+	remote (remote_index) { (directives) } ;
+
+	鍵交換する相手の定義する。
+	directivesは以下の通り。
+
+	ikev1 { (directives) } ;
+	ikev2 { (directives) } ;
+	kink  { (directives) } ;
+		各鍵交換プロトコルを設定する。
+
+	acceptable_kmp (ikev1|ikev2|kink) ;
+		responder時に受けつけられる鍵交換プロトコルを設定する。(複数可)
+		最初に定義したプロトコルをinitiator時に使う。
+		default ikev2
+
+	selector_index (selector_index) ;
+		参照するselectorのselector_indexを定義する。
+		RW to HOST/SGWの Responderの時にのみ使われる。
+
+	以下、各鍵交換プロトコルで設定するディレクティブ
+
+		logmode (normal|debug) ;
+			default normal
+
+		logfile (file) ;
+			個別のログファイルを指定する。
+			ここに指定しても全体のログは出力される。
+
+		passive (on|off) ;
+			responderとしてしか振舞わない。
+
+		peers_ipaddr (address) [port (port)];
+			相手のIPアドレスを設定する。IKEv2やIKEv1のmainモードで
+			responderの時のremoteの最初の検索キーになる。省略時や
+			IP_RWと書く場合にはdefaultディレクティブが必要。複数可。
+
+		verify_id (on|off) ;
+		verify_pubkey (on|off) ;
+		send_cert (on|off) ;
+		send_cert_req (on|off) ;
+		nonce_size (number) ;
+		initial_contact (on|off) ;
+
+		support_proxy (on|off) ;
+			transport modeの場合にのみ有効。
+			phase2のID payloadのIDや TS(IKEv1)を
+			SAのエンドアドレスとして扱う。
+
+		my_id (ipaddr|email|fqdn|keyid|x509_subject) (value) ;
+		peers_id (ipaddr|email|fqdn|keyid|x509_subject) (value) ;
+			ipaddr (ip address)
+				IPv4 or IPv6アドレス
+			fqdn (FQDN)
+				FQDN
+			email (e-mail address)
+				 E-Mailアドレス
+			keyid (filename)
+				KEY-ID
+			x509_subject (filename)
+				証明書のSubject
+			複数何
+
+		selector_check (obey|exact) ;
+			responder側のIDやTSの比較処理を定義する。
+			obey
+				initiatorのポリシをSPDにインストールする
+			exact
+				initiatorのポリシがSPDになければエラーにする。
+			相互接続性のためにデフォルトは obey
+			racoon1の generate_policy onに相当する。
+
+		proposal_check (obey|strict|claim|exact) ;
+			responder側のポリシ比較処理を定義する。
+			obey
+				initiatorのポリシをSPDにインストールする
+			strict
+				initiatorの値が安全ならば使う。
+				そうでなければエラー。
+				安全とはlifetimeは小さい。PFSは使うことを言う。
+			claim
+				IKEv1のみ有効
+				strictの時にエラーにせずresponderの値を使い、
+				RESPONDER_LIFETIMEを返す。
+			exact
+				initiatorの値が完全一致してるならば使う。
+				そうでなければエラー。
+
+		random_pad_content (on|off) ;
+		padlen_random (on|off) ;
+		max_padlen (number) ;
+			パディングに関して設定する
+
+		max_retry_to_send (number) ;
+		interval_to_send (number) ;
+		times_per_send (number) ;
+			再送に関して設定する。
+
+		kmp_sa_lifetime_time (number) ;
+		kmp_sa_lifetime_byte (number) ;
+		kmp_sa_nego_time_limit (number) ;
+		ipsec_sa_nego_time_limit (number) ;
+			鍵交換する時間に関する設定
+
+		kmp_enc_alg (algorithm) ;
+			暗号アルゴリズム
+			複数指定可能
+		kmp_hash_alg (algorithm) ;
+			ハッシュアルゴリズム
+			複数指定可能
+		kmp_prf_alg (algorithm) ;
+			認証アルゴリズム
+			複数指定可能
+		kmp_dh_group (algorithm) ;
+			DHグループ
+			複数指定可能
+		kmp_auth_method (algorithm) ;
+			認証方法
+			複数指定可能
+
+		exchange_mode (main|aggressive|base|all) ;
+			ikev1でのみ有効なディレクティブ
+			exchange modeを設定する。
+			responder時に受けつけられるmodeを設定する。(複数可)
+			最初に定義したmodeをinitiator時に使う。
+
+		my_gssapi_id (string) ;
+			ikev1での有効なディレクティブ
+			GSSAPI IDを定義する。
+			XXX my_principal のことかな？
+
+		cookie_required (on|off);
+			ikev2でのみ有効なディレクティブ
+			responder時にcookieを要求するかどうかのフラグ
+			デフォルト off
+
+		need_pfs (on|off) ;
+			ikev1,ikev2でのみ有効なディレクティブ
+			PFSを有効にするかどうかを定義する。
+			IKEv1ではphase2でKEを再送する。
+			デフォルト off
+
+		my_public_key (x509pem|pkcs12|ascii) (pubkey) (privkey)
+		peers_public_key (x509pem|pkcs12|ascii) (pubkey)
+			XXX TBD
+			ikev1,ikev2でのみ有効なディレクティブ
+			公開鍵証明書が格納されたファイルへのパス(複数可)
+			x509pem
+				X.509 PEM形式
+			pkcs12
+				PKCS12形式
+			ascii
+				PGP ASCII ARMORED形式
+
+		pre_shared_key (file)
+			ikev1,ikev2でのみ有効なディレクティブ
+			事前共有鍵が格納されたファイルへのパス
+			バイナリ形式として扱われる。
+
+		my_princiapl (principal-id)
+		peers_princiapl (principal-id)
+			kinkでのみ有効なディレクティブ
+			プリンシパルIDを定義する。
+			principal-idは "principal@realm"
+
+o selector
+	selector (selector_index) { (directives) } ;
+
+	セレクタを定義する。
+	1つのpolicyをpolicy_indexで参照する。
+	directivesは以下の通り。
+
+	order (number) ;
+		カーネルで評価される評価順序番号を定義する。
+		一意な必要はない
+
+	direction (inbound|outbound);
+		パケットの方向
+
+	src (address) [port (port)];
+	dst (address) [port (port)];
+		セレクタを定義する。
+		XXX リストは書けない。
+
+	upper_layer_protocol (protocol) [(options)];
+		マッチさせたいヘッダチェーンの最後のヘッダの
+		プロトコル番号を定義する。
+		/etc/prototolsに定義された文字列と any が使える。
+
+	next_header_including (protocol)[:(option)];
+		XXX 未実装
+		マッチさせたいヘッダチェーンに含まれるプロトコル番号を定義する。
+		/etc/protocolsで定義された文字列も使える。
+		複数可
+
+		(option)はprotocolに依存した値を定義する。
+
+		定義できるoptionは以下の通り
+
+		ipv6-icmp (type) (code)
+
+	policy_index (policy_index) ;
+		参照するpolicyのpolicy_indexを定義する。
+
+o policy
+	policy (policy_index) { (directives) } ;
+
+	IPsecのプロポーザルを定義する。
+	1つ以上のipsecをipsec_indexで参照する。
+	参照するipsecは鍵交換プロトコルではORで評価される。
+	1つ以上のselectorからpolicy_indexで参照される。
+	1つの remoteをremote_indexで参照する。
+	directivesは以下の通り。
+
+	action (auto_ipsec|static_ipsec|discard|none) ;
+
+	remote_index
+		参照するremoteのremote_indexを定義する。
+
+	ipsec_index
+		参照するipsecのipsec_indexを定義する。
+		複数指定可能
+
+	my_sa_ipaddr (address) ;
+	peers_sa_ipaddr (address) ;
+		SAの終端IPアドレスを定義する。IPアドレス,FQDN,マクロが書ける。
+		actionが static_ipsecの場合、または tunnelモードを使う場合は
+		定義する。peers_sa_ipaddrをIP_RWと書くと、generate policyする。
+
+	ipsec_level (unique|require|use) ;
+		use
+			XXX 未実装
+			SAが無ければ設定開始するがパケットは送出する。
+		require
+			SAが無ければ設定開始しSAができるまでパケットは破棄する。
+			他のpolicyから使われる可能性がある。
+		unique
+			XXX とりあえずカーネルには設定されるが、
+			XXX 鍵交換デーモンが正しく扱うか未確認。
+			requireに加えて他のpolicyと排他的に使う。
+
+	ipsec_mode (transport|tunnel) ;
+		IPsecモードを定義する。
+
+o ipsec
+	ipsec (ipsec_index) { (directives) } ;
+
+	SAバンドルを定義する。
+	1つ以上のsaをsa_indexで参照する。
+	参照するsaは鍵交換プロトコルではANDで評価される。
+	1つのpolicyからipsec_indexで参照される。
+	directivesは以下の通り。
+
+	ipsec_sa_lifetime_time (number) ;
+	ipsec_sa_lifetime_byte (number) ;
+		SAの有効期限を定義する。
+
+	ext_sequence (on|off) ;
+		拡張シーケンスの有無
+
+	sa_index (sa_index) ;
+		3つまで指定可能
+		SAペイロードではANDで評価されSAバンドルを表現する。
+
+		複数指定する場合のsaのsa_protocolの順列制限
+		AH
+		ESP
+		IPCOMP
+		AH_ESP
+		AH_IPCOMP
+		ESP_IPCOMP
+		AH_ESP_IPCOMP
+
+o sa
+	sa (sa_index) { (directives) } ;
+
+	1つのSAを定義する。
+	1つのipsecからsa_indexで参照される。
+	directivesは以下の通り。
+
+	sa_protocol (ah|esp|ipcomp) ;
+		SAのプロトコルを定義する。
+
+	esp_enc_alg (algorithm) ;
+	esp_auth_alg (algorithm) ;
+		複数指定可能
+		鍵交換プロトコルではORで評価される。
+		sa_protocol espの場合にのみ有効
+
+	ah_auth_alg (algorithm) ;
+		複数指定可能
+		鍵交換プロトコルではORで評価される。
+		sa_protocol ahの場合にのみ有効
+
+	ipcomp_alg (algorithm) ;
+		複数指定可能
+		鍵交換プロトコルではORで評価される。
+		sa_protocol ipcompの場合にのみ有効
+
+	spi (spi) ;
+		(廃止？)
+		静的SAのSPIを定義する。

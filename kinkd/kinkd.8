@@ -1,0 +1,171 @@
+.\" $Id: kinkd.8,v 1.13 2007/07/05 01:36:38 kamada Exp $
+.\"
+.\" Copyright (C) 2004-2005 WIDE Project.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the project nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd May 10, 2006
+.Dt KINKD 8
+.Os RACOON2
+.\" ----------------------------------------------------------------
+.Sh NAME
+.Nm kinkd
+.Nd KINK key management daemon
+.\" ----------------------------------------------------------------
+.Sh SYNOPSIS
+.Nm
+.Op Fl dhFV
+.Op Fl f Ar configfile
+.Op Fl D Ar level
+.\" ----------------------------------------------------------------
+.Sh DESCRIPTION
+.Nm
+is a key management daemon, which supports
+the Kerberized Internet Negotiation of Keys (KINK) protocol.
+It is driven by upcalls from the kernel via the PF_KEYv2 interface or
+by negotiation requests from remote peers,
+and manages IPsec SAs according to
+.Pa racoon2.conf .
+.Pp
+The following options are available:
+.Bl -tag -width "indent"
+.It Fl d
+Increase the debugging level.
+This causes more verbose logging.
+This flag may occur multiple times.
+.It Fl f Ar configfile
+Read configurations from the specified file.
+.It Fl h
+Show simple help messages.
+.It Fl D Ar level
+Use the directly specified debugging level (1 -- 3).
+.It Fl F
+Run in the foreground.
+.Nm
+does not detach itself from the terminal and does not become a daemon.
+Logs are output to the stderr.
+.It Fl V
+Show the version.
+.El
+.Pp
+.Nm
+exits on SIGTERM or SIGINT.
+It reloads the configuration on SIGHUP.
+.Pp
+IPsec policies are managed by
+.Xr spmd 8 ,
+thus it must be started before
+.Nm .
+When
+.Xr spmd 8
+restarts,
+.Nm
+needs to be reloaded to reconnect with it.
+.\" ----------------------------------------------------------------
+.Sh FILES
+.Bl -tag -width "/var/run/kinkd.pid" -compact
+.It Pa @sysconfdir@/racoon2.conf
+The default configuration file for racoon2.
+.It Pa /var/run/kinkd.pid
+The PID file of the current instance of the daemon.
+.It Pa /var/run/kinkd.rc
+The replay cache file.
+.El
+.\" ----------------------------------------------------------------
+.Sh COMPATIBILITY
+.Pp
+This version of
+.Nm ,
+which is based on RFC 4430, is not interoperable with
+racoon2-20051102a and older, which is based on draft-ietf-kink-kink-06.
+.Bl -dash -compact
+.It
+The KINK header format and the location of the Cksum field were changed.
+.It
+The format of KINK_ENCRYPT was changed.
+.It
+Kerberos prfs for Simplified Profiles were changed from
+draft-ietf-krb-wg-crypto-07 to RFC 3961.
+.It
+The values of KINK next payload types were defiend.
+(Values from draft-02 have been used previously.)
+.It
+Key usage numbers were assigned.
+(Zeros have been used previously by mistake.)
+.El
+.\" ----------------------------------------------------------------
+.Sh SEE ALSO
+.Xr racoon2 7 ,
+.Xr racoon2.conf 5 ,
+.Xr spmd 8 ,
+.Xr iked 8 ,
+.Xr ipsec 4
+.Rs
+.%T "Kerberized Internet Negotiation of Keys (KINK)"
+.%R RFC 4430
+.%D March 2006
+.Re
+.Pp
+Documentations on the Kerberos5 library you are using.
+Its FILES, ENVIRONMENT, etc will affect the behavior of
+.Nm .
+.\" ----------------------------------------------------------------
+.Sh HISTORY
+The
+.Nm
+command was first implemented at The University of Tokyo in 2003.
+It took the ISAKMP parser from
+.Xr racoon 8 .
+It then appeared in the racoon2 IPsec key management kit.
+.\" ----------------------------------------------------------------
+.Sh AUTHORS
+.Nm
+was written by
+.An "KAMADA Ken'ichi" .
+.An WIDE/racoon2 project
+.Aq http://www.racoon2.wide.ad.jp/
+maintains the code.
+.\" ----------------------------------------------------------------
+.Sh BUGS
+User-to-User mode is not yet available (and thus the GETTGT command and
+related payloads are not yet implemented).
+.Pp
+Retrieving ticket is currently implemented as a blocking operation.
+Therefore
+.Nm
+will be stalled for a while if there is no answer
+from the KDC (the KDC is not responding, packets are dropped, etc).
+.Pp
+The replay cache is not preserved across restarts.
+.Pp
+When linked with the MIT krb5 library, the ccache size (thus
+the virtual size of the daemon) will continue to grow and never be reduced.
+.Pp
+SA bundles (e.g. AH+ESP) in tunnel mode do not work.
+.Pp
+and more.
+.\"
+.\" EOF

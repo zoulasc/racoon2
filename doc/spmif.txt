@@ -1,0 +1,190 @@
+$Id: spmif.txt,v 1.12 2006/06/29 07:21:39 francis Exp $
+
+o spmd shell interface (port number: 9555, temporary)
+
+  - command
+    case insensitive
+
+  - initiation
+
+     banner)
+     STATUS <SP> STRING <CRLF>
+
+     LOGIN <SP> PASSWORD <CRLF>
+
+     reply)
+     STATUS <SP> RESULT <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+
+     RESULT := [OK|FAILED]
+
+     S: 220 = service ready
+        250 = requested action ok
+     E: 500 = syntax error
+        502 = command not implemented
+        550 = operation failed
+        
+  - name server operation
+
+     NS <SP> COMMAND <SP> [ OPTION ] <CRLF>
+
+     COMMAND := [ADD|DELETE|CHANGE|LIST]
+     OPTION := ADDRESS
+
+     ex)
+     NS <SP> LIST <CRLF>
+     	==> show the name servers list (may show multiple lines)
+     NS <SP> ADD <SP> 218.219.152.89 <CRLF>
+     	==> add the name server to the list and use it
+     NS <SP> DELETE <SP> 3ffe:501:1057:710::53 <CRLF>
+     	==> delete the name server from the list
+     NS <SP> CHANGE <SP> 3ffe:501:1057:710::1 <CRLF>
+     	==> change the current using name server
+	    (specified name server address must be included in the list)
+
+     reply)
+     if the result is single line:
+     STATUS <SP> STRING <CRLF> 
+
+     if the result is multiple lines:
+     *(STATUS <-> STRING <CRLF>)
+     STATUS  <SP> STRING <CRLF>
+
+     (The 1st line indicates the current using DNS server.)
+
+     STATUS := [1-5][0-5][0-5]
+
+     S: 250 = requested action ok
+     	251 = requested action ok, but no dns server list exists
+     E: 500 = syntax error
+        550 = operation failed
+	551 = nameserver address already exist(ADD) or does not exist(DELETE)
+
+   - policy operation
+
+     POLICY <SP> ADD <SP> SELECTOR_INDEX <SP> LIFETIME <SP> SAMODE <SP> SP_SRC <SP> SP_DST [<SP> SA_SRC <SP> SA_DST] <CRLF>
+     POLICY <SP> DELETE <SP> SELECTOR_INDEX <CRLF>
+     POLICY <SP> DUMP <CRLF>
+
+     COMMAND := [ADD|DELETE|DUMP]
+     SELECTOR_INDEX := STRING
+     (ID string in racoon2 configuration file)
+     LIFETIME := NUMBER
+     SAMODE  := [TRANSPORT|TUNNEL]
+     SP_SRC ;= STRING (ip address)
+     SP_DST := STRING (ip address)
+     SA_SRC := STRING (ip address)
+     SA_DST := STRING (ip address)
+
+     SP_SRC have to match the "src" member of selector object which specified by SELECTOR_INDEX.
+     SP_DST have to match the "dst" member of selector object which specified by SELECTOR_INDEX.
+     
+     reply)
+     STATUS <SP> STRING <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+
+     S: 250 = requested action ok (policy added or updated)
+     	251 = requested action ok, but no policy exists
+     E: 500 = syntax error
+        550 = operation failed
+	551 = 
+
+   - query operation
+
+     FQDN <SP> COMMAND <SP> [OPTION] <CRLF>
+
+     COMMAND := [ADD|DELETE|QUERY|LIST]
+     OPTION := ADDRESS
+
+     ex) (dont forget to add '.' at last fqdn string)
+     FQDN <SP> ADD www.linux-ipv6.org. <CRLF>
+     FQDN <SP> DEL www.linux-ipv6.org. <CRLF>
+     FQDN <SP> QUERY 218.219.152.89 <CRLF>
+        ==> show FQDN (if cache exists)
+     FQDN <SP> LIST <CRLF>
+        ==> show FQDN (which we have to check for cache)
+
+     reply)
+     STATUS <SP> STRING <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+
+     S: 250 = requested action ok
+     	251 = requested action ok, but no fqdn list exists
+     E: 500 = syntax error 
+        501 = not chached
+        550 = operation failed
+
+     STRING = FQDN, INFOMATION
+
+   - query slid operation
+
+     SLID <SP> SPID <CRLF>
+
+     SPID := [0-9].*
+     (ID number in kernel SPD)
+
+     reply)
+
+     STATUS <SP> STRING <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+     
+     S: 250 = requested action ok
+     E: 500 = syntax error
+        550 = operation failed
+	551 = no such selector index
+
+     NUM := [0-9].*
+
+   - statistics
+
+     STAT <CRLF>
+
+     reply)
+
+     *(STATUS <-> STATISTICS <CRLF>)
+     STATUS <SP> STATISTICS <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+
+     S: 250 = requested action ok
+     E: 500 = syntax error
+
+     STATISTICS := {DNS QUERY=VALl|,..}
+     VAL := [0-9].*
+
+   - termination
+
+     EXIT <CRLF>
+      or
+     QUIT <CRLF>
+
+     reply)
+     STATUS <SP> STRING <CRLF>
+
+     STATUS := [1-5][0-5][0-5]
+
+     S: 250 = requested action ok
+     E: 550 = operation failed
+
+   - STATUS
+     (ref rfc2821)
+
+     1yz   Positive Preliminary reply
+     2yz   Positive Completion reply
+     3yz   Positive Intermediate reply
+     4yz   Transient Negative Completion reply
+     5yz   Permanent Negative Completion reply
+
+     x0z   Syntax
+     x1z   Information
+     x2z   Connections
+     x3z   Unspecified
+     x4z   Unspecified
+     x5z   spmd
+
+     the third digit is defined by each command.
+

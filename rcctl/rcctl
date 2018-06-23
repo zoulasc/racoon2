@@ -1,0 +1,186 @@
+#!/usr/bin/env perl
+
+$pskgen = 'pskgen';
+$spmd_pid = '/var/run/spmd.pid';
+
+sub usage
+{
+	print <<EOD;
+Usage: rcctl (opts) from (addr/net) to (addr/net) [my (addr) peer (addr)]
+       rcctl abort
+
+	It is a very simple IPsec/IKEv2 configuration generator for racoon2
+	like ipsec.conf(5) of OpenBSD.  It can make a configuration for ESP
+	Tunnel mode with racoon2.  There is a constraint that both sides
+	have to be racoon2.  each "addr/net" is either an address or an
+	network address to be protected.
+
+	"opts" are
+	-d: debug option
+	-P: supress to make a PSK.
+
+	you can specify a key management protocol if you want.
+	-1: specify using ikev1.
+	-k: specify using kink.
+	default key management protocol is ikev2.
+
+	e.g.
+
+	# rcctl from 192.168.153.128 to 192.168.153.129
+
+	# rcctl from 192.168.0.0/24 to 192.168.0.0/24 \
+	    mine 10.0.0.1 peer 10.0.0.2
+
+	# rcctl from 192.168.0.1 to 192.168.0.0/24 peer 10.0.0.2
+
+	the 2nd example is for protecting networks, both "mine" and
+	"peer" are the address of the gateway.  If "src" is a network
+	address, you can not ommit the gateway's address.  "dst" is same to.
+
+	"esp tunnel" can be specified between "rcctl" and "from" to keep
+	compatible usage with OpenBSD like below.
+
+	# rcctl esp tunnel from 192.168.0.1 to 192.168.0.2
+
+	A typical operation is:
+	# rcctl from 192.168.153.128 to 192.168.153.129
+	# cp conf_192.168.153.128_192.168.153.129 /etc/racoon2
+	# cp psk_conf_192.168.153.128_192.168.153.129 /etc/racoon2/psk
+	# scp conf_192.168.153.129_192.168.153.128 peer:/etc/racoon2
+	# scp psk_conf_192.168.153.128_192.168.153.129 peer:/etc/racoon2/psk
+
+EOD
+	exit 0;
+}
+
+if ($ARGV[0] eq 'abort') {
+	system("pkill spmd");
+	print "racoon2 aborted.\n";
+	exit 0;
+} elsif ($ARGV[0] eq 'shutdown') {
+	if (! -f $spmd_pid) {
+		print "No spmd's pid file found\n";
+	}
+	if (! -f $spmd_pid) {
+		print "No spmd's pid file found\n";
+	}
+	;
+}
+
+require 'getopts.pl';
+do Getopts('dPlkh');
+&usage if ($opt_h || !@ARGV || ($opt_1 && $opt_k));
+
+#
+# parsing
+#
+while (@ARGV) {
+	$p = shift(@ARGV);
+	if ($p eq 'esp') {
+		$p = shift(@ARGV);
+		&usage if ($p ne 'tunnel');
+		next;
+	}
+	if ($p eq 'from') {
+		$src = shift(@ARGV);
+		next;
+	}
+	if ($p eq 'to') {
+		$dst = shift(@ARGV);
+		next;
+	}
+	if ($p eq 'my') {
+		$src_sa = shift(@ARGV);
+		next;
+	}
+	if ($p eq 'peer') {
+		$dst_sa = shift(@ARGV);
+		next;
+	}
+	&usage;
+}
+&usage if (($src_sa && !$dst_sa) || (!$src_sa && $dst_sa));
+
+#
+# make parameters
+#
+$dst_sa = $dst_sa ? $dst_sa : $dst;
+$src_sa = $src_sa ? $src_sa : $src;
+# XXX to be check whether dst/src is not a network address.
+
+($src_reg = $src_sa) =~ s@/@-@;
+($dst_reg = $dst_sa) =~ s@/@-@;
+$ci_file = sprintf "conf_%s_%s", $src_reg, $dst_reg;
+$cr_file = sprintf "conf_%s_%s", $dst_reg, $src_reg;
+$psk_file = sprintf "psk_%s_%s", $src_reg, $dst_reg;
+if (!$opt_P) {
+	system("$pskgen -r -o $psk_file");
+}
+
+$kmp_proto = 'ikev2';
+if ($opt_1) {
+	$kmp_proto = 'ikev1';
+} elsif ($opt_k) {
+	$kmp_proto = 'kink';
+}
+
+&make_conf($src_sa, $dst_sa, $src, $dst, 'inbound', 'outbound', $ci_file);
+&make_conf($dst_sa, $src_sa, $dst, $src, 'outbound', 'inbound', $cr_file);
+
+exit 0;
+
+#
+# make configurations
+#
+sub make_conf
+{
+	my ($src_sa, $dst_sa, $src, $dst, $dir_in, $dir_out, $file) = @_; 
+
+	$remote_index = sprintf "remote_index_%s", $dst_sa;
+	$selector_index = sprintf "selector_index_%s_%s", $src, $dst;
+	$policy_index = sprintf "policy_index_%s_%s", $src, $dst;
+
+	open(OUT, "> $file") || die "can not open [$file]"; 
+
+	print OUT <<EOD;
+
+remote $remote_index {
+	acceptable_kmp { $kmp_proto; };
+	$kmp_proto {
+		my_id ipaddr "$src_sa";
+		kmp_auth_method { psk; };
+		peers_id ipaddr "$dst_sa";
+		peers_ipaddr "$dst_sa" port 500;
+		pre_shared_key "\$\{PSKDIR\}/$psk_file";
+	};
+	selector_index ${selector_index}_inbound;
+};
+
+selector ${selector_index}_outbound {
+	direction outbound;
+	src "$src";
+	dst "$dst";
+	policy_index $policy_index;
+};
+
+selector ${selector_index}_inbound {
+	direction inbound;
+	src "$dst";
+	dst "$src";
+	policy_index $policy_index;
+};
+
+policy $policy_index {
+	action auto_ipsec;
+	remote_index $remote_index;
+	ipsec_mode tunnel;
+	ipsec_index { ipsec_esp; };
+	ipsec_level require;
+	my_sa_ipaddr "$src_sa";
+	peers_sa_ipaddr "$dst_sa";
+};
+
+EOD
+
+	close(OUT);
+}

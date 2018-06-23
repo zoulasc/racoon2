@@ -1,0 +1,670 @@
+$Id: specification.ja.txt,v 1.27 2005/10/04 08:22:14 fukumoto Exp $
+
+Racoon2 仕様
+
++ 概要
++ ポリシ管理デーモン (spmd)
++ IKEv1/v2デーモン (iked)
++ KINKデーモン (kinkd)
++ 設定ファイル (racoon.conf)
++ 共通ライブラリ (libracoon.a)
+
+
++ 概要
+
+o racoon2概要
+	racoon2は、１つのプラットフォームで複数の鍵交換プロトコルを同時に
+	動作させるための枠組である。
+	racoon2は、ポリシ管理デーモンと各プロトコルデーモンで構成され、
+	さらに鍵管理に必要な共通ライブラリを提供する。
+
+	ポリシ管理デーモンは起動時に設定ファイルを読み込み必要ならば
+	設定ファイルに書かれたフィルタをカーネルにインストールする。
+	このフィルタは各プロトコルデーモンを起動させるために、カーネルから
+	要求を発生させる役割を持つ。
+	また、アプリケーションが名前解決した時点で必要ならば名前とセレクタを
+	キャッシュをし、カーネルにフィルタをインストールする。
+	カーネルとのインターフェイスとしてPF_KEY version2[RFC2367]と
+	その拡張を使う。PF_KEYの新しいバージョンやPF_POLICYが出た時には
+	移行する。
+
+	Initiatorの各プロトコルデーモンは、カーネルからSA設定要求イベントを
+	受けて鍵交換を始する。
+	Responderは、Initiator側からの鍵交換要求イベントにより必要ならば
+	鍵交換を開始する。
+	鍵交換プロトコルとして以下を IPv4及びIPv6上でサポートする。
+
+		IKE version 1 [RFC2409, RFC2407, RFC2408]
+		IKE version 2 [draft-ietf-ipsec-ikev2-17.txt]
+		KINK [draft-ietf-kink-kink-06.txt]
+
+	共通ライブラリは、カーネルインターフェイスと設定ファイル操作、
+	その他のユーティリティを提供している。
+
+o 用語
+	フィルタ
+		任意のパケットに対する処理の定義。
+		セレクタとルールで構成される。
+		ポリシと同義
+
+	ポリシ
+		フィルタと同義
+
+	セレクタ
+		パケットに対してフィルタを適用するための比較要素
+			IPアドレス
+			プレフィクス長
+			プロトコル番号
+			ICMPタイプ
+			ICMPコード
+			ポート番号
+		で構成される。
+
+	ルール
+		フィルタにマッチしたパケットの処理を記述する。
+		IPsecの場合、以下の３通りがある。
+			パケットを破棄する
+			IPsecスタックをバイパスする
+			IPsecスタックを通す
+		IPsecスタックを通す場合、セキュリティプロトコルやモードも
+		定義されている。
+
+	セレクタインデックス
+		セレクタを一意に識別する文字列
+		selector_indexは設定ファイル全体で一意である。
+
+o 動作環境
+	以下のプラットフォームで開発する
+		NetBSD 2.0
+		Linux 2.6.0
+
+	以下のプラットフォームで動作させることを目標とする
+		NetBSD 2.0
+		FreeBSD 4.x
+		Linux 2.6.0
+
+	必要なカーネルインターフェイス以下である
+		Socket API
+		Advanced API[]
+		PF_KEY [RFC2367]
+		PF_KEY拡張またはフィルタ操作I/F
+
+	- PF_KEY [RFC2367]
+		少なくとも以下のメッセージをサポートしている必要がある。
+		GETSPI
+		UPDATE
+		ADD
+		DELETE
+		EXPIRE
+		ACQUIRE
+
+	- PF_KEY拡張またはフィルタ操作I/F
+		セキュリティポリシデータベース(SPD)または
+		同等のフィルタデータベースを操作するI/Fがなければならない。
+
+	- 鍵交換の始動に関して
+		カーネルがパケットを送信するときにフィルタを評価し、
+		もしIPsecするならば対応する SAがあるか検査し、
+		なければフィルタの識別子をユーザ空間に知らせる事ができる。
+		racoon2ではフィルタの識別子をフィルタIDと呼ぶ。
+		またフィルタの評価順序はユーザが指定できる。
+
+	- Kerberosへの要求
+		１つAレコードに対してprincipalを１つ定義しなければいけない
+
+o 構成
+	XXX 手設定のSAとの関係
+
+o 設定できるSAとIPSECモード
+	IKEv1/IKEv2
+		ESP with transport mode
+			IP|ESP|ULP
+		AH with transport mode
+			IP|AH|ULP
+		IPCOMP with transport mode
+			IP|IPCOMP|ULP
+		AH+ESP with transport mode
+			IP|AH|ESP|ULP
+		AH+IPCOMP with transport mode
+			IP|AH|IPCOMP|ULP
+		ESP+IPCOMP with transport mode
+			IP|ESP|IPCOMP|ULP
+		AH+ESP+IPCOMP with transport mode
+			IP|AH|ESP|IPCOMP|ULP
+		ESP with tunnel mode
+			IP2|ESP|IP1|ULP
+		AH with tunnel mode
+			IP2|AH|IP1|ULP
+		IPCOMP with tunnel mode
+			IP2|IPCOMP|IP1|ULP
+		AH+ESP with tunnel mode
+			IP2|AH|ESP|IP1|ULP
+		AH+IPCOMP with tunnel mode
+			IP2|AH|IPCOMP|IP1|ULP
+		ESP+IPCOMP with tunnel mode
+			IP2|ESP|IPCOMP|IP1|ULP
+		AH+ESP+IPCOMP with tunnel mode
+			IP2|AH|ESP|IPCOMP|IP1|ULP
+
+	KINK
+		ESP with transport mode
+			IP|ESP|ULP
+
+o 起動と終了
+	始めに spmdを起動し、次にプロトコルデーモン(iked, kinkd)を起動する。
+	iked, kinkdは個別に起動する。
+	spmdが終了すると各プロトコルデーモンは終了する。
+
+
++ ポリシ管理デーモン (spmd)
+
+o ポリシ管理デーモン概要
+	ポリシ管理デーモンは以下の３つの処理に分けられる。
+		フィルタをカーネルにインストールする処理
+		名前解決処理
+		アドレス逆引き処理
+		セレクタインデックスとSPIDのマッピング
+
+	起動時に設定ファイルに書かれたフィルタをカーネルにインストールする。
+	セレクタにFQDNが書かれている場合、インストールする時点でのIPアドレス
+	を使ってインストールする。その後、アプリケーションが名前解決した時に、
+	その時点でのIPアドレスでカーネルのフィルタを置き換える。従ってセレクタ
+	にFQDNを使うには、アプリケーションのリゾルバをポリシ管理デーモンで
+	置き換えなければならない。
+
+	カーネルにフィルタをインストールすると、カーネルは割り当てたSPIDを
+	返すので、それとセレクタインデックスの対応を管理する。
+
+	プロトコルデーモンからのアドレス逆引き要求を受けてキャッシュしている
+	FQDNを返す。
+	プロトコルデーモンからポリシ設定要求を受けて対応するフィルタを
+	カーネルにインストールする。ポリシ設定要求はセレクタインデックスが
+	指定されるので、対応する
+
+o 起動オプション
+	commandline-options.txt 参照
+
+o spmd インターフェイス
+	localhostのTCPポート番号9555(暫定)を使う。
+	telnet(1)でデバッグできるように実装する。
+	認証は challenge and response方式を使う。
+	パスワードは設定ファイルに書いてある。
+	設定ファイルのパーミッションに注意。
+	IPアドレスの正規化は特にする必要はない。
+
+o 初期化処理
+	設定ファイルの読み込み
+	引数処理
+	二重起動検査
+	ロギング初期化
+	各ソケット初期化
+	PF_KEY初期化
+	PF_POLICY初期化
+	FQDNキャッシュ初期化
+	イベント待ち
+
+o 名前解決処理
+	リゾルバを置き換えるのでアプリケーションからの通常の名前解決要求に
+	応答しなければならない。
+	127.0.0.1と::1の53番ポートを使う。
+	設定ファイルに要求されたFQDNがあった場合、展開して全てのアドレスに
+	対してフィルタをカーネルにインストールし、FQDNとIPアドレスのペアを
+	キャッシュする。
+	既にインストールされているフィルタがあった場合は上書きされる。
+
+	P.HOGE CNAME Z.HOGE 
+	Q.HOGE CNAME Z.HOGE
+	R.HOGE CNAME Z.HOGE
+
+	P.HOGE A     Z.HOGE
+	Q.HOGE A     Z.HOGE
+	R.HOGE A     Z.HOGE
+
+o キャッシュ
+	racoon.confに書かれているFQDNは全てキャッシュの対象とする。
+	Aレコードを全て展開しキャッシュする。
+	レコードの削除はしないが、名前解決処理の時にキャッシュを更新する。
+	SIGUSR2を受けてキャッシュをパージする。
+
+o アドレス逆引き処理
+	プロトコルデーモンからのアドレス逆引き要求を受けて対応する任意の
+	Aレコードを１つ返す。
+
+o ポリシ設定要求処理
+	プロトコルデーモンからポリシ設定要求を受けて対応するセレクタを
+	カーネルにインストールする。これはResponder側として動作している
+	デーモンからの要求である。
+
+	セレクタINDEX
+	相手のアドレス
+
+o 現在の設定の書き出し
+	ユーザからの通知を受けて、現在の SPDをファイルへ書き出す。
+
+o 終了イベント
+	管理ユーザーから終了イベントを受けて正常終了する。
+	終了時の処理は以下の通り。
+	- 鍵交換要求の破棄
+	- socketのクローズ
+	- カーネルへ設定したIPsecポリシまたはそれに付随するSAを必要ならば
+	  削除する。
+	- PF_KEYおよびPF_POLILCY socketのクローズ
+	- ログファイルのクローズ
+	- 二重起動防止の解除
+
+o 異常終了
+	例えば、メモリ不足のような回復不能な状態に陥った場合には異常終了する。
+	メモリイメージを吐いて終了する。
+
+o rekeyに関して
+	daemonがrekeyをinitiateすることも考えられるが、
+	送信するパケットがないのにrekeyする必要はないことから、
+	rekeyにinitiateはkernelに任せる。
+
+
++ IKEv1/v2デーモン (iked)
+
+o IKEv1/v2デーモン概要
+	IKE version1とIKE version2をサポートするデーモンである。
+	IPv4及びIPv6で通信できる。
+	鍵交換に使うポート番号は 500番とするが相手毎に設定で変えられる。
+	draft-ietf-ipsec-ikev2-10.txtの 4. conformance requirementsで定義された
+	機能をサポートする。
+	ikedは、FQDNで記述された設定もサポートする。
+
+o IKEv1に関する仕様
+	MainモードとAggressiveモードをサポートする。
+	認証方法は Pre-share Keyと RSA Signature in PKCS#1をサポートする。
+	IDは Mainモード with Pre-share Keyの場合はIPアドレス、
+	それ以外の組合せではIPアドレスとFQDN,E-mailアドレスが使える。
+	Oakley groupは 1,2,5をサポートする。
+
+o IKEv1 ペイロード解析
+	RFC2408で定義されるペイロードのうち以下のペイロードをサポートする。
+	ISAKMP Header
+	Security Association Payload
+	Proposal Payload
+	Transform Payload
+	Key Exchange Payload
+	Identification Payload
+	Certificate Payload
+	Certificate Request Payload
+	Hash Payload
+	Signature Payload
+	Nonce Payload
+	Notification Payload
+	    Notify Message Types
+	Delete Payload
+	Vendor ID Payload
+
+o IKEv1 の SA Lifetimeに関して
+	IKE-SAの Lifetimeと IPsec-SAの Lifetimeは独立する。
+
+	IKE-SAの initiatorのプロポーザルに対してresponderは
+	以下のいずれかの動作を選択する。
+
+	OBEY
+		常にinitiatorの提示した生存時間に従う
+
+	STRICT
+		initiatorの提示した生存時間がresponderのそれより短いか
+		等しい場合はinitiatorに従う。それ以外はメッセージを破棄する。
+
+	CLAIM
+		initiatorの提示した生存時間がresponderのそれより短いか
+		等しい場合はinitiatorに従う。それ以外はRESPONDER-LIFETIME
+		Notifyメッセージを返し、responderのそれを使う。
+
+	EXACT
+		initiatorの提示した生存時間がresponderのそれと等しくない場合は
+		メッセージを破棄する。
+
+o IKEv1 Initiator
+	カーネルからSA設定要求イベントを受信すると、これに含まれている
+	フィルタIDをポリシ検索関数に渡しポリシを得る。
+	鍵交換する必要があるならばセレクタINDEXから鍵交換する相手の定義を取得し
+	鍵交換を始める。
+	鍵交換終了後、カーネルにSAを設定して、カーネルからの
+	SADB_EXPIREメッセージ待ちに入る。
+
+o IKEv1 Responder
+	Initiator側からの鍵交換要求メッセージを受信すると、
+	main modeの場合、送信元のIPアドレスを通信相手取得関数に渡し
+	通信相手に関する情報を得る。
+	aggressive modeの場合、IDペイロードに含まれているIDを
+	通信相手取得関数に渡し通信相手を特定する情報を得る。
+	トンネルモードの鍵交換の場合Phase2のIDペイロードに含まれている
+	SAのセレクタをセレクタ検索関数に渡し、セレクタとポリシを得る。
+	鍵交換終了後、カーネルにSAを設定し、ポリシ管理デーモンに
+	ポリシ設定要求をだし、カーネルからのSADB_EXPIREメッセージ待ちに入る。
+
+	また、Roadworrorの場合…
+	phase1のID から selector_infoを検索し、
+	なければ ID payloadを使って検索する。
+	IDから selector_infoを検索した場合は、phase2のID payloadの
+	チェックをしない
+
+o IKEv2に関する仕様
+	以下の機能はサポートしない。
+		UDP-ESPトンネルによるNATを越えた通信(nat-t)
+		トンネルエンドポイントの一時的なIPアドレスの取得(mode-cfg)
+		レガシー認証(xauth)
+		1以上のウインドウサイズ
+		1つのIKE_SAから複数のSAを設定する機能
+		ただし、SA bundleはこれに該当しない。
+
+	デーモンは設定ファイルに従い、Initiator側か Responder側、
+	またはその両方の動作をする。
+	動作を変えたい場合は再起動する。
+
+o IKEv2 メッセージ
+	IKEv2仕様に定義された IKE_SA_INIT, IKE_AUTH, CREATE_CHILD_SA,
+	INFORMATIONALを適切に処理しなければならない。
+	Informationalメッセージに対して空のInformationalメッセージ
+	を返すことが許されるが、ikedは適切なメッセージを返すものとする。
+
+o IKEv2 ペイロード解析
+	以下のペイロードをサポートする。
+		The IKE Header
+		Security Association Payload
+		Key Exchange Payload
+		Identification Payloads
+		Certificate Payload
+		Certificate Request Payload
+		Authentication Payload
+		Nonce Payload
+		Notify Payload
+		Delete Payload
+		Vendor ID Payload
+		Traffic Selector Payload
+		Encrypted Payload
+
+	これ以外のペイロードの場合、クリティカルビットの有無で処理が変わる。
+	クリティカルビットがセットされているならば、パケット全体を破棄する。
+	クリティカルビットがセットいないならば、そのペイロードだけを無視する。
+	いずれの場合も、ログにタイプとクリティカルビットの有無を出力する。
+
+o IKEv2 TS Payload
+	Initiatorの場合
+		TSペイロードは、セレクタ情報から生成される。
+		ikedがカーネルから受信するSADB_ACQUIREメッセージには、
+		セレクタIDが含まれ、これと起動時に読み込んだ設定ファイルから
+		ikedはセレクタ情報を参照できる。
+
+	Responderの場合
+		TSペイロードは、セレクタ情報から決定される。
+		ikedは、受信したIKE_AUTHメッセージに含まれるIDiペイロードに基づいて
+		リモート情報を参照する。次に、TSペイロードからセレクタ情報を検索する
+		検索したセレクタ情報からは、ポリシ情報を介してリモート情報が参照できる
+		ので、これによりリモート情報をチェックする。
+
+		*セレクタ情報の検索(マッチング)の仕方は、
+		もしTSペイロードが specific なTSで始まっていて、そのTS 
+		が自分のコンフィギュレーションのセレクタに包含されるか、
+		またはTS ペイロードがTSペイロードの最初が specific な
+		TSではない
+		と同時に、
+		TSペイロードのいずれかのTSが、自分のコンフィギュレーショ
+		ンのセレクタを包含する
+		このときマッチするとみなす。
+		（要考察）
+
+		レスポンダーがイニシエーターに返すTSペイロードはつねに
+		自分のコンフィギュレーションのセレクタから生成される。
+		すなわち相手のTSのほうが広いとき、自分のセレクタへ狭め
+		ることになる。
+
+
+o IKEv2 Initiator
+	カーネルからSA設定要求イベントを受信すると、これに含まれている
+	selector indexをポリシ検索関数に渡しポリシを得る。
+	鍵交換する必要があるならばselector indexから鍵交換する相手の
+	情報を取得し鍵交換を始める。
+
+	鍵交換終了後、カーネルにSAを設定して、カーネルからの
+	SADB_EXPIREメッセージ待ちに入る。
+	XXX 入るんだっけ？独自でやるんだっけ？
+
+	+ IKE_SA_INIT
+	HDR, SAi1, KEi, Ni
+
+	+ IKE_AUTH
+	HDR, SK {IDi, [CERT,] [CERTREQ,] [IDr,] AUTH, SAi2, TSi, TSr}
+
+	+ CREATE_CHILD_SA
+	HDR, SK {[N], SA, Ni, [KEi], [TSi, TSr]}
+
+o IKEv2 Responder
+	remote_infoの検索方法は、
+		IPアドレスと各remote_infoのpeers_ipaddr
+		IDとremote_infoのpeers_id
+		default
+	の順で採用する。
+	Initiator側からの鍵交換要求メッセージを受信すると
+	トンネルモードの鍵交換の場合TSペイロードに含まれているSAのセレクタを
+	セレクタ検索関数に渡し、セレクタとポリシを得る。
+	鍵交換終了後、カーネルにSAを設定し、ポリシ管理デーモンに
+	ポリシ設定要求をだし、カーネルからのSADB_EXPIREメッセージ待ちに入る。
+	また、Roadworrorの場合…
+
+	+ IKE_SA_INIT
+	HDR, SAr1, KEr, Nr, [CERTREQ]
+
+	+ IKE_AUTH
+	HDR, SK {IDr, [CERT,] AUTH, SAr2, TSi, TSr}
+
+	+ CREATE_CHILD_SA
+	HDR, SK {SA, Nr, [KEr], [TSi, TSr]}
+
+o IKEv2の INFORMATIONAL
+	HDR, SK {[N,] [D,] [CP,] ...} -->
+	                             <-- HDR, SK {[N,] [D,] [CP], ...}
+
+o IKEv2の Cookieを使った場合
+       Initiator                          Responder
+       -----------                        -----------
+       HDR(A,0), SAi1, KEi, Ni   -->
+
+                                 <-- HDR(A,0), N(COOKIE)
+
+       HDR(A,0), N(COOKIE), SAi1, KEi, Ni   -->
+
+                                 <-- HDR(A,B), SAr1, KEr, Nr, [CERTREQ]
+
+       HDR(A,B), SK {IDi, [CERT,] [CERTREQ,] [IDr,]
+           AUTH, SAi2, TSi, TSr} -->
+
+                                 <-- HDR(A,B), SK {IDr, [CERT,] AUTH,
+                                                SAr2, TSi, TSr}
+
+      Cookie = <VersionIDofSecret> | Hash(Ni | IPi | SPIi | <secret>)
+
+
+o SA Lifetime
+	IKEv2仕様によりIKE-SA,AH/ESP-SA共にLifetimeのネゴシエーションはしない。
+	rekeyは設定されたlifetimeでIntiator,Responder双方から発生する。
+	同時に発生することを避けるために jitterを加える。
+	jitterは設定可能。
+	設定により発生させないことも可能にする。
+
+	- IKE-SAがAH/ESP-SAよりも先にexpireした場合
+	IKE-SAをRekeyし、Child-SAは新しいIKE-SAに引き継がれる。
+
+	- rekeyの終了
+	lifetimeにsoft/hard expiration timeを設ける。
+	hard expiration timeが来る前に ACQUIREを受けた場合は rekeyする。
+	kernelには soft/hardとも設定する。
+
+	- rekeyにおけるkernelに期待する動作
+	SAが必要ならば hard expiration timeまでに ACQUIREを1回以上送出する。
+	soft expiration timeが来るまでは ACQUIREを出さないことが望ましい。
+	soft expiration timeが来たら1回ACQUIREを送出する。
+	以降SA検索が失敗する度にACQUIREを送出する。
+	1秒以内に2つ以上のACQUIREを出さないことが望ましい。
+
+o DH key exchange
+	- DH groupで定義されたパラメータを使いDH key exchangeに使う値を
+	  生成する。
+	- 生成にはライブラリの関数を使うが、配布キットには含まれないので、
+	  コンパイル時、または実行時にリンクされなければならない。
+	- 使用する関数は鍵ペア生成関数と共有鍵生成関数である。
+	- ライブラリ関数の入力は、 Y = g^X mod p において pとgとする。
+	  ここで p, gはIKE仕様で定義されており、pは十分に大きな素数、
+	  gは 2である。
+	  ライブラリ関数の出力は、Y, Xである。
+	- 使用する DH group
+		1,2 (ikev2-17.txt, Appendix B)
+		5,14,15,16,17,18 (RFC3526)
+		楕円系は考慮しない
+	- ライブラリとしては OpenSSLが使える。
+	- これら以外のgroupが定義された場合は、再コンパイルすることで
+	  使用可能にする。
+	- DH公開情報は KE payloadを使い相手に送信する。
+
+
++ KINKデーモン (kinkd)
+
+o KINKデーモン概要
+	KINK(draft-ietf-kink-kink-05.txt)をサポートするデーモンである。
+	鍵交換に使うポート番号は <IANA consideration> である。
+
+o 動作環境
+	動作環境は基本的にracoon2に従うが、以下の追加環境が必要である。
+
+	- PF_KEY拡張I/F
+		PF_KEYインターフェイスが、
+		SPIを変更することなくIPsec SAパラメータを書き換える機能
+		を提供しなければならない。
+		3-way handshake を行わない場合、この機能は必要ない。
+
+	- Kerberos V5ライブラリ
+		サポートするKerberos5ライブラリは以下のものである。
+			Heimdal-0.6
+
+		XXX
+		輸出規制が緩和され、2003-10-24からMITによるKerberosライブラリを
+		入手することが可能になったため、将来的には
+			MIT krb5
+		をサポートする可能性がある。
+
+	- 暗号ライブラリ
+		OpenSSL ???
+
+o KINKメッセージ
+	draft-ietf-kink-kink-05.txtで定義されるメッセージのうち、
+		CREATE
+		DELETE
+		REPLY
+		GETTGT
+		ACK
+		STATUS
+	をサポートする。
+
+o KINKペイロード
+	ペイロード番号は現在 <IANA consideration> である。
+	draft-ietf-kink-kink-05.txtで定義されるペイロードをすべて
+	サポートする。
+		KINK_AP_REQ
+		KINK_AP_REP
+		KINK_KRB_ERROR
+		KINK_TGT_REQ
+		KINK_TGT_REP
+		KINK_ISAKMP
+		KINK_ENCRYPT
+		KINK_ERROR
+
+o ISAKMPペイロード
+	RFC2408で定義されるペイロードのうち以下のペイロードをサポートする。
+		Security Association Payload
+		Proposal Payload
+		Transform Payload
+		Nonce Payload
+		Delete Payload
+
+	XXX
+	key exchange
+	identification
+	notification
+
+o 初期化処理
+	引数処理
+	設定ファイルの読み込み
+	ロギング初期化
+	内部状態初期化
+	Kerberos TGTの取得
+	二重起動防止処理
+	signal設定
+	KINK socket初期化
+	PF_KEY初期化
+	spmdへ接続・ログイン処理
+	イベント待ち
+
+o Kerberos Ticketの取得
+	起動時に最初のTGTを取得する。
+	Service Ticketは鍵交換要求が発生した時点で取得する。
+	またTGT、Service Ticketともにキャッシュする。
+	鍵交換の結果、Service Ticketの有効期限が切れていた場合は、
+	Service Ticketの再発行を受ける。
+	Service Ticket取得時にTGTの有効期限が切れていた場合は、
+	TGTの再発行を受ける。
+
+o 終了イベント処理
+	SIGTERMまたはSIGINTによって以下の正常終了処理を行なう。
+	- KINK socketのクローズ
+	- PF_KEYおよびPF_POLICY socketのクローズ
+	- spmdへのQUITメッセージの送信
+	- spmd socketのクローズ
+	- ログファイルのクローズ
+	- 二重起動防止の解除
+	???- 終了時に自分の設定したSAを消去する。
+
+o 異常終了
+	メモリ不足や内部状態の不整合などの致命的な状態に陥った時は、
+	メモリイメージを出力して終了する。???
+
+o その他のイベント処理
+	SIGHUPによって設定ファイルの再読み込みを行なう。
+	またspmdへの接続が切断されている場合、再接続を試みる。
+
+o KINK Initiator
+        カーネルからSADB_ACQUIREメッセージを受信すると、
+	これに含まれているセレクタIDをポリシ検索関数に渡しポリシを得る。
+        鍵交換する必要があるならばセレクタINDEXから鍵交換する相手の定義を取得し
+        鍵交換を始める。
+	通信相手のprincipal nameに含まれるFQDNを取得するため、
+	spmdに対してアドレス逆引き要求(FQDN QUERYメッセージ)で
+	問い合わせを行なう。
+	カーネルにinboundのSAを設定した後、鍵交換を開始し、
+	鍵交換終了後、outboundのSAを設定する。
+	カーネルからSADB_EXPIREメッセージを取得すると鍵の更新作業を行なう。
+
+	XXX 3-way の記述
+	XXX user-to-user
+
+o KINK Responder
+	Initiatorからの鍵交換要求メッセージを受信すると、
+	送信元・宛先のIPアドレス、KINK_AP_REQペイロードに含まれている
+	principal name、KINK_ISAKMPペイロードに含まれているパラメータ
+	を用いて鍵交換を開始する。
+	鍵交換時に、カーネルにSAを設定し、spmdにポリシ設定要求を送信する。
+	Responderは鍵の更新を行なわないので、SADB_EXPIREメッセージは無視する。
+
+	XXX 3-way の記述
+
+
++ 設定ファイル (racoon.conf)
+
+	racoon2-config.txtを参照
+
+
++ 共通ライブラリ (libracoon.a)
+
+	racoon2-lib.txtを参照
+
+
++ ログ
+	起動時のオプションで出力ファイルを定義できる。定義されていない場合は
+	syslog()に出力する。
+	remoteで定義された相手毎の鍵交換プロトコル毎に出力ファイルを定義し、
+	他のオプションに関わらず独立して出力する。
+	起動オプションで標準出力にも独立して出せる。

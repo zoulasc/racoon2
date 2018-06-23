@@ -1,0 +1,55 @@
+CC = @CC@
+MKDEP = @MKDEP@
+CFLAGS = @CFLAGS@ @CPPFLAGS@ @DEFS@ -DSYSCONFDIR=\"${sysconfdir}\" 
+# CFLAGS +=-DSADB_X_MIGRATE
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+INSTALL=@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+INSTALL_DIR=@INSTALL_DIR@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+sysconfdir = @sysconfdir@
+mandir = @mandir@
+man8dir = $(mandir)/man8
+
+SRCS := main.c dns.c udp.c query.c task.c signal.c shell.c utils.c cache.c spmd_pfkey.c fqdn_query.c
+OBJS := ${SRCS:c=o}
+
+DAEMON = spmd
+COMMAND = spmdctl
+MANFILES = spmd.8 spmdctl.8
+TARGET = $(DAEMON) $(COMMAND)
+
+all: $(TARGET)
+
+$(DAEMON): $(OBJS) ../lib/libracoon.a
+	$(CC) -o $@ $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS)
+
+$(OBJS): spmd_includes.h spmd_internal.h task.h dns.h query.h utils.h cache.h
+
+spmdctl: spmdctl.o ../lib/libracoon.a
+	$(CC) -o $@ $(CFLAGS) spmdctl.o $(LDFLAGS) $(LIBS)
+
+spmdctl.o: spmd_internal.h
+
+install: all
+	$(INSTALL_DIR) $(sbindir)
+	$(INSTALL_PROGRAM) $(DAEMON) $(sbindir)
+	$(INSTALL_PROGRAM) $(COMMAND) $(sbindir)
+	$(INSTALL_DIR) $(man8dir)
+	$(INSTALL_DATA) $(MANFILES) $(man8dir)
+
+clean:
+	-rm -f $(TARGET) *.o $(COMMAND)
+
+distclean: clean
+	-rm -f config.cache config.log config.status config.h Makefile .depend
+
+depend:
+	$(MKDEP) $(CFLAGS) $(SRCS)
+@IF_GMAKE@-include .depend

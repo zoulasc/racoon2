@@ -1,0 +1,139 @@
+#!@perl_bindir@
+
+# Copyright (C) 2004, 2005 WIDE Project.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the project nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+$default_keysize = 16;	# 128 bits
+
+sub usage
+{
+	print <<EOD;
+Usage: pskgen -r [-s length] [-o file] [-d]
+       pskgen -i file [-h] [-o file] [-d]
+       pskgen -e file [-o file] [-d]
+
+  randomized key mode:
+    -r  output random bytes.
+    -s  specify the byte length of the key.
+        the default is $default_keysize bytes.
+    -o  specify the output file.
+    -d  debug mode. no harm to any file.
+
+  file specific mode:
+    -i  specify the input file.  '-' means the standard input.
+    -h  assumed that the input file is written in the following syntax:
+        0x leading one or two of hexadecimal number separated space
+        characters.  for example: 0x72 0x61 0x63 0x6f 0x6f 0x6e
+    -o  specify the output file.
+    -d  debug mode. no harm to any file.
+
+  export mode:
+    -e  export the key file.  the format is like the option -h defined.
+    -o  specify the output file.
+    -d  debug mode. no harm to any file.
+EOD
+	exit 0;
+}
+
+require 'getopts.pl';
+do Getopts('rs:o:di:he:d');
+$output = '-';
+$output = $opt_o if ($opt_o);
+
+umask(077);
+
+if ($opt_r) {
+	$keysize = $default_keysize;
+	$keysize = $opt_s if ($opt_s);
+	&mode_r;
+} elsif ($opt_i) {
+	&mode_i;
+} elsif ($opt_e) {
+	&mode_e;
+} else {
+	&usage;
+}
+exit 0;
+
+sub mode_i
+{
+	my @b;
+
+	open(OUT, ">$output") || die "can\'t open $output";
+	open(IN, "<$opt_i") || die "can\'t open $opt_i";
+	if ($opt_h) {
+		while (<IN>) {
+			chomp;
+			s/0x//g;
+			@b = split(/ */);
+			while (@b) {
+				printf OUT "%c", hex(shift(@b) . shift(@b));
+			}
+		}
+	} else {
+		# use only the first line.
+		$_ = <IN>;
+		chomp;
+		print OUT;
+	}
+	close(IN);
+	close(OUT);
+}
+
+sub mode_r
+{
+	my @b;
+
+	srand(time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
+	for (1 ... $keysize) {
+		push(@b, int(rand 256));
+	}
+
+	open(OUT, ">$output") || die "can\'t open $output";
+	syswrite(OUT, pack("C*", @b));
+	close(OUT);
+}
+
+sub mode_e
+{
+	my ($size, $offset) = (64, 0);
+	my @b;
+
+	open(OUT, ">$output") || die "can\'t open $output";
+	open(IN, "<$opt_e") || die "can\'t open $opt_i";
+	while (sysread(IN, $buf, 64)) {
+		last if ($size == 0);
+		@b = unpack("C*", $buf);
+		for (0 ... $#b) {
+			printf OUT "0x%02x%s", $b[$_],
+			    ($_ + 1) % 16 == 0 ? "\n" :
+			    (($_ + 1) % 8 == 0 ? "  " : " ");
+		}
+	}
+	close(IN);
+	close(OUT);
+}

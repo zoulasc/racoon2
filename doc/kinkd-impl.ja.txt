@@ -1,0 +1,656 @@
+$Id: kinkd-impl.ja.txt,v 1.29 2005/07/20 09:30:51 inoue Exp $
+KINKd 実装メモ
+
+1. 実装状況
+===========
+  * メッセージフロー
+	TGT 取得 (Kerberos)
+		ok	AS_REQ -- AS_REP
+
+	service Ticket 取得 (Kerberos (+ KINK))
+		ok	TGS_REQ -- TGS_REP
+		NG	GETTGT -- REPLY -- TGS_REQ (with peer's TGT) -- TGS_REP
+
+			Heimdal には KRB_AP_ERR_USER_TO_USER_REQUIRED
+			というエラーが定義されているので、CREATE に対して
+			REPLY (KRB_AP_ERR_USER_TO_USER_REQUIRED)
+			が帰ってきた場合に、GETTGT に入るという動作も
+			可能かも。
+			よく見ると clarifications にも定義されてた。
+
+	KINK
+		ok	CREATE -- REPLY
+		ok	CREATE -- REPLY -- ACK   (i.e. 3-way handshake)
+		ok	DELETE -- REPLY
+		ok	STATUS -- REPLY
+
+		<memo>
+		CREATE は今のところ、SADB_ACQUIRE の satype や、
+		SPD を見ていない。決めうち。
+
+		現在 DELETE では、kink_handle にぶら下がっている SPI を
+		全部消してしまう。
+
+		rekeying は、SADB_EXPIRE を受けて CREATE している。
+		その後 DELETE はしていない。
+		</memo>
+
+  * エラーハンドリング
+	KINK_ERROR			送	受
+	------------------------------------------
+		KINK_OK			never	ok
+		KINK_PROTOERR		ok	ok
+		KINK_INVDOI		ok	ok
+		KINK_INVMAJ		ok	ok
+		KINK_INVMIN		ok	ok
+		KINK_INTERR		..	ok
+		KINK_BADQMVERS		ok	ok
+		未定義			never	ok
+
+	KINK_KRB_ERROR				送	受
+	--------------------------------------------------
+		KRB_AP_ERR_BAD_INTEGRITY	ok	ok?
+		KRB_AP_ERR_TKT_EXPIRED		ok	ok
+		KRB_AP_ERR_SKEW			ok	ok?
+		KRB_AP_ERR_NOKEY		ok	ok?
+		KRB_AP_ERR_BADKEYVER		ok	ok?
+		その他				TBD	TBD
+
+		TKT_EXPIRED 時のトランザクションやり直し	ok
+
+		ERR_SKEW 時の処理
+		[kink-05 5.1.4 (page 18), 7.1 (page 27)]
+		    ctime に時刻を入れて返す			ok
+		    ctime で受けとった時刻を元にオフセット	ok
+
+  * SAD, SPD
+				送	受
+	----------------------------------
+	SADB_GETSPI		ok	ok
+	SADB_UPDATE		ok	NG
+	SADB_ADD		ok	NG
+	SADB_DELETE		ok?	ok?
+	SADB_ACQUIRE		NG	ok	# XXX satype 見ていない
+	SADB_REGISTER		ok	NG
+	SADB_EXPIRE		never	ok
+	SADB_FLUSH
+	SADB_DUMP
+
+	PF_KEY メッセージの再送はまだ実装されていない。タイムアウトしたら
+	トランザクションが失敗する。
+
+	ACQUIRE に失敗した時に、errno を返していない。
+
+  * ISAKMP
+	with CREATE, REPLY-to-CREATE
+		SA			ok
+		Nonce (Ni)		ok
+		Nonce (Nr, 3-way)	ok
+		[KE]			NG
+		[ID]			BROKEN (*1)
+		[Notification]		NG
+
+		/*
+		 * [kink-05 4.3 (page 7), 4.4 (page 9),...]
+		 */
+		/*
+		 * (*1) ID には tunnel のときな selector を入れる。
+		 * transport の時は必要ないと思う。
+		 */
+
+	with DELETE, REPLY-to-DELETE
+		Delete			ok
+		[Notification]		IN PROGRESS
+
+		/*
+		 * 送られてきた Delete で指定された SPI がなかったら
+		 * Notification を返すようになった。
+		 * initiator がいきなり Notification を送る状況は
+		 * ありえるか?
+		 */
+
+	with STATUS, REPLY-to-STATUS
+		[Notification]		NG
+
+  * KINK misc
+	handle epoch change (DPD)			ok
+	[kink-05 4.4.2 (page 10)]
+
+	aggressive? DPD					NO IDEA
+
+	multiple KINK_ISAKMP				NG
+	[kink-05 5.1.7 (page 21)]
+
+	randomized rekeying time			NG
+	[kink-05 4.4.1 (page 9)]
+
+	replay protection (by krb)			ok
+
+	DELETE grace timer				ok
+
+  * spmd
+	LOGIN		ok
+	NS		never?
+	POLICY		IN PROGRESS
+	FQDN		ok (only QUERY subcommand)
+	SLID		ok
+	STAT		never
+	QUIT		ok
+
+  * libracoonify
+	cf		IN PROGRESS
+	if_pfkeyv2	done
+	rc_type		IN PROGRESS
+		ところで rc_type は 8 ビットなのか (struct rcpfk_msg)
+		もしかして rcpfk_msg では PF_KEY type を使うべき?
+	vmbuf		done
+	plog		IN PROGRESS
+
+  * IANA considerations
+	ポート番号: TBD (デフォルトでは 4174 を使用)
+		registered 領域を勝手に使ってる。
+
+	ISAKMP ペイロードタイプ: TBD (デフォルトでは BASE = 14)
+		これは -04 あたりまでの i-d に書かれていた番号。
+		すでに GDOI にとられたので、変更の必要あり。
+		private に移動すべきか。
+
+
+2. 動作環境
+===========
+
+2-1. OS
+=======
+	NetBSD 2.0
+	FreeBSD 4.10, 5.3
+	Debian/GNU Linux 3.0 with kernel 2.6.x
+
+2-2. ライブラリ
+===============
+	Kerberos ライブラリ
+		Heimdal-0.6.x または MIT krb5-1.3.x
+	暗号ライブラリ
+		OpenSSL-0.9.[67]
+	libracoon
+
+	- Heimdal-current では bbkk_heimdal.c を変更しないと
+	  動かない。
+	- MIT krb5 はあまりテストしていない。
+
+
+3. spec 補完
+============
+  * PRF
+	draft-ietf-krb-wg-crypto-07.txt
+	draft-raeburn-krb-rijndael-krb-06.txt
+	に定義されている prf。
+
+  * KRB-ERROR checksum [kink-06 7.1 and 5.1.4]
+	KRB-ERROR にはつけない。(そもそも RFC 1510 では checksum は
+	付けられない)
+	KINK の checksum をつける。
+
+
+4. KRB5KRB_AP_ERR_SKEW の取り扱いの実装
+=======================================
+
+4-1. 方針
+=========
+
+  a. Kerberos ライブラリには手を入れず、kinkd の側で頑張る。
+
+      利点
+	- エンドユーザに libkrb5 を置き換えてもらう手間がないので、
+	  手軽に使える。
+      欠点
+	- private な構造体/関数に手を出す必要がある。
+	  → ライブラリのバージョンに大きく依存。
+
+  b. 素直にライブラリにパッチを当てる。
+
+      利点
+	- おそらく素直に実装できる。
+      欠点
+	- kinkd 使う人は libkrb5 を置き換えて or
+	  別のパスに kinkd 用のを置いて or スタティックリンクして
+	  ください、と言わなきゃいけない。
+	- やっぱりライブラリのバージョンに依存。
+
+  c. パッチ当てたライブラリを一緒に配布する。
+	ええー
+
+	実は一番確実?
+	lisence は?
+	どれつかうの? mit, heimdal, shishi, ...
+
+4-2. 現在の実装
+===============
+
+	「a. Kerberos ライブラリには手を入れず、kinkd の側で頑張る。」
+	の方向。
+
+  4-2-1. ERR_SKEW が起きた時の処理
+
+	krb5_rd_req のサブセットの機能を持つ関数
+	krb5e_force_get_key によって、鍵などを取り出し auth_context を
+	作成する。
+
+  4-2-1. AP_REQ を作成する際の時刻の調整
+
+    Heimdal
+	krb5_context に kdc_sec_offset, kdc_usec_offset という
+	メンバがある。
+	これを利用し、krb5_mk_req_extended() する瞬間のみ時刻をずらす。
+
+    MIT
+	krb5_get_time_offsets(), krb5_set_time_offset() という
+	(private) 関数があり、krb5_context に対して時刻のオフセットを
+	設定できる。
+	これを利用し、krb5_mk_req_extended() する瞬間のみ時刻をずらす。
+
+4-3. おまけ
+===========
+	clarifications-06 3.1.5 AS を用いた時刻調整について書いてある。
+
+	MIT: デフォルトでやる。
+	Heimdal: [libdefaults] kdc_timesync オプション
+	(ちゃんと nonce 使ってるかどうかは未確認)
+
+	4-2 で述べた時刻調整の実装は、この機能を濫用している。
+
+
+5. 内部のメモ
+=============
+
+5-1. ファイル構成
+=================
+	スタートアップ、コンフィグのロード
+		main.c
+	メインループ, signal, pfkey.c からの callback
+		session.c
+	KINK のメッセージハンドリング, イベントハンドラ
+		base.c
+	スケジューラキューの管理
+		scheduler.c
+	KINK パケット/ペイロードの encode/decode
+		kink_fmt.c
+	KINK の暗号周り (KEYMAT 生成, PRF, checksum)
+		kink_crypto.c
+		oakley.c
+	KINK peer の管理
+		peer.c
+		dpd.c
+	ISAKMP ペイロードの encode/decode
+		isakmp.c (*)
+		isakmp_quick.c (*)
+		isakmp_inf.c (*)
+	proposal の生成、チェック
+		ipsec_doi.c (*)
+		proposal.c (*)
+	設定ファイル操作
+		kink_conf.c
+	Kerberos5 ライブラリ周り
+		bbkk_heimdal.c
+		bbkk_mit.c
+	OpenSSL 周り
+		crypto_openssl.c (*)
+	PF_KEY 周り
+		pfkey.c (*)
+	その他
+		algorithm.c (*)
+		etchosts.c
+		handle.c
+		sockmisc.c (*)
+		strnames.c (*)
+		utils.c
+		rct_ipsecdoi.c
+
+	(*) マークのファイルは racoon1 からの派生
+	scheduler は racoon1 とは別物。
+	pfkey.c はもともと派生だったが、libracoon 化に伴う変更のため、
+	あまり原形はとどめていない。
+
+	checksum の計算は libkrb5 をそのまま使用。
+	OpenSSL は KINK_ENCRYPT と prf の計算に使用。
+	暗号/HMAC アルゴリズムの鍵長の取得にも使用。
+	(KEYMAT を計算する時に、ESP_3DES だから何ビットか、とか)
+
+5-2. データ構造
+===============
+	struct kink_global (@handle.h)
+		KINK daemon のグローバルな状態 (自分の principal name,
+		krb5_context, 現在使用中の TGT, epoch など) を保持する。
+		プロセス内で 1 つだけ生成される。
+
+	struct kink_handle (@handle.h)
+		1 つの KINK transaction につき 1 つ生成され、状態を保持する。
+		例外は、
+		- responder からエラーが返ってきた直後に再試行する場合は、
+		  別 transaction ではあるが、kink_handle は使い回す。
+		  (チケットの有効期限が切れている場合、SKEW の場合)
+		- ACK メッセージをパースするときは、同一 transaction
+		  ではあるが、パースしてみるまで分からないので、
+		  kink_handle は新しいものが割り当てられている。
+
+		すべての kink_handle はスケジューラ用の単一のキュー
+		(kink_global->schedq) につながれる。
+
+	struct ph2handle (@handle.h)
+		kink_handle と一対一に対応し、ISAKMP payload の内容を保持する。
+		別の構造体になっているのは、racoon1 のコードを使い回すため。
+
+	struct kink_state (@handle.h)
+		KINK transaction の状態 (GETSPI 待ちである, REPLY 待ちで
+		ある, ...) を示す。
+		グローバルに固定個数の state が用意されていて、
+		kink_handle から指される。
+
+		状態一覧
+		 - Initiator の状態
+			I_GETSPI	SADB_GETSPI 発行後、返事待ち。
+			I_CREATE	CREATE 送信後、REPLY 待ち。
+			I_AGING		3-way で ACK を送ったの場合に、
+					REPLY の再送があるかもしれないので、
+					状態を保持。
+			I_STALE		transaction 完了。
+					SADB_EXPIRE に備えて待機。
+			I_DELETE	DELETE 送信後、REPLY 待ち。
+			I_DELETE_HALF	REPLY 受信後、inbound SA を消すまでの
+					grace timer 待ち。
+			I_STATUS	STATUS 送信後、REPLY 待ち。
+		 - Responder の状態
+			R_GETSPI	SADB_GETSPI 発行後、返事待ち。
+			R_REPLY		REPLY 送信後、ACK 待ち (when 3-way)
+			R_AGING		REPLY 送信後、command の再送が来るかも
+					しれないので状態を保持。
+			R_STALE		transaction 完了。
+			R_DELETE_RECV	DELETE 受信直後。特に何かを待つ
+					わけではなく、即座に R_DELETE_HALF に
+					遷移する。rekeying の際に、古い handle
+					が、新たな CREATE 用の handle と、
+					DELETE 用の handle を生むため、
+					片方 (DELETE 用) をキューに入れるとき
+					に使う。
+			R_DELETE_HALF	REPLY 送信後、inbound SA を消すまでの
+					grace timer 待ち。
+			I_REKEYED	rekey の際の古い handle を
+					後で消すために使われる。
+		 - その他の状態
+			NONE		kink_handle が生成された直後。
+
+	struct kink_addr (@handle.h)
+		自ノードがもっているアドレス。
+
+		定期的にアドレスをチェックし、アドレスが生成/削除されていたら、
+		それに応じて kink_addr のリストも更新する。
+		ただし、kink_addr は struct kink_handle から参照されるため、
+		アドレスが消えても kink_addr をすぐに消せないことがある。
+		そのため、参照カウント (kink_addr->ref_cnt) で管理されている。
+
+	struct kink_peer (@peer.h)
+		他の KINK ノードの情報 (そのノードに対するサービスチケット、
+		epoch など) を保持する。
+		principal name をキーとして identify される。
+
+		すべての kink_peer は、kink_global->peerlist または
+		kink_global->deadpeerlist のどちらか一方につながれる。
+
+
+
+****************************************************************
+多分以下は古い
+****************************************************************
+
+3.3. 内部処理関数
+=================
+
+□ KINK メッセージのエンコード/デコード (kink_fmt.c)
+
+  * CREATE メッセージのエンコード
+    ldata *kink_encode_create(struct kink_handle *kh);
+
+    パラメータ
+	kh                KINK transaction の状態
+	kh->krb_ap_req    Kerberos の AP_REQ パケット
+	kh->in_isakmp     ISAKMP ペイロード
+	kh->auth_context  パケット暗号化用の authentication context
+    返り値
+	生成されたパケット
+
+  * REPLY メッセージのエンコード
+    ldata *kink_encode_reply(struct kink_handle *kh);
+
+  * CREATE/REPLY メッセージのデコード
+    int kink_decode_generic(struct kink_handle *kh, ldata *packet);
+
+    パラメータ
+	kh
+	packet            受信したパケット全体
+    出力
+	kh->xid           受信した XID
+	kh->flags         受信した flags
+	kh->error_code    KINK_ERROR のエラーコード (失敗した場合)
+	kh->ap_req, kh->ap_rep, kh->krb_error,
+	kh->isakmp, kh->encrypt, kh->error
+	                  デコード結果
+    返り値
+	0=成功, non-0=失敗
+
+  * KINK_ENCRYPT ペイロードのデコード
+    int kink_decode_kink_encrypt(struct kink_handle *kh);
+
+    パラメータ
+	kh
+	kh->encrypt       デコード対象の KINK_ENCRYPT ペイロード
+	kh->auth_context  デコード用の authentication context
+    出力
+	kh->ap_req, kh->ap_rep, kh->krb_error,
+	kh->isakmp, kh->encrypt, kh->error
+	                  デコード結果
+	kh->error_code    KINK_ERROR のエラーコード (失敗した場合)
+	                  (XXX FIX ME: 失敗してもセットされないこともある)
+    返り値
+	0=成功, non-0=失敗
+    メモ
+	例えば CREATE メッセージは、
+	 1. kink_decode_generic() でデコードする
+	 2. KRB_AP_REQ が取得できるので、checksum のチェックを行なう
+	 3. KRB_AP_REQ を用いて、
+	    kink_decode_kink_encrypt() で完全にデコードする
+
+□ KINK ペイロードのエンコード/デコード (kink_fmt.c)
+
+  * make_kink_*
+  * read_kink_*
+
+□ スケジューラ (scheduler.c)
+	(racoon1 のスケジューラとは別物)
+
+  * タイムアウトした kink_handle の callback と、次回タイムアウトの計算
+    struct timeval *scheduler(struct kink_global *kg, struct timeval *tv);
+
+    パラメータ
+	kg                KINK daemon のグローバル状態
+	tv                返り値を格納するためのバッファ
+    返り値
+	次回タイムアウト時刻
+
+  * 登録
+    void sched_register(struct kink_handle *kh);
+
+  * 登録解除
+    void sched_unregister(struct kink_handle *kh);
+
+  * タイムアウトした kink_handle の、次のタイムアウトを待つ。
+    2 倍の exponential backoff。
+    void sched_waitnext(struct kink_handle *kh);
+
+  * タイムアウト時刻のリセット
+    void sched_resettimer(struct kink_handle *kh);
+
+
+3.4. 動作のながれ
+=================
+
+□ メインループ @session.c
+	各種ソケットと、スケジューラが計算した次回タイムアウトに
+	対してイベント待ち
+		PF_KEYv2 ソケット
+		racoond ソケット (TCP)
+		自ノードのアドレス 1 つづつに用意したソケット (UDP, bound)
+		+ タイムアウトの指定
+
+	タイムアウトした場合
+		スケジューラに制御を返し、
+		スケジューラからタイムアウトハンドラが呼ばれる。
+
+		scheduler() @scheduler.c
+		→ (*kink_handle->state->timeout)() @schduler.c
+		   = timeout_i_getspi() @base.c
+		or = timeout_r_create() @base.c
+		...
+		or = periodic_update_addrs() @session.c
+
+	PF_KEYv2 ソケットでイベントが発生した場合
+		handle_pfkey() @pfkey.c
+		→ (*callback_acquire)() @pfkey.c
+		   = callback_acquire() @session.c
+		     → acquire() @base.c
+		          → initiate1() @base.c
+		→ (*callback_expire)() @pfkey.c
+		   = callback_expire() @session.c
+		     → expire() @base.c
+		          → initiate1() @base.c
+		→ (*job->callback)() @pfkey.c
+		   = callback_i_getspi() @base.c
+		or = callback_r_getspi() @base.c
+
+	racoond ソケットでイベントが発生した場合
+	(今のところ FQDN QUERY に対する返事のみ)
+		racoond_handler() @racoond_if.c
+		→ racoond_read() @racoond_if.c
+		     → parse_rep_fqdn_query() @racoond_if.c
+		          → (*job->callback)() @racoond_if.c
+		             = callback_i_racoond() @base.c
+
+	ネットワークソケットでイベントが発生した場合
+		receive() @base.c
+		→ handle_create() @base.c
+		→ handle_reply() @base.c
+
+□ SADB_ACQUIRE を受信した時
+	メインループ
+	→ handle_pfkey() @pfkey.c
+	    → pk_recvacquire() @pfkey.c
+	        → (*callback_acquire)() @pfkey.c
+	           = callback_acquire @session.c
+	            → acquire() @base.c
+	                → initiate1() @base.c
+	                    kink_handle の生成。
+	                    SADB_ACQUIRE から必要な情報を取り出す。
+	                    (今のところアドレスしか見ていない。)
+	                    responder の principal name を取得するため、
+	                    FQDN QUERY を racoond に投げて、いったん戻る。
+	メインループ
+	→ racoond_handler() @racoond_if.c
+	    → (*job->callback)() @racoond_if.c
+	       = callback_i_racoond() @base.c
+	        → initiate2() @base.c
+	            proposal 生成。
+	            SADB_GETSPI をカーネルに送信。いったん戻る。
+	メインループ
+	→ handle_pfkey() @pfkey.c
+	    → pk_recvgetspi() @pfkey.c
+	        → (*job->callback)() @pfkey.c
+	           = callback_i_getspi() @base.c
+	            → initiate3() @base.c
+	                ISAKMP ペイロードの生成。
+	                KRB_AP_REQ の生成。
+	                    Service Ticket がなければ取得。
+	                    TGT がなければ取得。
+			KEYMAT の計算
+	                inbound SA の生成。
+	                CREATE コマンドを送信。いったん戻る。
+	メインループ
+	→ receive() @base.c
+	    → read_udp_pacet() @base.c
+	    → handle_reply() @base.c
+	        受信した XID から kink_handle を引っかける。
+	        REPLY のデコード
+
+	        Kerberos 的に成功していれば、AP_REP が返ってくるはずなので、
+		→ initate4() @base.c
+	            epoch のチェック。
+	            ISAKMP ペイロードのデコード。
+	            1st proposal が認められたか確認。
+	            KEYMAT の計算
+	            outbound SA の生成。
+	            鍵交換完了。戻る。
+	rekeying されずに放置されたら、いずれタイムアウトして
+	→ scheduler() @scheduler.c
+	    → timeout_i_stale() @base.c
+	        → initiate6() @base.c
+	            krb authentication contexts 解放。
+	            kink_handle 消滅。
+
+□ CREATE メッセージを受信した時
+	メインループ
+	→ receive() @base.c
+	    → read_udp_packet() @base.c
+	    → handle_create( @base.c
+	        → respond_to_auth_command()
+	            CREATE のデコード。
+	            KRB_AP_REQ が付いているはずなので、取り出してチェック。
+	                authentication context はここで出来る。
+	            KINK_ENCRYPT もデコード。
+	            チケットに付いている cname から、
+	            initiator の principal name を取得。
+	            epoch のチェック。
+	            → respond1() @base.c
+	                ISAKMP ペイロードのデコード。
+	                proposal をチェック。
+	                SADB_GETSPI。いったん戻る。
+	メインループ
+	→ handle_pfkey() @pfkey.c
+	    → pk_recvgetspi() @pfkey.c
+	        → (*job->callback)() @pfkey.c
+	           = callback_r_getspi() @base.c
+	            → resopnd2() @base.c
+	                ISAKMP ペイロードの生成。
+	                KEYMAT の計算。
+	                inbound SA の生成。
+	                outbound SA の生成。
+	                REPLY メッセージを送信。
+	                鍵交換とりあえず完了。戻る。
+	REPLY メッセージが落ちて、CREATE の再送が来るかもしれないので、
+	しばらく R_AGING 状態で待機。
+
+	(メモ: responder の場合、鍵交換を完了したらすぐに、
+	 initiator の場合、再送の可能性のある時刻を過ぎたら
+	 (I_STALE になったら)、auth context は消しても良いが、
+	 今の実装は、kink_handle を消す時まで消してない。)
+
+3.5. socket 周り
+================
+	PF_KEYv2 ソケット
+		session()@session.c 内のローカル変数 fd_pfkey および
+		kink_global->fd_pfkey にグローバルに保持する。
+	racoond ソケット
+		localhost に対する PF_UNSPEC/SOCK_STREAM なソケット。
+
+		session()@session.c 内のローカル変数 fd_rcnd および
+		kink_global->fd_rcnd にグローバルに保持する。
+	KINK ソケット
+		自分の持っているアドレス 1 つにつき 1 つ作成し、
+		そのアドレスに bind する。
+		SOCK_DGRAM なソケット。
+		PF_INET6 の場合は、IPV6_V6ONLY ソケットオプションをセットする。
+		今のところ per-socket policy は設定していない。
+		(→ よって、SPD で KINK のポートを IPsec しないように設定
+		しておかないと、はまる)
+
+		struct kink_addr に格納し、
+		session.c 内の static 変数 addrlist につなげる。
+
+	ソケットに対するイベント待ちには select が使われているが、
+	poll でも kqueue でも /dev/poll でも epoll でもいけるはず。

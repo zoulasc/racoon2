@@ -1,0 +1,7 @@
+#!/bin/sh
+PATH=/usr/local/ipsec/sbin:$PATH
+
+for name_server in $new_domain_name_servers
+do
+  spmdctl ns add $name_server
+done

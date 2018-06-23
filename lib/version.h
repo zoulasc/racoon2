@@ -1,0 +1,1 @@
+#define RACOON2_VERSION "20100526a"
