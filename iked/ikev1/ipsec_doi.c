@@ -220,7 +220,9 @@ get_ph1approval(iph1, pair)
 	rc_vchar_t *newsa;
 	struct isakmpsa *sa, tsa;
 	struct prop_pair *s, *p;
+#if 0
 	int prophlen;
+#endif
 	int i;
 
 	if (iph1->approval) {
@@ -232,8 +234,10 @@ get_ph1approval(iph1, pair)
 		if (pair[i] == NULL)
 			continue;
 		for (s = pair[i]; s; s = s->next) {
+#if 0
 			prophlen = sizeof(struct isakmp_pl_p)
 					+ s->prop->spi_size;
+#endif
 			/* compare proposal and select one */
 			for (p = s; p; p = p->tnext) {
 				sa = get_ph1approvalx(p, iph1->proposal,
@@ -254,8 +258,10 @@ get_ph1approval(iph1, pair)
 			if (pair[i] == NULL)
 				continue;
 			for (s = pair[i]; s; s = s->next) {
+#if 0
 				prophlen = sizeof(struct isakmp_pl_p)
 						+ s->prop->spi_size;
+#endif
 				for (p = s; p; p = p->tnext) {
 					print_ph1mismatched(p,
 							    iph1->proposal);
@@ -1238,7 +1244,7 @@ get_proppair(sa, mode)
 			"failed to get buffer.\n");
 		return NULL;
 	}
-	memset(pair, 0, sizeof(pair));
+	memset(pair, 0, sizeof(*pair));
 
 	bp = (caddr_t)(sab + 1);
 	tlen = sa->l - sizeof(*sab);
