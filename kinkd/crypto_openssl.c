@@ -239,7 +239,7 @@ eay_aes_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	rc_vchar_t *res;
 	AES_KEY k;
 
-	if (AES_set_encrypt_key(key->v, key->l << 3, &k) < 0)
+	if (AES_set_encrypt_key((unsigned char *)key->v, key->l << 3, &k) < 0)
 		return NULL;
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL) {
@@ -247,7 +247,7 @@ eay_aes_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		EXITREQ_NOMEM();
 		return NULL;
 	}
-	AES_cbc_encrypt(data->v, res->v, data->l, &k, iv->v, AES_ENCRYPT);
+	AES_cbc_encrypt((unsigned char *)data->v, (unsigned char *)res->v, data->l, &k, (unsigned char *)iv->v, AES_ENCRYPT);
 
 	return res;
 }
@@ -258,7 +258,7 @@ eay_aes_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	rc_vchar_t *res;
 	AES_KEY k;
 
-	if (AES_set_decrypt_key(key->v, key->l << 3, &k) < 0)
+	if (AES_set_decrypt_key((unsigned char *)key->v, key->l << 3, &k) < 0)
 		return NULL;
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL) {
@@ -266,7 +266,7 @@ eay_aes_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		EXITREQ_NOMEM();
 		return NULL;
 	}
-	AES_cbc_encrypt(data->v, res->v, data->l, &k, iv->v, AES_DECRYPT);
+	AES_cbc_encrypt((unsigned char *)data->v, (unsigned char *)res->v, data->l, &k, (unsigned char *)iv->v, AES_DECRYPT);
 
 	return res;
 }
@@ -291,7 +291,7 @@ eay_aes_cts_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	rc_vchar_t *res;
 	AES_KEY k;
 
-	if (AES_set_encrypt_key(key->v, key->l << 3, &k) < 0)
+	if (AES_set_encrypt_key((unsigned char *)key->v, key->l << 3, &k) < 0)
 		return NULL;
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL) {
@@ -299,7 +299,7 @@ eay_aes_cts_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		EXITREQ_NOMEM();
 		return NULL;
 	}
-	AES_cts_encrypt(data->v, res->v, data->l, &k, iv->v, AES_ENCRYPT);
+	AES_cts_encrypt((unsigned char *)data->v, (unsigned char *)res->v, data->l, &k, (unsigned char *)iv->v, AES_ENCRYPT);
 
 	return res;
 }
@@ -310,7 +310,7 @@ eay_aes_cts_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	rc_vchar_t *res;
 	AES_KEY k;
 
-	if (AES_set_decrypt_key(key->v, key->l << 3, &k) < 0)
+	if (AES_set_decrypt_key((unsigned char *)key->v, key->l << 3, &k) < 0)
 		return NULL;
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL) {
@@ -318,7 +318,7 @@ eay_aes_cts_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		EXITREQ_NOMEM();
 		return NULL;
 	}
-	AES_cts_encrypt(data->v, res->v, data->l, &k, iv->v, AES_DECRYPT);
+	AES_cts_encrypt((unsigned char *)data->v, (unsigned char *)res->v, data->l, &k, (unsigned char *)iv->v, AES_DECRYPT);
 
 	return res;
 }
@@ -348,17 +348,17 @@ AES_cts_encrypt(const unsigned char *in, unsigned char *out,
 		memcpy(lastblk, ivec, AES_BLOCK_SIZE);
 		for (i = 0; i < fraglen; i++)
 			lastblk[i] ^= (in + cbclen + AES_BLOCK_SIZE)[i];
-		AES_encrypt(lastblk, out + cbclen, key);
+		AES_encrypt((unsigned char *)lastblk, out + cbclen, key);
 	} else {
 		/* Decrypt the last plainblock. */
-		AES_decrypt(in + cbclen, lastblk, key);
+		AES_decrypt(in + cbclen, (unsigned char *)lastblk, key);
 		for (i = 0; i < fraglen; i++)
 			(out + cbclen + AES_BLOCK_SIZE)[i] =
 			    lastblk[i] ^ (in + cbclen + AES_BLOCK_SIZE)[i];
 
 		/* Decrypt the second last block. */
 		memcpy(lastblk, in + cbclen + AES_BLOCK_SIZE, fraglen);
-		AES_decrypt(lastblk, out + cbclen, key);
+		AES_decrypt((unsigned char *)lastblk, out + cbclen, key);
 		if (cbclen == 0)
 			for (i = 0; i < AES_BLOCK_SIZE; i++)
 				(out + cbclen)[i] ^= ivec[i];
@@ -738,7 +738,7 @@ eay_sha1_final(caddr_t c)
 	if ((res = rc_vmalloc(SHA_DIGEST_LENGTH)) == 0)
 		return(0);
 
-	SHA1_Final(res->v, (SHA_CTX *)c);
+	SHA1_Final((unsigned char *)res->v, (SHA_CTX *)c);
 	(void)free(c);
 
 	return(res);
@@ -792,7 +792,7 @@ eay_md5_final(caddr_t c)
 	if ((res = rc_vmalloc(MD5_DIGEST_LENGTH)) == 0)
 		return(0);
 
-	MD5_Final(res->v, (MD5_CTX *)c);
+	MD5_Final((unsigned char *)res->v, (MD5_CTX *)c);
 	(void)free(c);
 
 	return(res);
