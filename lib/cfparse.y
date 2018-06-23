@@ -1712,7 +1712,7 @@ rcf_dhgroupnumer_fromname(const char *str)
 	int n;
 	char *bp;
 	struct cf_list *new;
-	rcf_t type;
+	rc_type type;
 
 	n = strtoll(str, &bp, 10);
 
