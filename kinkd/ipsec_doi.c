@@ -654,7 +654,7 @@ get_proppair_quickmode(rc_vchar_t *sa)
 			"failed to get buffer.\n");
 		return NULL;
 	}
-	memset(pair, 0, sizeof(pair));
+	memset(pair, 0, sizeof(*pair));
 
 	bp = (caddr_t)(sab + 1);
 	tlen = sa->l - sizeof(*sab);
@@ -2034,7 +2034,7 @@ ipsecdoi_sockaddr2id(struct sockaddr *saddr, unsigned int prefixlen, unsigned in
 
 	/* set prefix */
 	if (len2) {
-		unsigned char *p = new->v + sizeof(struct ipsecdoi_id_b) + len1;
+		unsigned char *p = (unsigned char *)new->v + sizeof(struct ipsecdoi_id_b) + len1;
 		unsigned int bits = prefixlen;
 
 		while (bits >= 8) {
@@ -2141,7 +2141,7 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		plen = 0;
 		max = alen <<3;
 
-		p = buf->v
+		p = (unsigned char *)buf->v
 			+ sizeof(struct ipsecdoi_id_b)
 			+ alen;
 
