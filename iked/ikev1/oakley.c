@@ -585,7 +585,6 @@ oakley_compute_hash3(struct ph1handle *iph1, uint32_t msgid, rc_vchar_t *body)
 {
 	rc_vchar_t *buf = 0, *res = 0;
 	int len;
-	int error = -1;
 
 	/* create buffer */
 	len = 1 + sizeof(uint32_t) + body->l;
@@ -609,8 +608,6 @@ oakley_compute_hash3(struct ph1handle *iph1, uint32_t msgid, rc_vchar_t *body)
 	res = oakley_prf(iph1->skeyid_a, buf, iph1);
 	if (res == NULL)
 		goto end;
-
-	error = 0;
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH computed:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
@@ -637,7 +634,6 @@ oakley_compute_hash1(struct ph1handle *iph1, uint32_t msgid, rc_vchar_t *body)
 	rc_vchar_t *buf = NULL, *res = NULL;
 	char *p;
 	int len;
-	int error = -1;
 
 	/* create buffer */
 	len = sizeof(uint32_t) + body->l;
@@ -663,8 +659,6 @@ oakley_compute_hash1(struct ph1handle *iph1, uint32_t msgid, rc_vchar_t *body)
 	if (res == NULL)
 		goto end;
 
-	error = 0;
-
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH computed:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
 
@@ -687,7 +681,6 @@ oakley_ph1hash_common(struct ph1handle *iph1, int sw)
 	rc_vchar_t *buf = NULL, *res = NULL, *bp;
 	char *p, *bp2;
 	int len, bl;
-	int error = -1;
 #ifdef HAVE_GSSAPI
 	rc_vchar_t *gsstokens = NULL;
 #endif
@@ -780,8 +773,6 @@ oakley_ph1hash_common(struct ph1handle *iph1, int sw)
 	if (res == NULL)
 		goto end;
 
-	error = 0;
-
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH (%s) computed:\n",
 		iph1->side == INITIATOR ? "init" : "resp");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
@@ -811,7 +802,6 @@ oakley_ph1hash_base_i(struct ph1handle *iph1, int sw)
 	rc_vchar_t *hash = NULL;	/* for signature mode */
 	char *p;
 	int len;
-	int error = -1;
 
 	/* sanity check */
 	if (iph1->etype != ISAKMP_ETYPE_BASE) {
@@ -925,8 +915,6 @@ oakley_ph1hash_base_i(struct ph1handle *iph1, int sw)
 	if (res == NULL)
 		goto end;
 
-	error = 0;
-
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH_I computed:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
 
@@ -950,7 +938,6 @@ oakley_ph1hash_base_r(struct ph1handle *iph1, int sw)
 	rc_vchar_t *hash = NULL;
 	char *p;
 	int len;
-	int error = -1;
 
 	/* sanity check */
 	if (iph1->etype != ISAKMP_ETYPE_BASE) {
@@ -1048,8 +1035,6 @@ oakley_ph1hash_base_r(struct ph1handle *iph1, int sw)
 	res = oakley_prf(hash, buf, iph1);
 	if (res == NULL)
 		goto end;
-
-	error = 0;
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH computed:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
