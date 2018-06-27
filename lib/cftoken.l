@@ -73,7 +73,6 @@ static char rcf_linebuf[CF_LINEBUFSIZE];
 
 	/* debug message */
 #ifdef CF_DEBUG
-#define YYDEBUG 1
 #define DP \
 	if (cf_debug) { \
 		fprintf(CF_ERRDEV, "%s:%d:%d[%s] len=%zu\n", \

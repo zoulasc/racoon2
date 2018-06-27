@@ -636,6 +636,8 @@ build_os
 build_vendor
 build_cpu
 build
+MKDEP
+MKEP
 SET_MAKE
 INSTALL_DATA
 INSTALL_SCRIPT
@@ -701,7 +703,9 @@ enable_debug
 enable_pcap
 enable_pedant
 enable_secure
+enable_natt
 enable_fix_glibc_getifaddrs
+with_openssl_libdir
 '
       ac_precious_vars='build_alias
 host_alias
@@ -749,7 +753,7 @@ sbindir='${exec_prefix}/sbin'
 libexecdir='${exec_prefix}/libexec'
 datarootdir='${prefix}/share'
 datadir='${datarootdir}'
-sysconfdir='${prefix}/etc'
+sysconfdir='${prefix}/etc/racoon2'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
 includedir='${prefix}/include'
@@ -1291,7 +1295,7 @@ Fine tuning of the installation directories:
   --bindir=DIR            user executables [EPREFIX/bin]
   --sbindir=DIR           system admin executables [EPREFIX/sbin]
   --libexecdir=DIR        program executables [EPREFIX/libexec]
-  --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
+  --sysconfdir=DIR        read-only single-machine data [PREFIX/etc/racoon2]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
   --libdir=DIR            object code libraries [EPREFIX/lib]
@@ -1331,6 +1335,7 @@ Optional Features:
   --enable-pcap           use libpcap to output decoded packet for debugging
   --disable-pedant        no pedantic compiler options
   --enable-secure         build a secure version
+  --enable-natt           enable NAT-T support
   --disable-fix-glibc-getifaddrs
                           doesn't workaround a bug of IPv6 scope ID
                           (glibc-2.3.3 or less).
@@ -1339,6 +1344,8 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-kernel-build-dir=DIR       specify the directory built the kernel
+  --with-openssl-libdir=DIR
+                          specify openssl library directory
 
 Some influential environment variables:
   CC          C compiler command
@@ -3524,7 +3531,65 @@ $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
 
-RC_PROG_MKDEP
+
+
+for ac_prog in mkdep
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MKDEP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKDEP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKDEP="$MKDEP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MKDEP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKDEP=$ac_cv_path_MKDEP
+if test -n "$MKDEP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDEP" >&5
+$as_echo "$MKDEP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MKDEP" && break
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking which program to make .depend" >&5
+$as_echo_n "checking which program to make .depend... " >&6; }
+if test -n "$MKDEP"; then
+	MKDEP="$MKDEP --"
+elif test x"$ac_cv_c_compiler_gnu" = xyes; then
+	MKDEP='shmkdep(){ $(CC) -MM "$$@" > .depend; }; shmkdep'
+else
+	MKDEP=":"
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDEP" >&5
+$as_echo "$MKDEP" >&6; }
+
 
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
@@ -4144,8 +4209,79 @@ fi
 done
 
 
-RC_CHECK_PFKEYV2_H
-RC_IF_NATT_ENABLE
+
+for ac_header in net/pfkeyv2.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "net/pfkeyv2.h" "ac_cv_header_net_pfkeyv2_h" "$ac_includes_default"
+if test "x$ac_cv_header_net_pfkeyv2_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NET_PFKEYV2_H 1
+_ACEOF
+
+fi
+
+done
+
+case $host in
+*linux*)
+	if test "$kernel_build_dir" != "no" ; then
+		OPTFLAG="$OPTFLAG -I${kernel_build_dir}/include"
+	else
+		for d in /usr/include "/lib/modules/`uname -r`/build/include"
+		do
+			if test -f "$d/linux/pfkeyv2.h" ; then
+				OPTFLAG="$OPTFLAG -I$d"
+				echo "$d added to the include path"
+				break
+			fi
+		done
+	fi
+	;;
+esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if --enable-natt option is specified" >&5
+$as_echo_n "checking if --enable-natt option is specified... " >&6; }
+# Check whether --enable-natt was given.
+if test "${enable_natt+set}" = set; then :
+  enableval=$enable_natt;
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if NAT-T is available" >&5
+$as_echo_n "checking if NAT-T is available... " >&6; }
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef HAVE_NET_PFKEYV2_H
+# include <net/pfkeyv2.h>
+#else
+# include <linux/pfkeyv2.h>
+#endif
+#ifdef SADB_X_EXT_NAT_T_TYPE
+natt_compilable
+#endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "natt_compilable" >/dev/null 2>&1; then :
+  enable_natt=yes
+else
+  enable_natt=no
+fi
+rm -f conftest*
+
+
+fi
+
+if test x"$enable_natt" = xyes; then
+
+$as_echo "#define ENABLE_NATT 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_natt" >&5
+$as_echo "$enable_natt" >&6; }
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
 $as_echo_n "checking for an ANSI C-conforming const... " >&6; }
@@ -4623,7 +4759,53 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-RC_WITH_OPENSSL_LIB
+
+openssl_libdir="none"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if --with-openssl-libdir option is specified" >&5
+$as_echo_n "checking if --with-openssl-libdir option is specified... " >&6; }
+
+# Check whether --with-openssl-libdir was given.
+if test "${with_openssl_libdir+set}" = set; then :
+  withval=$with_openssl_libdir; openssl_libdir=$withval
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $openssl_libdir" >&5
+$as_echo "$openssl_libdir" >&6; }
+if test "$openssl_libdir" != "none" ; then
+	if test -f "$openssl_libdir/lib/libcrypto.a"; then
+		LDFLAGS="$LDFLAGS -L$openssl_libdir/lib"
+		CPPFLAGS="$CPPFLAGS -I$openssl_libdir/include"
+	elif test -f "$openssl_libdir/libcrypto.a"; then
+		LDFLAGS="$LDFLAGS -L$openssl_libdir";
+		CPPFLAGS="$CPPFLAGS -I$openssl_libdir/include"
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: can't locate libcrypto.a" >&5
+$as_echo "$as_me: WARNING: can't locate libcrypto.a" >&2;}
+	fi
+else
+	for d in /usr/local /usr/local/openssl /usr/pkg /usr '' ; do
+		if test -f "$d/lib/libcrypto.a" ; then
+						{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using $d/lib/libcrypto.a" >&5
+$as_echo "using $d/lib/libcrypto.a" >&6; }
+			openssl_libdir="$d/lib"
+			LDFLAGS="$LDFLAGS -L$openssl_libdir"
+			case "$openssl_libdir" in
+			/lib|/usr/lib)	;;
+			*)		CPPFLAGS="$CPPFLAGS -I$d/include";;
+			esac
+			break
+		fi
+	done
+fi
+LIBS="-lcrypto $LIBS"
+case $host_os in
+*netbsd*)
+	case "$openssl_libdir" in
+	/lib|/usr/lib)	;;
+	*)	LDFLAGS="-Wl,-R$openssl_libdir $LDFLAGS" ;;
+	esac
+esac
+
 
 for ac_header in openssl/evp.h
 do :
@@ -4638,7 +4820,27 @@ fi
 done
 
 
-RC_CHECK_MAKE
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking make" >&5
+$as_echo_n "checking make... " >&6; }
+if ${MAKE-make} --version -f /dev/null 2>/dev/null | grep "GNU Make" >/dev/null; then
+	MAKE_TYPE=gmake
+elif ${MAKE-make} -f - bsd.pmake<<'EOT' 2>/dev/null | grep "^bsd\.src$" > /dev/null; then
+VAR1=SOMESTR
+.if $(VAR1) == "SOMESTR"
+.SUFFIXES: .pmake .src
+.src.pmake:
+	@echo ${.IMPSRC}
+bsd.src:
+.endif
+EOT
+	MAKE_TYPE=pmake
+else
+	MAKE_TYPE=unknown
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKE_TYPE" >&5
+$as_echo "$MAKE_TYPE" >&6; }
+
 
 if test $MAKE_TYPE = gmake; then
 	IF_GMAKE=''

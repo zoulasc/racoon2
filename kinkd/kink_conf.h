@@ -49,3 +49,5 @@ struct rcf_selector *get_selector(const rc_vchar_t *slid);
 struct rcf_selector *get_selector_by_fqdn(const char *str, rc_type dir);
 struct rcf_selector *get_selector_by_sa(const struct sockaddr *my_sa,
     const struct sockaddr *peers_sa);
+struct rcf_interface *rcf_interface_head;
+

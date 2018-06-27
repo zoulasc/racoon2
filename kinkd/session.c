@@ -341,7 +341,6 @@ update_addrs(void)
 	struct sockaddr *sa;
 	struct rc_addrlist *al0, *al;
 	struct kink_addr *ka, *ka_next;
-	extern struct rcf_interface *rcf_interface_head;
 
 	if ((al0 = get_kink_if_list()) == NULL)
 		return 1;
