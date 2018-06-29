@@ -93,6 +93,16 @@
 #include "sockmisc.h"
 
 #include "debug.h"
+#ifdef INET6
+/* Useful IPv6 macros and definitions (derived from NetBSD kernel) */
+#define _IN6MASK0        {{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
+#define _s6_addr32 __u6_addr.__u6_addr32
+#define _IN6_ARE_MASKED_ADDR_EQUAL(d, a, m)	(	\
+	(((d)->_s6_addr32[0] ^ (a)->_s6_addr32[0]) & (m)->_s6_addr32[0]) == 0 && \
+	(((d)->_s6_addr32[1] ^ (a)->_s6_addr32[1]) & (m)->_s6_addr32[1]) == 0 && \
+	(((d)->_s6_addr32[2] ^ (a)->_s6_addr32[2]) & (m)->_s6_addr32[2]) == 0 && \
+	(((d)->_s6_addr32[3] ^ (a)->_s6_addr32[3]) & (m)->_s6_addr32[3]) == 0 )
+#endif
 
 static int nostate1 (struct ph1handle *, rc_vchar_t *);
 static int nostate2 (struct ph2handle *, rc_vchar_t *);
@@ -2606,6 +2616,7 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 	uint16_t ulproto;
 	struct ipsecdoi_id_b *idb;
 	struct sockaddr_storage ss;
+	struct rc_addrlist *address;
 
 	idb = (struct ipsecdoi_id_b *)id->v;
 	switch (idb->type) {
@@ -2631,6 +2642,100 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 
 	default:
 		return FALSE;
+	}
+
+	for (address = addr; address; address = address->next) {
+
+		switch (SOCKADDR_FAMILY((struct sockaddr *)address->a.ipaddr)) {
+		case AF_INET:
+			if (SOCKADDR_FAMILY((struct sockaddr *)&ss) != AF_INET)
+				break;
+
+			/* If selector's port is any port, match the peer's port */
+
+			if (((struct sockaddr_in *)address->a.ipaddr)->sin_port == IPSEC_PORT_ANY)
+				((struct sockaddr_in *)address->a.ipaddr)->sin_port =
+				((struct sockaddr_in *)&ss)->sin_port;
+
+			/* If selector's address is any
+			 * address, match the peer's address */
+
+			if (((struct sockaddr_in *)address->a.ipaddr)->sin_addr.s_addr == 0) {
+				((struct sockaddr_in *)address->a.ipaddr)->sin_addr =
+				((struct sockaddr_in *)&ss)->sin_addr;
+				((struct sockaddr_in *)address->a.ipaddr)->sin_len =
+				((struct sockaddr_in *)&ss)->sin_len;
+				((struct sockaddr_in *)address->a.ipaddr)->sin_family =
+				((struct sockaddr_in *)&ss)->sin_family;
+			}
+
+			/* If selector's masked address matches the
+		 	 * peer's masked address, match the peer's address */
+
+			if (address->prefixlen > 0 && address->prefixlen < 32) {
+				uint32_t mask = 0;
+				rcs_in_prefixlen2mask(&mask, address->prefixlen);
+				if(((((struct sockaddr_in *)&ss)->sin_addr.s_addr ^
+				    ((struct sockaddr_in *)address->a.ipaddr)->sin_addr.s_addr) &
+				    ntohl(mask)) == 0) {
+					((struct sockaddr_in *)address->a.ipaddr)->sin_addr =
+					((struct sockaddr_in *)&ss)->sin_addr;
+					((struct sockaddr_in *)address->a.ipaddr)->sin_len =
+					((struct sockaddr_in *)&ss)->sin_len;
+				}
+			}
+			break;
+#ifdef INET6
+		case AF_INET6:
+			if (SOCKADDR_FAMILY((struct sockaddr *)&ss) != AF_INET6)
+				break;
+
+			/* If selector's port is any port, match the peer's port */
+
+			if (((struct sockaddr_in6 *)address->a.ipaddr)->sin6_port == IPSEC_PORT_ANY)
+				((struct sockaddr_in6 *)address->a.ipaddr)->sin6_port =
+				((struct sockaddr_in6 *)&ss)->sin6_port;
+
+			/* If selector's address is any
+			 * address, match the peer's address */
+
+			if (((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr._s6_addr32[0] == 0 &&
+			    ((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr._s6_addr32[1] == 0 &&
+			    ((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr._s6_addr32[2] == 0 &&
+			    ((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr._s6_addr32[3] == 0) {
+				((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr =
+				((struct sockaddr_in6 *)&ss)->sin6_addr;
+				((struct sockaddr_in6 *)address->a.ipaddr)->sin6_len =
+				((struct sockaddr_in6 *)&ss)->sin6_len;
+				((struct sockaddr_in6 *)address->a.ipaddr)->sin6_scope_id =
+				((struct sockaddr_in6 *)&ss)->sin6_scope_id;
+			}
+
+			/* If selector's masked address matches the peer's
+		 	 * masked address, match the address of the peer */
+
+			if (address->prefixlen > 0 && address->prefixlen < 128) {
+				struct in6_addr mask6 = _IN6MASK0;
+				rcs_in6_prefixlen2mask(&mask6, address->prefixlen);
+				if(_IN6_ARE_MASKED_ADDR_EQUAL(&((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr,
+					&((struct sockaddr_in6 *)&ss)->sin6_addr, &mask6)) {
+					((struct sockaddr_in6 *)address->a.ipaddr)->sin6_addr =
+					((struct sockaddr_in6 *)&ss)->sin6_addr;
+					((struct sockaddr_in6 *)address->a.ipaddr)->sin6_len =
+					((struct sockaddr_in6 *)&ss)->sin6_len;
+					((struct sockaddr_in6 *)address->a.ipaddr)->sin6_scope_id =
+					((struct sockaddr_in6 *)&ss)->sin6_scope_id;
+				}
+			}
+			break;
+#endif
+		default:
+			plog(PLOG_PROTOERR, PLOGLOC, NULL,
+			   "unsupported address family (%d) for selector address\n",
+			   SOCKADDR_FAMILY((struct sockaddr *)address->a.ipaddr));
+			return FALSE;
+		}
+	addr = address;
 	}
 
 	if (rcs_cmpsa(addr->a.ipaddr, (struct sockaddr *)&ss) != 0)

@@ -28,6 +28,7 @@
  */
 
 struct rc_addrlist;
+struct in6_addr;
 extern int rcs_is_addrmacro (const rc_vchar_t *);
 extern int rcs_is_addr_rw (struct rc_addrlist *);
 extern int rcs_getaddrlistbymacro (const rc_vchar_t *,
@@ -46,6 +47,8 @@ extern const char *rcs_sa2str (const struct sockaddr *);
 extern int rcs_cmpsa_wop (const struct sockaddr *, const struct sockaddr *);
 extern int rcs_cmpsa (const struct sockaddr *, const struct sockaddr *);
 extern int rcs_addrlist_cmp(struct rc_addrlist *, struct rc_addrlist *);
+extern void rcs_in_prefixlen2mask(uint32_t *, int len);
+extern void rcs_in6_prefixlen2mask(struct in6_addr *, int len);
 
 #ifdef HAVE_SA_LEN
 #define SA_LEN(sa) ((sa)->sa_len)

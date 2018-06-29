@@ -1121,3 +1121,55 @@ rcs_addrlist_cmp(struct rc_addrlist *a1, struct rc_addrlist *a2)
 
 	return 0;			/* all addrs match */
 }
+
+/*
+ * convert a prefix length to a netmask for IPv4
+ */
+void
+rcs_in_prefixlen2mask(uint32_t *maskp, int len)
+{
+	static const u_char maskarray[8] = {0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+	int bytelen, bitlen, i;
+
+	/* sanity check */
+	if (len < 0 || len > 32) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		   "rcs_in_prefixlen2mask: invalid prefix length(%d)\n",
+		    len);
+		return;
+	}
+
+	memset(maskp, 0, sizeof(*maskp));
+	bytelen = len / 8;
+	bitlen = len % 8;
+	for (i = 0; i < bytelen; i++)
+		*maskp += 0xff << (8 * (3 - i));
+	if (bitlen)
+		*maskp += maskarray[bitlen - 1] << (8 * (3 - bytelen));
+}
+
+/*
+ * convert a prefix length to a netmask for IPv6
+ */
+void
+rcs_in6_prefixlen2mask(struct in6_addr *maskp, int len)
+{
+	static const u_char maskarray[8] = {0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+	int bytelen, bitlen, i;
+
+	/* sanity check */
+	if (len < 0 || len > 128) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		   "rcs_in6_prefixlen2mask: invalid prefix length(%d)\n",
+		    len);
+		return;
+	}
+
+	memset(maskp, 0, sizeof(*maskp));
+	bytelen = len / 8;
+	bitlen = len % 8;
+	for (i = 0; i < bytelen; i++)
+		maskp->s6_addr[i] = 0xff;
+	if (bitlen)
+		maskp->s6_addr[bytelen] = maskarray[bitlen - 1];
+}
