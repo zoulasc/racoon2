@@ -118,7 +118,7 @@ ike_spmif_post_policy_add(struct rcf_selector *sel, rc_type samode,
 	extern int addrlist_equal(struct rc_addrlist *, struct rc_addrlist *);
 
 	/* default config clause */
-	if (rmconf->rm_index == 0)
+	if (0 && rmconf->rm_index == 0)
 		return -1;
 
 	spmif_fd = ike_spmif_socket();
