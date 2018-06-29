@@ -1558,6 +1558,8 @@ purge_remote(struct ph1handle *iph1)
 
 		destroy_ph2(iph2);
 	}
+	remph1(iph1);
+	delph1(iph1);
 }
 
 
