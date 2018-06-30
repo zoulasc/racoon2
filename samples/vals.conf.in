@@ -40,13 +40,24 @@ setval {
 
 	# Peer's IP Address (If peer is behind NAT this should be set to Peer's
 	#		     Public IP address)
+	# If the peer's address is known, set it here. If not, comment it out
+	# here and set it to any address by uncommenting the IP_ANY line below
 	PEERS_IPADDRESS	"192.168.1.1";
+	# For use when peer's address is not known
+	# Selectors in the config files should specify a specific protocol,
+	# port, or service to protect with IPSec; otherwise this setting will
+	# break connectivity by requiring all networking traffic to be secured.
+	# The sample transport_ike.conf configuration file is an example
+	# that secures L2TP traffic to you on udp port 1701
+	# PEERS_IPADDRESS	"IP_ANY";
 
 ### Transport Mode NAT-T Settings ###
 	# Your Public IP Address (Your IP address if you are not behind NAT)
-	MY_PUBLIC_IPADDRESS	"216.58.194.142";
+	MY_PUBLIC_IPADDRESS	"123.202.64.33";
 
-	# Peer's Private IP Address
+	# Peer's Private IP Address (If peer is not behind NAT, uncomment
+	# selectors in configuration files that refer to this value
+	# because this value is not needed in that case)
 	PEERS_PRIVATE_IPADDRESS	"10.0.0.1";
 
 ### Tunnel Mode Settings ###

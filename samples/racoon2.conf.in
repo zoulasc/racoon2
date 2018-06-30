@@ -8,7 +8,11 @@ interface
 {
 	ike {
 		MY_IP port 500;
-## Uncomment to enable NAT-T (both initiator and responder)
+## Tunnel mode NAT-T: Uncomment tunnel_ike_natt.conf line below
+## Transport mode NAT-T: Uncomment transport_ike.conf line below
+## 			 and uncomment the transport_ike_natt.conf line in
+## 			 the transport_ike.conf file 
+## Uncomment to enable NAT-T (initiator and responder, tunnel and transport)
 #		MY_IP port 4500;
 	};
 	kink {
@@ -41,6 +45,10 @@ resolver
 # This line includes default configuration file;
 # Please don't touch this line (especially novice user);
 #
+# The default configuration for IKEv1 enables a pre-shared
+# key for the wildcard address. If you want to disable this
+# for security reasons, you can by commenting out the
+# appropriate line in default.conf.
 
 include "@prefix@/etc/racoon2/default.conf";
 
@@ -49,7 +57,11 @@ include "@prefix@/etc/racoon2/default.conf";
 #
 # Uncomment following one 'include' line you want to use.
 
-## Transport mode IKEv2 or IKEv1
+## Transport mode IKEv2 or IKEv1 (optional NAT-T support)
+## To enable NAT-T transport mode support, in addition to
+## uncommenting this 'include' line, also uncomment the
+## 'include' line for transport_ike_natt.conf in the transport_ike.conf
+## file and edit that file and vals.conf appropriately for your environment
 # include "@prefix@/etc/racoon2/transport_ike.conf";
 
 ## Tunnel mode IKEv2 or IKEv1 (initiator and responder)
