@@ -73,8 +73,8 @@ extern struct keyed_hash_method hmacsha1_method;
 extern struct keyed_hash_method hmacsha1_96_method;
 extern struct keyed_hash_method aes_xcbc_96_hash_method;
 #endif
-extern struct keyed_hash_method aes_xcbc_hash_method;
-extern struct keyed_hash_method aes_cmac_hash_method;
+extern struct eay_keyed_hash_method aes_xcbc_hash_method;
+extern struct eay_keyed_hash_method aes_cmac_hash_method;
 
 extern struct keyed_hash *hmacmd5_new(void);
 extern struct keyed_hash *hmacmd5_96_new(void);
