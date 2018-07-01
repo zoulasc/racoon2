@@ -39,8 +39,7 @@ extern int rcs_getaddrlist (const char *, const char *, rc_type, struct rc_addrl
 extern int rcs_extend_addrlist (struct rc_addrlist *, struct rc_addrlist **);
 extern int rcs_getport (const char *);
 extern struct sockaddr *rcs_sadup (const struct sockaddr *);
-extern int rcs_getsaport (const struct sockaddr *);
-extern void rcs_setsaport (struct sockaddr *, int port);
+extern int rcs_getport (const char *);
 extern int rcs_getsalen (const struct sockaddr *);
 extern const char *rcs_sa2str_wop (const struct sockaddr *);
 extern const char *rcs_sa2str (const struct sockaddr *);
@@ -55,3 +54,8 @@ extern void rcs_in6_prefixlen2mask(struct in6_addr *, int len);
 #else
 #define SA_LEN(sa) (rcs_getsalen(sa))
 #endif
+
+extern in_port_t *rcs_getsaport(const struct sockaddr *);
+extern void *rcs_getsaaddr(const struct sockaddr *);
+extern int rcs_getsaaddrlen(const struct sockaddr *);
+extern uint32_t *rcs_getsascopeid(const struct sockaddr *);

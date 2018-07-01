@@ -95,7 +95,7 @@ rcs_is_addrmacro(const rc_vchar_t *m)
 	char *buf, *p;
 	struct rcs_addrmacro *mx;
 
-	if ((buf = (char *)rc_malloc(m->l + 1)) == NULL)
+	if ((buf = rc_malloc(m->l + 1)) == NULL)
 		return 0;	/* XXX error! */
 	memcpy(buf, m->v, m->l);
 	buf[m->l] = '\0';
@@ -133,7 +133,7 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 	struct rc_addrlist *al;
 	int error = -1;
 
-	if ((buf = (char *)rc_malloc(m->l + 1)) == NULL)
+	if ((buf = rc_malloc(m->l + 1)) == NULL)
 		return EAI_MEMORY;
 	memcpy(buf, m->v, m->l);
 	buf[m->l] = '\0';
@@ -162,7 +162,7 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 static struct rcs_addrmacro *
 find_addrmacro(const char *buf)
 {
-	int i, len, plen;
+	size_t i, len, plen;
 
 	plen = strlen(buf);
 	for (i = 0; i < ARRAYLEN(rcs_addrmacro_list); i++) {
@@ -230,7 +230,7 @@ rcs_exmacro_my_ip_ipv6_global(const char *ifname)
 	prev = NULL;
 	for (a = al; a; a = next) {
 		next = a->next;
-		sin6 = (struct sockaddr_in6 *)a->a.ipaddr;
+		sin6 = (void *)a->a.ipaddr;
 		if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr) ||
 		    IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr) ||
 		    IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr) ||
@@ -270,7 +270,7 @@ rcs_exmacro_my_ip_ipv6_linklocal(const char *ifname)
 	prev = NULL;
 	for (a = al; a; a = next) {
 		next = a->next;
-		sin6 = (struct sockaddr_in6 *)a->a.ipaddr;
+		sin6 = (void *)a->a.ipaddr;
 		if (!IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 			free_addrlist(a);
 			a = NULL;
@@ -304,6 +304,7 @@ rcs_exmacro_my_ip_hoa(const char *ifname)
 }
 
 static struct rc_addrlist *
+/*ARGSUSED*/
 rcs_exmacro_ip_unspecified(const char *ifname)
 {
 	struct rc_addrlist *new_head = 0, *new, **lastap;
@@ -322,20 +323,20 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 	}
 
 	for (ap = ai; ap; ap = ap->ai_next) {
+		in_port_t *prt = rcs_getsaport(ap->ai_addr);
+		if (prt == NULL) {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+			    "bad address family %d.\n", ap->ai_addr->sa_family);
+			goto out;
+		}
 		if ((new = rc_calloc(1, sizeof(*new))) == NULL) {
-			rcs_free_addrlist(new_head);
-			freeaddrinfo(ai);
-			plog(PLOG_INTERR, PLOGLOC, NULL, "no memory\n");
-			return NULL;
+			goto nomemory;
 		}
 		new->type = RCT_ADDR_INET;
-		new->port = ntohs(rcs_getsaport(ap->ai_addr));
+		new->port = ntohs(*prt);
 		new->prefixlen = 128;
 		if ((new->a.ipaddr = rcs_sadup(ap->ai_addr)) == NULL) {
-			rcs_free_addrlist(new_head);
-			freeaddrinfo(ai);
-			plog(PLOG_INTERR, PLOGLOC, NULL, "no memory\n");
-			return NULL;
+			goto nomemory;
 		}
 		*lastap = new;
 		lastap = &new->next;
@@ -347,26 +348,25 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 	if ((error = getaddrinfo("0.0.0.0", NULL, &hints, &ai)) != 0) {
-		rcs_free_addrlist(new_head);
 		plog(PLOG_INTERR, PLOGLOC, NULL, "%s.\n", gai_strerror(error));
-		return NULL;
+		goto out;
 	}
 
 	for (ap = ai; ap; ap = ap->ai_next) {
+		in_port_t *prt = rcs_getsaport(ap->ai_addr);
+		if (prt == NULL) {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+			    "bad address family %d.\n", ap->ai_addr->sa_family);
+			goto out;
+		}
 		if ((new = rc_calloc(1, sizeof(*new))) == NULL) {
-			rcs_free_addrlist(new_head);
-			freeaddrinfo(ai);
-			plog(PLOG_INTERR, PLOGLOC, NULL, "no memory\n");
-			return NULL;
+			goto nomemory;
 		}
 		new->type = RCT_ADDR_INET;
-		new->port = ntohs(rcs_getsaport(ap->ai_addr));
+		new->port = ntohs(*prt);
 		new->prefixlen = 32;
 		if ((new->a.ipaddr = rcs_sadup(ap->ai_addr)) == NULL) {
-			rcs_free_addrlist(new_head);
-			freeaddrinfo(ai);
-			plog(PLOG_INTERR, PLOGLOC, NULL, "no memory\n");
-			return NULL;
+			goto nomemory;
 		}
 		*lastap = new;
 		lastap = &new->next;
@@ -374,6 +374,12 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 	freeaddrinfo(ai);
 
 	return new_head;
+nomemory:
+	plog(PLOG_INTERR, PLOGLOC, NULL, "no memory\n");
+out:
+	rcs_free_addrlist(new_head);
+	freeaddrinfo(ai);
+	return NULL;
 }
 
 static struct rc_addrlist *
@@ -406,15 +412,16 @@ getifaddrlist(int family, const char *ifname)
 			return NULL;
 		}
 		new->type = RCT_ADDR_INET;
-		new->port = ntohs(rcs_getsaport(ifap->ifa_addr));
+		new->port = ntohs(*rcs_getsaport(ifap->ifa_addr));
 		new->a.ipaddr = rcs_sadup(ifap->ifa_addr);
 		if (ifap->ifa_addr->sa_family == AF_INET6) {
-			sin6 = (struct sockaddr_in6 *)new->a.ipaddr;
+			sin6 = (void *)new->a.ipaddr;
 #ifdef __KAME__
 			if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr) ||
 			    IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr)) {
-				unsigned int scope_id =
-				    *(uint16_t *)&sin6->sin6_addr.s6_addr[2];
+				uint16_t scope_id;
+				memcpy(&scope_id, &sin6->sin6_addr.s6_addr[2],
+				    sizeof(scope_id));
 				/*
 				 * Restore KAME-mangled scoped address;
 				 * KAME after July 2005 doesn't expose this
@@ -513,7 +520,7 @@ getifaddrlist(int family, const char *ifname)
 			return NULL;
 		}
 		new->type = RCT_ADDR_INET;
-		new->port = ntohs(rcs_getsaport(&ifr->ifr_addr));
+		new->port = ntohs(*rcs_getsaport(&ifr->ifr_addr));
 		new->a.ipaddr = rcs_sadup(&ifr->ifr_addr);
 		if (ifr->ifr_addr.sa_family == AF_INET6) {
 			sin6 = (struct sockaddr_in6 *)new->a.ipaddr;
@@ -607,7 +614,7 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 	memset(&ifr6, 0, sizeof(ifr6));
 	strncpy(ifr6.ifr_name, ifname, strlen(ifname));
 
-	ifr6.ifr_addr = *(const struct sockaddr_in6 *)ifaddr;
+	memcpy(&ifr6.ifr_addr, ifaddr, sizeof(struct sockaddr_in6));
 
 	if (ioctl(s, SIOCGIFAFLAG_IN6, &ifr6) < 0) {
 		close(s);
@@ -656,7 +663,7 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 	 * copy addrstr0 to new buffer for future modification,
 	 * and get the prefix length if needed.
 	 */
-	switch (rc_strex((char *)addrstr0, &addrstr)) {
+	switch (rc_strex((char *)(intptr_t)addrstr0, &addrstr)) {
 	case 0: break;
 	case -1: return EAI_MEMORY;
 	default: return EAI_FAIL;
@@ -666,7 +673,7 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 		prefstr = mp + 1;
 	}
 	if (prefstr) {
-		prefixlen = strtol(prefstr, &bp, 10);
+		prefixlen = (int)strtol(prefstr, &bp, 10);
 		if (*bp != '\0') {
 			rc_free(addrstr);
 			return EAI_FAIL;
@@ -695,20 +702,17 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 			if (error != 0)
 				return error;
 			for (p = *al0; p; p = p->next) {
+				in_port_t *prt;
 				p->port = nport;
 				p->prefixlen = prefixlen;
-				switch (p->a.ipaddr->sa_family) {
-				case AF_INET:
-					((struct sockaddr_in *)p->a.ipaddr)->sin_port = htons(nport);
-					break;
-				case AF_INET6:
-					((struct sockaddr_in6 *)p->a.ipaddr)->sin6_port = htons(nport);
-					break;
-				default:
+
+				prt = rcs_getsaport(p->a.ipaddr);
+				if (prt == NULL) {
 					rcs_free_addrlist(*al0);
 					*al0 = 0;
 					return EAI_FAMILY;
 				}
+				*prt = htons(nport);
 			}
 			return 0;
 		default:
@@ -778,19 +782,13 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 			return EAI_MEMORY;
 		}
 		new->type = RCT_ADDR_INET;
-		new->port = ntohs(rcs_getsaport(ap->ai_addr));
-		switch (ap->ai_family) {
-		case AF_INET6:
-			new->prefixlen = 128;
-			break;
-		case AF_INET:
-			new->prefixlen = 32;
-			break;
-		default:
+		new->prefixlen = rcs_getsaaddrlen(ap->ai_addr);
+		if (new->prefixlen == 0) {
 			rcs_free_addrlist(new_head);
 			freeaddrinfo(ai);
 			return EAI_FAMILY;
 		}
+		new->port = ntohs(*rcs_getsaport(ap->ai_addr));
 		if (prefstr)
 			new->prefixlen = prefixlen;
 		if ((new->a.ipaddr = rcs_sadup(ap->ai_addr)) == NULL) {
@@ -821,7 +819,7 @@ rcs_getport(const char *str)
 	} else if ((ent = getservbyname(str, NULL)) != NULL) {
 		return ntohs(ent->s_port);
 	}
-	nport = strtol(str, &bp, 10);
+	nport = (int)strtol(str, &bp, 10);
 	if (*bp != '\0')
 		return -1;
 
@@ -894,36 +892,6 @@ rcs_sadup(const struct sockaddr *src)
 	return dst;
 }
 
-/* get a port number as is */
-int
-rcs_getsaport(const struct sockaddr *s)
-{
-	switch (s->sa_family) {
-	case AF_INET:
-		return ((struct sockaddr_in *)s)->sin_port;
-	case AF_INET6:
-		return ((struct sockaddr_in6 *)s)->sin6_port;
-	default:
-		return 0;	/* XXX fatal error */
-	}
-}
-
-/* set the port number (in the host byte order) */
-void
-rcs_setsaport(struct sockaddr *s, int port)
-{
-	switch (s->sa_family) {
-	case AF_INET:
-		((struct sockaddr_in *)s)->sin_port = htons(port);
-		break;
-	case AF_INET6:
-		((struct sockaddr_in6 *)s)->sin6_port = htons(port);
-		break;
-	default:
-		break;		/* XXX fatal error */
-	}
-}
-
 int
 rcs_getsalen(const struct sockaddr *s)
 {
@@ -937,6 +905,18 @@ rcs_getsalen(const struct sockaddr *s)
 	}
 }
 
+int
+rcs_getsaaddrlen(const struct sockaddr *s)
+{
+	switch (s->sa_family) {
+	case AF_INET:
+		return sizeof(struct in_addr);
+	case AF_INET6:
+		return sizeof(struct in6_addr);
+	default:
+		return 0;	/* XXX fatal error */
+	}
+}
 const char *
 rcs_sa2str_wop(const struct sockaddr *sa)
 {
@@ -946,8 +926,8 @@ rcs_sa2str_wop(const struct sockaddr *sa)
 	if (sa == NULL)
 		return NULL;
 	addr = rbuf_getlb();
-	if (getnameinfo(sa, SA_LEN(sa),
-	    addr->v, addr->l, NULL, 0, niflags))
+	if (getnameinfo(sa, (socklen_t)SA_LEN(sa), addr->v, (socklen_t)addr->l,
+	    NULL, 0, niflags))
 		return "error";
 
 	return addr->v;
@@ -963,11 +943,11 @@ rcs_sa2str(const struct sockaddr *sa)
 		return NULL;
 	addr = rbuf_getlb();
 	port = rbuf_getsb();
-	if (getnameinfo(sa, SA_LEN(sa),
-	    addr->v, addr->l, port->v, port->l, niflags))
+	if (getnameinfo(sa, (socklen_t)SA_LEN(sa), addr->v, (socklen_t)addr->l,
+	    port->v, (socklen_t)port->l, niflags))
 		return "error[error]";
 	vbuf = rbuf_getvb(strlen(addr->v) + strlen(port->v) + 4);
-	snprintf(vbuf->v, vbuf->l, "%s[%s]", addr->v, port->v);
+	snprintf(vbuf->s, vbuf->l, "%s[%s]", addr->s, port->s);
 
 	return vbuf->v;
 }
@@ -978,11 +958,9 @@ rcs_sa2str(const struct sockaddr *sa)
  *	1: not equal.
  */
 int
-rcs_cmpsa_wop(addr1, addr2)
-	const struct sockaddr *addr1;
-	const struct sockaddr *addr2;
+rcs_cmpsa_wop(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
-	caddr_t sa1, sa2;
+	void *sa1, *sa2;
 
 	if (addr1 == 0 && addr2 == 0)
 		return 0;
@@ -993,27 +971,19 @@ rcs_cmpsa_wop(addr1, addr2)
 	 || addr1->sa_family != addr2->sa_family)
 		return 1;
 
-	switch (addr1->sa_family) {
-	case AF_INET:
-		sa1 = (caddr_t)&((struct sockaddr_in *)addr1)->sin_addr;
-		sa2 = (caddr_t)&((struct sockaddr_in *)addr2)->sin_addr;
-		if (memcmp(sa1, sa2, sizeof(struct in_addr)) != 0)
-			return 1;
-		break;
-#ifdef INET6
-	case AF_INET6:
-		sa1 = (caddr_t)&((struct sockaddr_in6 *)addr1)->sin6_addr;
-		sa2 = (caddr_t)&((struct sockaddr_in6 *)addr2)->sin6_addr;
-		if (memcmp(sa1, sa2, sizeof(struct in6_addr)) != 0)
-			return 1;
-		if (((struct sockaddr_in6 *)addr1)->sin6_scope_id !=
-		    ((struct sockaddr_in6 *)addr2)->sin6_scope_id)
-			return 1;
-		break;
-#endif
-	default:
+	sa1 = rcs_getsaaddr(addr1);
+	if (sa1 == NULL)
 		return 1;
+
+	sa2 = rcs_getsaaddr(addr2);
+	if (memcmp(sa1, sa2, rcs_getsaaddrlen(addr1)) != 0)
+		return 1;
+#ifdef INET6
+	if (addr1->sa_family == AF_INET6) {
+		if (*rcs_getsascopeid(addr1) != *rcs_getsascopeid(addr2))
+			return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -1024,51 +994,20 @@ rcs_cmpsa_wop(addr1, addr2)
  *	1: not equal.
  */
 int
-rcs_cmpsa(addr1, addr2)
-	const struct sockaddr *addr1;
-	const struct sockaddr *addr2;
+rcs_cmpsa(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
-	caddr_t sa1, sa2;
-	uint16_t port1, port2;
+	in_port_t *port1, *port2;
 
 	if (addr1 == 0 && addr2 == 0)
 		return 0;
-	if (addr1 == 0 || addr2 == 0)
+
+	if (rcs_cmpsa_wop(addr1, addr2))
 		return 1;
 
-	if (SA_LEN(addr1) != SA_LEN(addr2)
-	 || addr1->sa_family != addr2->sa_family)
+	port1 = rcs_getsaport(addr1);
+	port2 = rcs_getsaport(addr2);
+	if (*port1 != *port2)
 		return 1;
-
-	switch (addr1->sa_family) {
-	case AF_INET:
-		sa1 = (caddr_t)&((struct sockaddr_in *)addr1)->sin_addr;
-		sa2 = (caddr_t)&((struct sockaddr_in *)addr2)->sin_addr;
-		port1 = ((struct sockaddr_in *)addr1)->sin_port;
-		port2 = ((struct sockaddr_in *)addr2)->sin_port;
-		if (port1 != port2)
-			return 1;
-		if (memcmp(sa1, sa2, sizeof(struct in_addr)) != 0)
-			return 1;
-		break;
-#ifdef INET6
-	case AF_INET6:
-		sa1 = (caddr_t)&((struct sockaddr_in6 *)addr1)->sin6_addr;
-		sa2 = (caddr_t)&((struct sockaddr_in6 *)addr2)->sin6_addr;
-		port1 = ((struct sockaddr_in6 *)addr1)->sin6_port;
-		port2 = ((struct sockaddr_in6 *)addr2)->sin6_port;
-		if (port1 != port2)
-			return 1;
-		if (memcmp(sa1, sa2, sizeof(struct in6_addr)) != 0)
-			return 1;
-		if (((struct sockaddr_in6 *)addr1)->sin6_scope_id !=
-		    ((struct sockaddr_in6 *)addr2)->sin6_scope_id)
-			return 1;
-		break;
-#endif
-	default:
-		return 1;
-	}
 
 	return 0;
 }
@@ -1172,4 +1111,51 @@ rcs_in6_prefixlen2mask(struct in6_addr *maskp, int len)
 		maskp->s6_addr[i] = 0xff;
 	if (bitlen)
 		maskp->s6_addr[bytelen] = maskarray[bitlen - 1];
+}
+
+uint32_t *
+rcs_getsascopeid(const struct sockaddr *sa)
+{
+	struct sockaddr_in6 *sin6;
+	switch (sa->sa_family) {
+	case AF_INET6:
+		sin6 = (void *)(intptr_t)sa;
+		return &sin6->sin6_scope_id;
+	default:
+		return NULL;
+	}
+}
+
+in_port_t *
+rcs_getsaport(const struct sockaddr *sa)
+{
+	struct sockaddr_in *sin;
+	struct sockaddr_in6 *sin6;
+	switch (sa->sa_family) {
+	case AF_INET:
+		sin = (void *)(intptr_t)sa;
+		return &sin->sin_port;
+	case AF_INET6:
+		sin6 = (void *)(intptr_t)sa;
+		return &sin6->sin6_port;
+	default:
+		return NULL;
+	}
+}
+
+void *
+rcs_getsaaddr(const struct sockaddr *sa)
+{
+	struct sockaddr_in *sin;
+	struct sockaddr_in6 *sin6;
+	switch (sa->sa_family) {
+	case AF_INET:
+		sin = (void *)(intptr_t)sa;
+		return &sin->sin_addr;
+	case AF_INET6:
+		sin6 = (void *)(intptr_t)sa;
+		return &sin6->sin6_addr;
+	default:
+		return NULL;
+	}
 }
