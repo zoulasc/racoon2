@@ -134,8 +134,8 @@ oakley_compute_expanded_keymat(struct oakley_prf *prf,
 		}
 		while (keymat->l < octet) {
 			/* make "K(n - 1) | src" into seed */
-			memcpy(seed->v, prev, prevlen);
-			memcpy(seed->v + prevlen, src->v,
+			memcpy(seed->u, prev, prevlen);
+			memcpy(seed->u + prevlen, src->v,
 			    src->l);
 			/* make "Kn" into this */
 			this = (*prf->func)(prf, seed);
@@ -149,10 +149,10 @@ oakley_compute_expanded_keymat(struct oakley_prf *prf,
 				EXITREQ_NOMEM();
 				goto fail;
 			}
-			memcpy(keymat->v + prevkeymat_len,
+			memcpy(keymat->u + prevkeymat_len,
 			    this->v, this->l);
 			/* hold "Kn" part of kermat into prev/prevlen */
-			prev = keymat->v + prevkeymat_len;
+			prev = keymat->u + prevkeymat_len;
 			prevlen = this->l;
 			rc_vfreez(this);
 		}

@@ -32,8 +32,6 @@
 
 #include "config.h"
 
-#define INET6		/* XXX */
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -55,6 +53,7 @@
 
 #include "../lib/vmbuf.h"
 #include "../lib/rc_type.h"
+#include "../lib/rc_net.h"
 #include "utils.h"
 #include "plogold.h"
 #include "isakmp.h"
@@ -156,11 +155,10 @@ ipsecdoi_make_qmprop(struct saprop *proposal)
 				rc_vfree(q);
 				return NULL;
 			}
-			memcpy(buf->v + buf->l - q->l, q->v, q->l);
+			memcpy(buf->u + buf->l - q->l, q->v, q->l);
 
 			if (propoff != 0) {
-				prop = (struct isakmp_pl_p *)(buf->v +
-				    propoff);
+				prop = (void *)(buf->u + propoff);
 				prop->h.np = ISAKMP_NPTYPE_P;
 			}
 			propoff = buf->l - q->l;
@@ -1462,8 +1460,8 @@ check_attr_ipsec(int proto_id, struct isakmp_pl_t *trns)
 {
 	struct isakmp_data *d;
 	int tlen;
-	int flag, type = 0;
-	uint16_t lorv;
+	int flag;
+	uint16_t lorv, type = 0;
 	int attrseen[16];	/* XXX magic number */
 
 	tlen = ntohs(trns->h.len) - sizeof(struct isakmp_pl_t);
@@ -1642,7 +1640,8 @@ check_attr_ipcomp(struct isakmp_pl_t *trns)
 {
 	struct isakmp_data *d;
 	int tlen;
-	int flag, type = 0;
+	int flag;
+	uint16_t type = 0;
 	uint16_t lorv;
 	int attrseen[16];	/* XXX magic number */
 
@@ -1788,7 +1787,7 @@ setph2proposal0(const struct saprop *pp, const struct saproto *pr)
 	struct satrns *tr;
 	int attrlen;
 	size_t trnsoff;
-	caddr_t x0, x;
+	char *x0, *x;
 	uint8_t *np_t; /* pointer next trns type in previous header */
 	const uint8_t *spi;
 
@@ -1889,13 +1888,13 @@ setph2proposal0(const struct saprop *pp, const struct saproto *pr)
 		prop = (struct isakmp_pl_p *)p->v;
 
 		/* set transform's values */
-		trns = (struct isakmp_pl_t *)(p->v + trnsoff);
+		trns = (void *)(p->u + trnsoff);
 		trns->h.np  = ISAKMP_NPTYPE_NONE;
 		trns->t_no  = tr->trns_no;
 		trns->t_id  = tr->trns_id;
 
 		/* set attributes */
-		x = x0 = p->v + trnsoff + sizeof(*trns);
+		x = x0 = p->s + trnsoff + sizeof(*trns);
 
 		if (pp->lifetime) {
 			x = isakmp_set_attr_l(x, IPSECDOI_ATTR_SA_LD_TYPE,
@@ -1940,7 +1939,7 @@ setph2proposal0(const struct saprop *pp, const struct saproto *pr)
 #endif
 
 		/* update length of this transform. */
-		trns = (struct isakmp_pl_t *)(p->v + trnsoff);
+		trns = (void *)(p->u + trnsoff);
 		trns->h.len = htons(sizeof(*trns) + attrlen);
 
 		/* save buffer to pre-next payload */
@@ -2028,7 +2027,7 @@ ipsecdoi_sockaddr2id(struct sockaddr *saddr, unsigned int prefixlen, unsigned in
 		ul_proto == IPSEC_ULPROTO_ANY ? 0 : ul_proto;
 	((struct ipsecdoi_id_b *)new->v)->port =
 		port == IPSEC_PORT_ANY ? 0 : port;
-	memcpy(new->v + sizeof(struct ipsecdoi_id_b), sa, len1);
+	memcpy(new->u + sizeof(struct ipsecdoi_id_b), sa, len1);
 
 	/* set address */
 
@@ -2060,6 +2059,7 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 {
 	struct ipsecdoi_id_b *id_b = (struct ipsecdoi_id_b *)buf->v;
 	unsigned int plen = 0;
+	in_port_t *port;
 
 	/*
 	 * When a ID payload of subnet type with a IP address of full bit
@@ -2075,12 +2075,6 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		saddr->sa_len = sizeof(struct sockaddr_in);
 #endif
 		saddr->sa_family = AF_INET;
-		((struct sockaddr_in *)saddr)->sin_port =
-			(id_b->port == 0
-				? IPSEC_PORT_ANY
-				: id_b->port);		/* see sockaddr2id() */
-		memcpy(&((struct sockaddr_in *)saddr)->sin_addr,
-			buf->v + sizeof(*id_b), sizeof(struct in_addr));
 		break;
 #ifdef INET6
 	case IPSECDOI_ID_IPV6_ADDR:
@@ -2089,12 +2083,6 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		saddr->sa_len = sizeof(struct sockaddr_in6);
 #endif
 		saddr->sa_family = AF_INET6;
-		((struct sockaddr_in6 *)saddr)->sin6_port =
-			(id_b->port == 0
-				? IPSEC_PORT_ANY
-				: id_b->port);		/* see sockaddr2id() */
-		memcpy(&((struct sockaddr_in6 *)saddr)->sin6_addr,
-			buf->v + sizeof(*id_b), sizeof(struct in6_addr));
 		break;
 #endif
 	default:
@@ -2102,6 +2090,10 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 			"unsupported ID type %d\n", id_b->type);
 		return ISAKMP_NTYPE_INVALID_ID_INFORMATION;
 	}
+	port = rcs_getsaport(saddr);
+	*port = id_b->port == 0 ? IPSEC_PORT_ANY : id_b->port;
+	memcpy(rcs_getsaaddr(saddr),
+	    buf->u + sizeof(*id_b), rcs_getsaaddrlen(saddr));
 
 	/* get prefix length */
 	switch (id_b->type) {
@@ -2120,7 +2112,7 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 	    {
 		unsigned char *p;
 		unsigned int max;
-		int alen = sizeof(struct in_addr);
+		size_t alen = sizeof(struct in_addr);
 
 		switch (id_b->type) {
 		case IPSECDOI_ID_IPV4_ADDR_SUBNET:
@@ -2194,8 +2186,8 @@ ipsecdoi_t2satrns(struct isakmp_pl_t *t, struct saprop *pp, struct saproto *pr, 
 	tr->trns_id = t->t_id;
 
 	tlen = ntohs(t->h.len) - sizeof(*t);
-	prev = (struct isakmp_data *)NULL;
-	d = (struct isakmp_data *)(t + 1);
+	prev = NULL;
+	d = (void *)(t + 1);
 
 	/* default */
 	life_t = IPSECDOI_ATTR_SA_LD_TYPE_DEFAULT;
@@ -2216,8 +2208,8 @@ ipsecdoi_t2satrns(struct isakmp_pl_t *t, struct saprop *pp, struct saproto *pr, 
 		switch (type) {
 		case IPSECDOI_ATTR_SA_LD_TYPE:
 		{
-			int type = ntohs(d->lorv);
-			switch (type) {
+			int type1 = ntohs(d->lorv);
+			switch (type1) {
 			case IPSECDOI_ATTR_SA_LD_TYPE_SEC:
 			case IPSECDOI_ATTR_SA_LD_TYPE_KB:
 				life_t = type;
@@ -2241,7 +2233,7 @@ ipsecdoi_t2satrns(struct isakmp_pl_t *t, struct saprop *pp, struct saproto *pr, 
 			}
 
 		    {
-			uint32_t t;
+			uint32_t t1;
 			rc_vchar_t *ld_buf = NULL;
 
 			if (flag) {
@@ -2266,7 +2258,7 @@ ipsecdoi_t2satrns(struct isakmp_pl_t *t, struct saprop *pp, struct saproto *pr, 
 			}
 			switch (life_t) {
 			case IPSECDOI_ATTR_SA_LD_TYPE_SEC:
-				t = ipsecdoi_set_ld(ld_buf);
+				t1 = ipsecdoi_set_ld(ld_buf);
 				rc_vfree(ld_buf);
 				if (t == 0) {
 					plog(LLV_ERROR, LOCATION, NULL,
@@ -2275,33 +2267,33 @@ ipsecdoi_t2satrns(struct isakmp_pl_t *t, struct saprop *pp, struct saproto *pr, 
 				}
 				/* lifetime must be equal in a proposal. */
 				if (pp->lifetime == IPSECDOI_ATTR_SA_LD_SEC_DEFAULT)
-					pp->lifetime = t;
-				else if (pp->lifetime != t) {
+					pp->lifetime = t1;
+				else if (pp->lifetime != t1) {
 					plog(LLV_ERROR, LOCATION, NULL,
 						"lifetime mismatched "
 						"in a proposal, "
 						"prev:%ld curr:%ld.\n",
-						pp->lifetime, t);
+						pp->lifetime, t1);
 					goto end;
 				}
 				break;
 			case IPSECDOI_ATTR_SA_LD_TYPE_KB:
-				t = ipsecdoi_set_ld(ld_buf);
+				t1 = ipsecdoi_set_ld(ld_buf);
 				rc_vfree(ld_buf);
-				if (t == 0) {
+				if (t1 == 0) {
 					plog(LLV_ERROR, LOCATION, NULL,
 						"invalid life duration.\n");
 					goto end;
 				}
 				/* lifebyte must be equal in a proposal. */
 				if (pp->lifebyte == 0)
-					pp->lifebyte = t;
-				else if (pp->lifebyte != t) {
+					pp->lifebyte = t1;
+				else if ((uint32_t)pp->lifebyte != t1) {
 					plog(LLV_ERROR, LOCATION, NULL,
 						"lifebyte mismatched "
 						"in a proposal, "
 						"prev:%ld curr:%ld.\n",
-						pp->lifebyte, t);
+						pp->lifebyte, t1);
 					goto end;
 				}
 				break;

@@ -382,7 +382,7 @@ sched_delete(struct sched_tag *stag)
 int
 sched_loop(void)
 {
-	fd_set rfds, wfds;
+	fd_set rfds1, wfds1;
 	struct sched_tag *stag, *next;
 	struct timeval cur, tv;
 	int ret, nfds, bulk;
@@ -419,9 +419,9 @@ sched_loop(void)
 			timersub(&stag->timeout, &cur, &tv);
 
 		nfds = (rfd0_max > wfd0_max ? rfd0_max : wfd0_max) + 1;
-		rfds = rfd0;
-		wfds = wfd0;
-		ret = select(nfds, &rfds, &wfds, NULL,
+		rfds1 = rfd0;
+		wfds1 = wfd0;
+		ret = select(nfds, &rfds1, &wfds1, NULL,
 		    stag != NULL ? &tv : NULL);
 		if (ret == -1) {
 			/*
@@ -440,7 +440,7 @@ sched_loop(void)
 		/* scan readq */
 		for (stag = TAILQ_FIRST(&readq); stag != NULL; stag = next) {
 #if 0
-			if (!FD_ISSET(stag->fd, &rfds)) {
+			if (!FD_ISSET(stag->fd, &rfds1)) {
 				next = TAILQ_NEXT(stag, next);
 				continue;
 			}
@@ -463,7 +463,7 @@ sched_loop(void)
 			else
 				next = beacon;
 #endif
-			if (FD_ISSET(stag->fd, &rfds)) {
+			if (FD_ISSET(stag->fd, &rfds1)) {
 				beacon = stag;
 				bulk = stag->maxbulk;
 				do {
@@ -488,7 +488,7 @@ sched_loop(void)
 
 		/* scan writeq */
 		for (stag = TAILQ_FIRST(&writeq); stag != NULL; stag = next) {
-			if (FD_ISSET(stag->fd, &wfds)) {
+			if (FD_ISSET(stag->fd, &wfds1)) {
 				beacon = stag;
 				ret = (*stag->callback)(stag->arg);
 				if (ret != 0)

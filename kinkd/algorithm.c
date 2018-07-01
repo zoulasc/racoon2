@@ -133,7 +133,7 @@ static struct hmac_algorithm *alg_ipsec_hmacdef (int);
 static struct enc_algorithm *
 alg_ipsec_encdef(int doi)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(ipsec_encdef); i++)
 		if (doi == ipsec_encdef[i].doi) {
@@ -149,7 +149,8 @@ alg_ipsec_encdef(int doi)
 int
 alg_ipsec_encdef_doi(int type)
 {
-	int i, res = -1;
+	int res = -1;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(ipsec_encdef); i++)
 		if (type == ipsec_encdef[i].type) {
@@ -175,7 +176,7 @@ alg_ipsec_encdef_keylen(int doi, int len)
 static struct hmac_algorithm *
 alg_ipsec_hmacdef(int doi)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(ipsec_hmacdef); i++)
 		if (doi == ipsec_hmacdef[i].doi) {
@@ -191,7 +192,8 @@ alg_ipsec_hmacdef(int doi)
 int
 alg_ipsec_hmacdef_doi(int type)
 {
-	int i, res = -1;
+	int res = -1;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(ipsec_hmacdef); i++)
 		if (type == ipsec_hmacdef[i].type) {
@@ -217,7 +219,8 @@ alg_ipsec_hmacdef_hashlen(int doi)
 int
 alg_ipsec_compdef_doi(int type)
 {
-	int i, res = -1;
+	int res = -1;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(ipsec_compdef); i++)
 		if (type == ipsec_compdef[i].type) {

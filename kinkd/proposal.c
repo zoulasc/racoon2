@@ -559,7 +559,7 @@ match_saidx(struct saprop *pp, int is_inbound, unsigned int proto_id, uint32_t s
 	struct saproto *pr;
 
 	for (pr = pp->head; pr != NULL; pr = pr->next) {
-		if (proto_id != pr->proto_id)
+		if (proto_id != (unsigned int)pr->proto_id)
 			continue;
 		if (is_inbound && spi == pr->spi) {
 			if (twinspi != NULL)

@@ -56,8 +56,7 @@ isakmp_info_prep_d2(struct saprop *approval)
 	struct isakmp_pl_d d;
 	rc_vchar_t *payload = NULL;
 	int tlen, numspi;
-	char *p, *h;
-	uint8_t *spi;
+	uint8_t *spi, *p, *h;
 
 	/* calculate the total size */
 	tlen = 0;
@@ -115,7 +114,7 @@ isakmp_info_prep_d2(struct saprop *approval)
 	}
 	d.h.np = ISAKMP_NPTYPE_NONE;
 	memcpy(h, &d, sizeof(d));
-	payload->l = p - payload->v;
+	payload->l = p - payload->u;
 
 	return payload;
 }
@@ -219,14 +218,13 @@ isakmp_info_recv_d(rc_vchar_t *msg, unsigned char np,
 					tlen = sizeof(*dr) +
 					    del_cnt * d.spi_size;
 					VCHKSIZE(rmsg, rlen + tlen + d.spi_size);
-					memcpy(rmsg->v + rlen + tlen, &spi,
+					memcpy(rmsg->u + rlen + tlen, &spi,
 					    d.spi_size);
 					del_cnt++;
 				} else {
 					tlen = sizeof(*nr) + d.spi_size;
 					VCHKSIZE(nv, nlen + tlen);
-					nr = (struct isakmp_pl_n *)
-					    (nv->v + nlen);
+					nr = (void *)(nv->u + nlen);
 					nr->h.np = ISAKMP_NPTYPE_N;
 					nr->h.reserved = 0;
 					nr->h.len = htons(tlen);
@@ -234,10 +232,10 @@ isakmp_info_recv_d(rc_vchar_t *msg, unsigned char np,
 					nr->proto_id = d.proto_id;
 					nr->spi_size = d.spi_size;
 					nr->type = htons(ret);
-					memcpy(nv->v + nlen + sizeof(*nr), &spi,
+					memcpy(nv->u + nlen + sizeof(*nr), &spi,
 					    d.spi_size);
 					nlen += tlen;
-					np_off_n = (char *)&nr->h.np - nv->v;
+					np_off_n = (uint8_t *)&nr->h.np - nv->u;
 				}
 			}
 			break;
@@ -252,33 +250,33 @@ isakmp_info_recv_d(rc_vchar_t *msg, unsigned char np,
 		}
 		if (del_cnt != 0) {
 			tlen = sizeof(*dr) + del_cnt * d.spi_size;
-			dr = (struct isakmp_pl_d *)(rmsg->v + rlen);
+			dr = (void *)(rmsg->u + rlen);
 			*dr = d;
 			dr->h.reserved = 0;
 			dr->h.len = htons(tlen);
 			dr->num_spi = htons(del_cnt);
-			*(uint8_t *)(rmsg->v + np_off) = ISAKMP_NPTYPE_D;
-			np_off = (char *)&dr->h.np - rmsg->v;
+			rmsg->u[np_off] = ISAKMP_NPTYPE_D;
+			np_off = (uint8_t *)&dr->h.np - rmsg->u;
 			rlen += tlen;
 		}
 		if (nlen != 0) {
 			VCHKSIZE(rmsg, rlen + nlen);
-			memcpy(rmsg->v + rlen, nv->v, nlen);
-			*(uint8_t *)(rmsg->v + np_off) = ISAKMP_NPTYPE_N;
+			memcpy(rmsg->u + rlen, nv->v, nlen);
+			rmsg->u[np_off] = ISAKMP_NPTYPE_N;
 			np_off = rlen + np_off_n;
 			rlen += nlen;
 		}
 	}
-	*(uint8_t *)(rmsg->v + np_off) = ISAKMP_NPTYPE_NONE;
+	rmsg->u[np_off] = ISAKMP_NPTYPE_NONE;
 
 	error = 0;
 end:
 	rc_vfree(pbuf);
 	rc_vfree(nv);
 	if (error == 0) {
-		*rnp_p = rmsg->v[0];
+		*rnp_p = rmsg->u[0];
 		rmsg->l = rlen - 1;
-		memmove(rmsg->v, rmsg->v + 1, rmsg->l);
+		memmove(rmsg->u, rmsg->u + 1, rmsg->l);
 		*rmsg_p = rmsg;
 	} else
 		rc_vfree(rmsg);

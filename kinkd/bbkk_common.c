@@ -146,7 +146,7 @@ static const struct bbkk_cryptotype cryptotype_list[] = {
 static const struct bbkk_cryptotype *
 get_cryptotype(int etype)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < lengthof(cryptotype_list); i++)
 		if (cryptotype_list[i].etype == etype)

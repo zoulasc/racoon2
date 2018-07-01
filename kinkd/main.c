@@ -63,11 +63,11 @@ int f_loglevel = KLLV_BASE;
 const char *config_file = RACOON2_CONFIG_FILE;
 unsigned int debug_flags = 0;
 
-struct debug_catdef {
+static const struct debug_catdef {
 	const char *str;
 	unsigned int flag;
 	int level;
-} static const debug_catdef[] = {
+} debug_catdef[] = {
 	{ "krb5",		DEBUG_KRB5_BIT,			2 },
 	{ "ticketing",		DEBUG_TICKETING_BIT,		2 },
 	{ "packet",		DEBUG_PACKET_BIT,		9999 },
@@ -80,10 +80,10 @@ struct debug_catdef {
 	{ "isakmp",		DEBUG_ISAKMP_BIT,		3 }
 }, *const debug_catend = debug_catdef + ARRAYLEN(debug_catdef);
 
-struct debug_levdef {
+static const struct debug_levdef {
 	const char *str;
 	int level;
-} static const debug_levdef[] = {
+} debug_levdef[] = {
 	{ "1",		1 },		/* just enable debugging messages */
 	{ "2",		2 },
 	{ "3",		3 },

@@ -164,11 +164,11 @@ eay_3des_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	if (key->l < 24)
 		return NULL;
 
-	if (DES_key_sched((void *)key->v, &ks1) != 0)
+	if (DES_key_sched((void *)key->u, &ks1) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 8), &ks2) != 0)
+	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 16), &ks3) != 0)
+	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
 		return NULL;
 
 	/* allocate buffer for result */
@@ -191,11 +191,11 @@ eay_3des_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	if (key->l < 24)
 		return NULL;
 
-	if (DES_key_sched((void *)key->v, &ks1) != 0)
+	if (DES_key_sched((void *)key->u, &ks1) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 8), &ks2) != 0)
+	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 16), &ks3) != 0)
+	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
 		return NULL;
 
 	/* allocate buffer for result */

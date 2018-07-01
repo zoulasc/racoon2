@@ -77,7 +77,7 @@
  */
 struct payload_setter {
 	rc_vchar_t *buf;
-	char *p;			/* next payload begins here */
+	uint8_t *p;			/* next payload begins here */
 	uint16_t *length_loc;		/* length field of the base header */
 	uint8_t *nptype_loc;		/* nptype field of the last payload */
 	uint16_t *cksum_len_loc;	/* CksumLen field of the base header */
@@ -482,7 +482,7 @@ kink_decode_generic(struct kink_handle *kh, rc_vchar_t *packet)
 
 	cksum_len = ntohs(kheader->cksum_len);
 	remlen = packet->l - sizeof(*kheader) - cksum_len;
-	p = (struct kink_payload *)(packet->v + sizeof(*kheader));
+	p = (void *)(packet->u + sizeof(*kheader));
 	nptype = kheader->next_payload;
 
 	return kink_decode_payload_list(kh, p, nptype, remlen, 0);
@@ -503,7 +503,7 @@ kink_decode_verify_checksum(struct kink_handle *kh, rc_vchar_t *packet)
 	kheader = (struct kink_header *)packet->v;
 	msglen = ntohs(kheader->length);
 	cksum_len = ntohs(kheader->cksum_len);
-	cksum_ptr = packet->v + msglen - cksum_len;
+	cksum_ptr = packet->u + msglen - cksum_len;
 
 	if (cksum_len == 0 && kh->auth_context == NULL) {
 		kinkd_log(KLLV_PRTERR_U, "no checksum\n");
@@ -842,7 +842,7 @@ make_kink_ap_req(struct kink_handle *kh)
 	p = (struct kink_pl_ap_req_b *)buf->v;
 
 	p->epoch = htonl(kh->g->epoch);
-	memcpy(buf->v + sizeof(*p), kh->krb_ap_req->v, kh->krb_ap_req->l);
+	memcpy(buf->u + sizeof(*p), kh->krb_ap_req->v, kh->krb_ap_req->l);
 
 	return buf;
 }
@@ -861,7 +861,7 @@ make_kink_ap_rep(struct kink_handle *kh)
 	p = (struct kink_pl_ap_rep_b *)buf->v;
 
 	p->epoch = htonl(kh->g->epoch);
-	memcpy(buf->v + sizeof(*p), kh->krb_ap_rep->v, kh->krb_ap_rep->l);
+	memcpy(buf->u + sizeof(*p), kh->krb_ap_rep->v, kh->krb_ap_rep->l);
 
 	return buf;
 }
@@ -882,7 +882,7 @@ make_kink_isakmp(struct kink_handle *kh)
 	p->in_nptype = kh->isakmp_1sttype;
 	p->qm_ver = KINK_QM_VERSION;
 	p->reserved = 0;
-	memcpy(buf->v + sizeof(*p), kh->in_isakmp->v, kh->in_isakmp->l);
+	memcpy(buf->u + sizeof(*p), kh->in_isakmp->v, kh->in_isakmp->l);
 
 	return buf;
 }
@@ -956,7 +956,7 @@ read_kink_ap_req(struct kink_handle *kh, rc_vchar_t *buf)
 		EXITREQ_NOMEM();
 		return 1;
 	}
-	memcpy(kh->krb_ap_req->v, buf->v + sizeof(*p), buf->l - sizeof(*p));
+	memcpy(kh->krb_ap_req->v, buf->u + sizeof(*p), buf->l - sizeof(*p));
 	return 0;
 }
 
@@ -979,7 +979,7 @@ read_kink_ap_rep(struct kink_handle *kh, rc_vchar_t *buf)
 		EXITREQ_NOMEM();
 		return 1;
 	}
-	memcpy(kh->krb_ap_rep->v, buf->v + sizeof(*p), buf->l - sizeof(*p));
+	memcpy(kh->krb_ap_rep->v, buf->u + sizeof(*p), buf->l - sizeof(*p));
 	return 0;
 }
 
@@ -1006,7 +1006,7 @@ read_kink_isakmp(struct kink_handle *kh, rc_vchar_t *buf)
 		EXITREQ_NOMEM();
 		return 1;
 	}
-	memcpy(kh->in_isakmp->v, buf->v + sizeof(*p), buf->l - sizeof(*p));
+	memcpy(kh->in_isakmp->v, buf->u + sizeof(*p), buf->l - sizeof(*p));
 	return 0;
 }
 
@@ -1080,8 +1080,8 @@ setpl_kink_payload(struct payload_setter *ps,
 	struct kink_payload *payload;
 
 	/* sanity check */
-	if ((char *)ALIGN_PTR(ps->p, 4) + sizeof(*payload) + data->l >
-	    ps->buf->v + ps->buf->l) {
+	if ((uint8_t *)ALIGN_PTR(ps->p, 4) + sizeof(*payload) + data->l >
+	    ps->buf->u + ps->buf->l) {
 		kinkd_log(KLLV_FATAL, "buffer overflow\n");
 		abort();
 	}
@@ -1108,8 +1108,8 @@ setpl_begin_encrypt_here(struct payload_setter *ps)
 	struct kink_pl_encrypt *encrypt;
 
 	/* sanity check */
-	if ((char *)ALIGN_PTR(ps->p, 4) + sizeof(*encrypt) >
-	    ps->buf->v + ps->buf->l) {
+	if ((uint8_t *)ALIGN_PTR(ps->p, 4) + sizeof(*encrypt) >
+	    ps->buf->u + ps->buf->l) {
 		kinkd_log(KLLV_FATAL, "buffer overflow\n");
 		abort();
 	}
@@ -1152,7 +1152,7 @@ setpl_do_encrypt(struct payload_setter *ps, struct kink_handle *kh)
 	 */
 	/* encrypt */
 	bbkkret = bbkk_encrypt(kh->g->context, kh->auth_context,
-	    &ps->encrypt->b, ps->p - (char *)&ps->encrypt->b,
+	    &ps->encrypt->b, ps->p - (uint8_t *)&ps->encrypt->b,
 	    &enc_ptr, &enc_len);
 	if (bbkkret != 0) {
 		kinkd_log(KLLV_SYSERR,
@@ -1163,11 +1163,11 @@ setpl_do_encrypt(struct payload_setter *ps, struct kink_handle *kh)
 	if (DEBUG_CRYPT()) {
 		kinkd_log(KLLV_DEBUG, "KINK_ENCRYPT before encryption\n");
 		kinkd_log_dump(KLLV_DEBUG,
-		    &ps->encrypt->b, ps->p - (char *)&ps->encrypt->b);
+		    &ps->encrypt->b, ps->p - (uint8_t *)&ps->encrypt->b);
 	}
 
 	/* sanity check */
-	if ((char *)&ps->encrypt->b + enc_len > ps->buf->v + ps->buf->l) {
+	if ((uint8_t *)&ps->encrypt->b + enc_len > ps->buf->u + ps->buf->l) {
 		kinkd_log(KLLV_SANITY, "insufficient buffer\n");
 		free(enc_ptr);
 		return 1;
@@ -1175,13 +1175,13 @@ setpl_do_encrypt(struct payload_setter *ps, struct kink_handle *kh)
 
 	/* copy */
 	memcpy(&ps->encrypt->b, enc_ptr, enc_len);
-	ps->p = (char *)&ps->encrypt->b + enc_len;
+	ps->p = (uint8_t *)&ps->encrypt->b + enc_len;
 	free(enc_ptr);
 
 	/*
 	 * complete KINK_ENCRYPT payload
 	 */
-	ps->encrypt->h.length = htons(ps->p - (char *)ps->encrypt);
+	ps->encrypt->h.length = htons(ps->p - (uint8_t *)ps->encrypt);
 
 	/*
 	 * KINK_ENCRYPT MUST be the last payload so there is no
@@ -1208,7 +1208,7 @@ setpl_finalize(struct payload_setter *ps, struct kink_handle *kh)
 		}
 
 		/* align 4-octet boundary */
-		if ((char *)ALIGN_PTR(ps->p, 4) > ps->buf->v + ps->buf->l) {
+		if ((uint8_t *)ALIGN_PTR(ps->p, 4) > ps->buf->u + ps->buf->l) {
 			kinkd_log(KLLV_SANITY,
 			    "insufficient buffer for packet construction\n");
 			rc_vfree(ps->buf);
@@ -1218,15 +1218,15 @@ setpl_finalize(struct payload_setter *ps, struct kink_handle *kh)
 			*ps->p++ = '\0';
 
 		/* temporary set length-without-checksum */
-		*ps->length_loc = htons(ps->p - ps->buf->v);
+		*ps->length_loc = htons(ps->p - ps->buf->u);
 
 		/* set remaining buffer size */
-		cksum_len = ps->buf->v + ps->buf->l - ps->p;
+		cksum_len = ps->buf->u + ps->buf->l - ps->p;
 
 		/* calculate checksum */
 		bbkkret = bbkk_calc_cksum(kh->g->context,
 		    kh->auth_context, ps->p, &cksum_len,
-		    ps->buf->v, ps->p - ps->buf->v);
+		    ps->buf->v, ps->p - ps->buf->u);
 		if (bbkkret != 0) {
 			kinkd_log(KLLV_SYSERR,
 			    "bbkk_calc_cksum: %s\n",
@@ -1240,7 +1240,7 @@ setpl_finalize(struct payload_setter *ps, struct kink_handle *kh)
 		ps->p += cksum_len;
 	}
 
-	msglen = ps->p - ps->buf->v;
+	msglen = ps->p - ps->buf->u;
 	*ps->length_loc = htons(msglen);
 	ps->buf->l = msglen;
 

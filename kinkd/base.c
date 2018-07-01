@@ -600,7 +600,7 @@ handle_krb_error(struct kink_handle *kh)
 
 	/* XXX hard coded */
 	bbkkret = bbkk_read_error(kh->g->context,
-	    kh->krb_error->v + 0, kh->krb_error->l - 0, &ecode, &stime);
+	    kh->krb_error->v, kh->krb_error->l, &ecode, &stime);
 	if (bbkkret != 0) {
 		kinkd_log(KLLV_SYSERR,
 		    "bbkk_read_error: %s\n",

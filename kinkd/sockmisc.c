@@ -30,8 +30,6 @@
  * SUCH DAMAGE.
  */
 
-#define INET6		/* XXX */
-
 #include <sys/types.h>
 #include <sys/socket.h>
 

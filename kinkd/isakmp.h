@@ -367,8 +367,8 @@ struct isakmp_parse_t {
 
 
 
-caddr_t isakmp_set_attr_v(caddr_t buf, int type, caddr_t val, int len);
 caddr_t isakmp_set_attr_l(caddr_t buf, int type, uint32_t val);
+caddr_t isakmp_set_attr_v(caddr_t buf, int type, caddr_t, int);
 
 caddr_t set_isakmp_payload(caddr_t buf, rc_vchar_t *src, int nptype);
 rc_vchar_t *isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len);

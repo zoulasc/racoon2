@@ -118,8 +118,8 @@ isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 			"failed to get buffer.\n");
 		return NULL;
 	}
-	p = (struct isakmp_parse_t *)result->v;
-	ep = (struct isakmp_parse_t *)(result->v + result->l - sizeof(*ep));
+	p = (void *)result->v;
+	ep = (void *)(result->u + result->l - sizeof(*ep));
 
 	tlen = len;
 
@@ -142,7 +142,7 @@ isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 
 		p->type = np;
 		p->len = ntohs(gen->len);
-		if (p->len < sizeof(struct isakmp_gen) || p->len > tlen) {
+		if ((size_t)p->len < sizeof(struct isakmp_gen) || p->len > tlen) {
 			plog(LLV_DEBUG, LOCATION, NULL,
 				"invalid length of payload\n");
 			rc_vfree(result);
@@ -160,8 +160,7 @@ isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 					"failed to realloc buffer.\n");
 				return NULL;
 			}
-			ep = (struct isakmp_parse_t *)
-				(result->v + result->l - sizeof(*ep));
+			ep = (void *)(result->u + result->l - sizeof(*ep));
 			p = (struct isakmp_parse_t *)result->v;
 			p += off;
 		}

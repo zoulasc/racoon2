@@ -586,7 +586,7 @@ pk_sendupdate(int fd_pfkey, struct saprop *approval,
 		pfk_msg.ul_proto = 0;
 		pfk_msg.enckey = pr->keymat->v;
 		pfk_msg.enckeylen = e_keylen;
-		pfk_msg.authkey = pr->keymat->v + e_keylen;
+		pfk_msg.authkey = pr->keymat->s + e_keylen;
 		pfk_msg.authkeylen = a_keylen;
 		if (rcpfk_send_update(&pfk_msg) == -1) {
 			kinkd_log(KLLV_SYSERR,
@@ -666,7 +666,7 @@ pk_sendadd(int fd_pfkey, struct saprop *approval,
 		pfk_msg.ul_proto = 0;
 		pfk_msg.enckey = pr->keymat_p->v;
 		pfk_msg.enckeylen = e_keylen;
-		pfk_msg.authkey = pr->keymat_p->v + e_keylen;
+		pfk_msg.authkey = pr->keymat_p->s + e_keylen;
 		pfk_msg.authkeylen = a_keylen;
 
 		if (rcpfk_send_add(&pfk_msg) == -1) {

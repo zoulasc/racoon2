@@ -42,6 +42,10 @@
 # include <krb5/krb5.h>
 # include <openssl/evp.h>
 typedef void *krb5_pk_init_ctx;
+struct _krb5_encryption_type;
+struct _krb5_key_data;
+struct _krb5_key_type;
+struct krb5_dh_moduli;
 # include <krb5/pkinit_asn1.h>
 # include <krb5/krb5-private.h>
 #else
