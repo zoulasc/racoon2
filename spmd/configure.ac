@@ -63,46 +63,41 @@ AC_FUNC_STRFTIME
 AC_CHECK_FUNCS(gettimeofday select socket strdup strerror uname getopt_long strlcpy strlcat atoll)
 dnl AC_REPLACE_FUNCS(strlcpy strlcat atoll)
 
-dnl Check sa_len
+dnl Check for sa_len
 AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
-AC_TRY_RUN([
-#include <sys/types.h>
+AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/socket.h>
-int main(void)
-{
-	struct sockaddr sa;
-	sa.sa_len = 0;
-	exit(0);
-}
-],
-AC_DEFINE(HAVE_SA_LEN)
-AC_MSG_RESULT(yes),
-AC_MSG_RESULT(no),:)
+], [    struct sockaddr sa;
+        sa.sa_len = 0;
 
+],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
+        AC_MSG_RESULT(yes),
+        AC_MSG_RESULT(no))
+        
 echo $ac_n "checking for architecture""... $ac_c" 1>&6
 case "$target" in
 	*freebsd4*)
-		AC_DEFINE(HAVE_HOST_CONF)
+		AC_DEFINE(HAVE_HOST_CONF, 1, [use /etc/host.conf])
 		AC_MSG_RESULT(use /etc/host.conf)
 		;;
 	*openbsd*)
-		AC_DEFINE(HAVE_LOOKUP_IN_RESOLV_CONF)
+		AC_DEFINE(HAVE_LOOKUP_IN_RESOLV_CONF, 1, [use lookup in /etc/resolve.conf])
 		AC_MSG_RESULT(use lookup in /etc/resolv.conf)
 		;;
 	*)      
+		AC_DEFINE(HAVE_NSSWITCH_CONF, 1, [use /etc/nsswitch.conf])
 		AC_MSG_RESULT(use /etc/nsswitch.conf)
-		AC_DEFINE(HAVE_NSSWITCH_CONF)
 		;;
 esac
 
 echo $ac_n "checking for SPDUPDATE BUG""... $ac_c" 1>&6
 case $host_os in
 	*netbsd*)
-		AC_DEFINE(HAVE_SPDUPDATE_BUG)
+		AC_DEFINE(HAVE_SPDUPDATE_BUG, 1, [BSD does not keep SPID after spdupdate])
 		AC_MSG_RESULT(yes)
 		;;
 	*freebsd*)
-		AC_DEFINE(HAVE_SPDUPDATE_BUG)
+		AC_DEFINE(HAVE_SPDUPDATE_BUG, 1, [BSD does not keep SPID after spdupdate])
 		AC_MSG_RESULT(yes)
 		;;
 	*)
