@@ -4,6 +4,7 @@ srcdir=@srcdir@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
+datarootdir=@datarootdir@  
 sysconfdir=@sysconfdir@
 mandir=@mandir@
 

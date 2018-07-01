@@ -8,6 +8,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
 sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@
 @SET_MAKE@
 INSTALL =@INSTALL@
 INSTALL_PROG=@INSTALL_PROGRAM@

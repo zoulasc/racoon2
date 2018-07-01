@@ -3,6 +3,7 @@
 srcdir=@srcdir@
 prefix=@prefix@
 sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@  
 INSTALL =@INSTALL@ @INSTALL_OPTS@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@

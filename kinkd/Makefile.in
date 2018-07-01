@@ -5,6 +5,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
 sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@  
 mandir=@mandir@
 CC	=@CC@
 OPTFLAG	=@OPTFLAG@
