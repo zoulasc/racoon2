@@ -46,7 +46,11 @@ typedef struct vchar_tag {
 	caddr_t bp;	/* pointer to the buffer */
 #endif
 	size_t l;	/* length of the value */
-	caddr_t v;	/* place holder to the pointer to the value */
+	union {
+		void *v;	/* place holder to the pointer to the value */
+		uint8_t *u;
+		char *s;
+	};
 } rc_vchar_t;
 
 #define VPTRINIT(p) \
@@ -55,7 +59,7 @@ do { \
 		rc_vfree(p); \
 		(p) = NULL; \
 	} \
-} while(0);
+} while(/*CONSTCOND*/0);
 
 extern rc_vchar_t *rc_vmalloc (size_t);
 extern rc_vchar_t *rc_vrealloc (rc_vchar_t *, size_t);
@@ -72,11 +76,12 @@ extern rc_vchar_t *rc_vprepend (const rc_vchar_t *, const void *, size_t);
 extern rc_vchar_t *rc_vconcat(rc_vchar_t *, const void *, size_t);
 
 /* for static variable initialization */
-#define	VCHAR_INIT(ptr_, len_)	{ (len_), (ptr_) }
+#define	VCHAR_INIT(ptr_, len_)	{ .l = (len_), { .v = (void *)(intptr_t)(ptr_) } }
 
 /* for consecutively appending data */
 #define	VCONCAT(v_, p_, s_)	do {					\
-	    assert((v_)->v <= (caddr_t)(p_) && (caddr_t)(p_) <= (v_)->v + (v_)->l);	\
-	    memcpy((p_), (s_)->v, (s_)->l);				\
-	    (p_) += (s_)->l;						\
-	} while (0)
+    assert((v_)->v <= (void *)(p_) && 					\
+	(void *)(p_) <= (void *)((v_)->u + (v_)->l));			\
+    memcpy((p_), (s_)->v, (s_)->l);					\
+    (p_) += (s_)->l;							\
+} while (/*CONSTCOND*/0)

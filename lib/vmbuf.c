@@ -172,7 +172,7 @@ int
 rc_vmemcmp(const rc_vchar_t *s1, const rc_vchar_t *s2)
 {
 	unsigned char *p1, *p2;
-	int n;
+	size_t n;
 
 	n = s1->l < s2->l ? s1->l : s2->l;
 	if (n != 0) {
@@ -183,7 +183,7 @@ rc_vmemcmp(const rc_vchar_t *s1, const rc_vchar_t *s2)
 				return (*--p1 - *--p2);
 		} while (--n != 0);
 	}
-	return s1->l - s2->l;
+	return (int)(s1->l - s2->l);
 }
 
 /*
@@ -196,7 +196,7 @@ rc_vmem2str(const rc_vchar_t *src)
 
 	buf = rbuf_getvb(1 + src->l);
 	memcpy(buf->v, src->v, src->l);
-	buf->v[src->l] = '\0';
+	buf->s[src->l] = '\0';
 
 	return buf->v;
 }
@@ -208,7 +208,7 @@ rc_vchar_t *
 rc_str2vmem(const char *src)
 {
 	rc_vchar_t *dst;
-	int len;
+	size_t len;
 
 	len = strlen(src);
 	if ((dst = rc_vmalloc(len)) == NULL)
@@ -243,7 +243,7 @@ rc_vprepend(const rc_vchar_t *buf, const void * ptr, size_t len)
 	if (newv == NULL)
 		return NULL;
 	memcpy(newv->v, ptr, len);
-	memcpy(newv->v + len, buf->v, buf->l);
+	memcpy(newv->u + len, buf->v, buf->l);
 	return newv;
 }
 
@@ -262,7 +262,7 @@ rc_vconcat(rc_vchar_t *dest, const void *data, size_t len)
 	dest = rc_vrealloc(dest, orig_l + len);
 	if (! dest)
 		return 0;
-	memcpy(dest->v + orig_l, data, len);
+	memcpy(dest->u + orig_l, data, len);
 	return dest;
 }
 
