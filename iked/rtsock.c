@@ -48,6 +48,20 @@
 
 static int rtsock = -1;
 
+#if defined(RO_MSGFILTER) || defined(ROUTE_MSGFILTER)
+        static unsigned char msgfilter[] = {
+	    RTM_IFINFO,
+#ifdef RTM_IFANNOUNCE
+            RTM_IFANNOUNCE,
+#endif
+            RTM_ADD, RTM_CHANGE, RTM_DELETE, 
+#ifdef RTM_CHGADDR
+            RTM_CHGADDR,
+#endif          
+            RTM_NEWADDR, RTM_DELADDR 
+        };  
+#endif
+
 int
 rtsock_init(void)
 {
@@ -55,6 +69,22 @@ rtsock_init(void)
 	TRACE((PLOGLOC, "rtsock: %d\n", rtsock));
 	if (rtsock < 0)
 		return -1;
+
+#if defined(RO_MSGFILTER)
+	if (setsockopt(rtsock, PF_ROUTE, RO_MSGFILTER,
+	    msgfilter, sizeof(msgfilter)) == -1)
+		plog(PLOG_INTERR, PLOGLOC, 0,
+		     "rtsock: RO_MSGFILTER %s\n", strerror(errno));
+#elif defined(ROUTE_MSGFILTER)
+	/* Convert the array into a bitmask. */
+	int msgfilter_mask = 0;
+	for (i = 0; i < __arraycount(msgfilter); i++)
+		msgfilter_mask |= ROUTE_FILTER(msgfilter[i]);
+	if (setsockopt(ctx->link_fd, PF_ROUTE, ROUTE_MSGFILTER,
+	    &msgfilter_mask, sizeof(msgfilter_mask)) == -1)
+		plog(PLOG_INTERR, PLOGLOC, 0,
+		     "rtsock: ROUTE_MSGFILTER %s\n", strerror(errno));
+#endif
 	return 0;
 }
 
@@ -69,11 +99,10 @@ rtsock_socket(void)
 void
 rtsock_process(void)
 {
-	char msg[BUFSIZ];
 	ssize_t len;
-	struct rt_msghdr *rtm;
+	struct rt_msghdr rtm[10];
 
-	len = recv(rtsock, msg, sizeof(msg), 0);
+	len = recv(rtsock, rtm, sizeof(rtm), 0);
 	TRACE((PLOGLOC, "rtsock %d read len=%zd\n", rtsock, len));
 	if (len < 0) {
 		plog(PLOG_INTERR, PLOGLOC, 0,
@@ -81,10 +110,9 @@ rtsock_process(void)
 		return;
 	}
 
-	rtm = (struct rt_msghdr *)msg;
-	if (len < sizeof(struct rt_msghdr)) {
+	if ((size_t)len < sizeof(int32_t)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
-		     "PF_ROUTE message is short (%zd)\n", len);
+		     "PF_ROUTE message is too short (%zd)\n", len);
 		return;
 	}
 	if (len < rtm->rtm_msglen) {
@@ -104,9 +132,18 @@ rtsock_process(void)
 
 	TRACE((PLOGLOC, "rtm_type %d\n", rtm->rtm_type));
 	switch (rtm->rtm_type) {
+#ifdef RTM_IFANNOUNCE
+	case RTM_IFANNOUNCE:
+#endif
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
+#ifdef RTM_CHGADDR
+	case RTM_CHGADDR:
+#endif
+	case RTM_ADD:
+	case RTM_CHANGE:
 	case RTM_DELETE:
+
 	case RTM_IFINFO:
 		isakmp_reopen(); /* rescan interface addresses */
 		break;
