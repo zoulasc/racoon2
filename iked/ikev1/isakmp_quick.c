@@ -1854,7 +1854,9 @@ get_sainfo_r(struct ph2handle *iph2)
 	iph2->selector = ike_conf_find_ikev1sel_by_id(idsrc, iddst);
 	if (! iph2->selector) {
 		plog(PLOG_INTERR, PLOGLOC, 0,
-		     "can't find matching selector\n");
+		     "can't find matching selector src=%s dst=%s\n",
+		     rcs_sa2str_wop(iph2->src),
+		     rcs_sa2str_wop(iph2->dst));
 		goto end;
 	}
 
@@ -1862,7 +1864,9 @@ get_sainfo_r(struct ph2handle *iph2)
 	iph2->sainfo = getsainfo(idsrc, iddst, iph2->ph1->id_p);
 	if (iph2->sainfo == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
-			"failed to get sainfo.\n");
+			"failed to get sainfo src=%s dst=%s.\n");
+			rcs_sa2str_wop(iph2->src),
+			rcs_sa2str_wop(iph2->dst));
 		goto end;
 	}
 
