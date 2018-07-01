@@ -899,6 +899,8 @@ pk_sendupdate(struct ph2handle *iph2)
 #endif
 	struct rcpfk_msg param;
 
+	memset(&param, 0, sizeof(param));
+
 	/* sanity check */
 	if (iph2->approval == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, 0, "no approvaled SAs found.\n");

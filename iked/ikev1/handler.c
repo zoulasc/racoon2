@@ -1488,6 +1488,8 @@ delete_ipsec_sa(struct sadb_request *r,
 	int satype;
 	int retval;
 
+	memset(&param, 0, sizeof(param));
+
 	switch (proto) {
 	case IPSECDOI_PROTO_IPSEC_AH:
 		satype = RCT_SATYPE_AH;
