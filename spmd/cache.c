@@ -93,7 +93,7 @@ fqdn_match(const char *fqdn1, const char *fqdn2)
 }
 
 int
-add_fqdn_db(char *name, size_t len)
+add_fqdn_db(const char *name, size_t len)
 {
 	int ret=0;
 	struct fqdn_list *fl = NULL;
@@ -122,7 +122,7 @@ del_fqdn_db(struct fqdn_list *fl)
 }
 
 struct fqdn_list *
-find_fqdn_db(char *name, size_t len)
+find_fqdn_db(const char *name, size_t len)
 {
 	struct fqdn_list *fl, *top;
 	int ret;
@@ -180,7 +180,7 @@ add_fqdn_addr_list(struct fqdn_list **flp, const struct sockaddr *sa)
 		f = f->next;
 	}
 	
-	fal = (struct fqdn_addr_list *)spmd_calloc(sizeof(*fal));
+	fal = spmd_calloc(sizeof(*fal));
 	fal->sa = (struct sockaddr *)&fal->ss;
 	memcpy(fal->sa, sa, SPMD_SALEN(sa));
 
@@ -201,7 +201,7 @@ add_fqdn_addr_list(struct fqdn_list **flp, const struct sockaddr *sa)
  * -1: error
  */
 int
-add_fqdn(struct fqdn_list **topp, char *name, size_t len)
+add_fqdn(struct fqdn_list **topp, const char *name, size_t len)
 {
 	struct fqdn_list *fl=NULL;
 	struct fqdn_list *p;
@@ -209,7 +209,7 @@ add_fqdn(struct fqdn_list **topp, char *name, size_t len)
 	if (name==NULL || len <= 0 || len >= MAX_NAME_LEN)
 		return -1;
 
-	fl = (struct fqdn_list *)spmd_calloc(sizeof(struct fqdn_list));
+	fl = spmd_calloc(sizeof(*fl));
 	if (!fl)
 		return -1;
 
@@ -263,7 +263,7 @@ del_fqdn(struct fqdn_list **topp, struct fqdn_list *fl)
  * otherwise: not found or error.
  */
 int
-find_fqdn(struct fqdn_list **topp, char *name, size_t len)
+find_fqdn(struct fqdn_list **topp, const char *name, size_t len)
 {
 	struct fqdn_list *fl;
 	int ret=-1;
@@ -317,7 +317,7 @@ free_cache_entry(struct cache_entry *ce)
 }
 
 /* search by address */
-const struct cache_entry *
+struct cache_entry *
 find_cache_entry(const struct sockaddr *sa)
 {
 	struct cache_entry *ce;
@@ -463,7 +463,7 @@ cache_update(struct dns_data *dd)
 			strlcpy(cname, rr->rdata, sizeof(cname));
 			has_cname=1;
 		} else if (rr->type == TYPE_A || rr->type == TYPE_AAAA) {
-			ce = (struct cache_entry *)find_cache_entry(rr->sa); /* lookup addrss db */
+			ce = find_cache_entry(rr->sa); /* lookup addrss db */
 			if (!ce) { /* nothing - create! */
 				ce = alloc_cache_entry();
 				if (has_cname && !strncmp(cname, rr->name, strlen(cname))) {
@@ -638,7 +638,7 @@ hosts_cache_update(void)
 		/* we don't care aliases */
 
 		if (!find_fqdn(&fqdn_list_top, hp, strlen(hp))) {
-			ce = (struct cache_entry *)find_cache_entry(res->ai_addr);
+			ce = find_cache_entry(res->ai_addr);
 			if (!ce) { 
 				ce = alloc_cache_entry();
 				add_fqdn(&ce->fltop, hp, strlen(hp));

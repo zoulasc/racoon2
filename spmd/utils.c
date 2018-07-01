@@ -85,11 +85,11 @@ sockcmp(const struct sockaddr *sa1, const struct sockaddr *sa2)
 		return -1;
 
 	if (sa1->sa_family == AF_INET) {
-		struct sockaddr_in *sin1, *sin2;
+		const struct sockaddr_in *sin1, *sin2;
 		in_addr_t addr1, addr2;
 
-		sin1 = (struct sockaddr_in *)sa1;
-		sin2 = (struct sockaddr_in *)sa2;
+		sin1 = (const struct sockaddr_in *)sa1;
+		sin2 = (const struct sockaddr_in *)sa2;
 
 		addr1 = sin1->sin_addr.s_addr;
 		addr2 = sin2->sin_addr.s_addr;
@@ -101,11 +101,11 @@ sockcmp(const struct sockaddr *sa1, const struct sockaddr *sa2)
 	}
 
 	if (sa1->sa_family == AF_INET6) {
-		struct sockaddr_in6 *sin61, *sin62;
-		struct in6_addr *addr61, *addr62;
+		const struct sockaddr_in6 *sin61, *sin62;
+		const struct in6_addr *addr61, *addr62;
 
-		sin61 = (struct sockaddr_in6 *)sa1;
-		sin62 = (struct sockaddr_in6 *)sa2;
+		sin61 = (const struct sockaddr_in6 *)sa1;
+		sin62 = (const struct sockaddr_in6 *)sa2;
 
 		addr61 = &sin61->sin6_addr;
 		addr62 = &sin62->sin6_addr;

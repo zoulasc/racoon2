@@ -142,7 +142,7 @@ sc_writemsg(int fd, const void *buf, size_t count)
 	ssize_t len=0;
 
 	if (IS_DISPLAY_WR) {
-		fprintf(stdout, "[MSG   TO SPMD] %s", (char *)buf);
+		fprintf(stdout, "[MSG   TO SPMD] %s", (const char *)buf);
 		fflush(stdout);
 	}
 
@@ -263,7 +263,7 @@ sc_interactive(int s)
 static struct sp_entry *
 sc_parse_alloc_sp_entry(const char *str, struct sp_entry *pre)
 {
-	char *ap, *cp;
+	const char *ap, *cp;
 	size_t slid_len=0;
 	struct sp_entry *sd=NULL;
 
@@ -278,7 +278,7 @@ sc_parse_alloc_sp_entry(const char *str, struct sp_entry *pre)
 	sd->sa_dst = (struct sockaddr *)&sd->ss_sa_dst;
 
 	if (str) {
-		ap = (char *)str;
+		ap = str;
 		cp = strpbrk(ap, " ");
 		if (!cp) {
 			return NULL;
@@ -303,7 +303,7 @@ sc_parse_alloc_sp_entry(const char *str, struct sp_entry *pre)
 }
 
 static void
-sc_free_all_sp_entry()
+sc_free_all_sp_entry(void)
 {
 	struct sp_entry *sd = NULL, *next = NULL;
 
@@ -971,7 +971,7 @@ sc_sock_open_file(const struct sockaddr *sa)
 
 	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof (on));
 
-	if (connect(s, sa, SUN_LEN((struct sockaddr_un *)sa))<0) {
+	if (connect(s, sa, SUN_LEN((const struct sockaddr_un *)sa))<0) {
 		close(s);
 		s = -1;
 	} 
@@ -992,7 +992,7 @@ sc_login(void)
 	char *p;
 	struct spmd_cid cid;
 	rc_vchar_t *vpasswd=NULL;
-	int i;
+	size_t i;
 	char *dp = NULL;
 	uint8_t *sp = NULL;
 	size_t plen = 0;
@@ -1106,7 +1106,7 @@ connect_ok:
 	}
 	dp = cid.password;
 	sp = (uint8_t *)vpasswd->v;
-	for (i=0; i<vpasswd->l; i++) {
+	for (i = 0; i < vpasswd->l; i++) {
 		snprintf(dp, plen, "%02X", sp[i]);
 		dp += 2;
 		plen -= 2;

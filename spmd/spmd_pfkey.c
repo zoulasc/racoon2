@@ -144,7 +144,9 @@ static int spid_data_add(uint32_t seq, const char *slid);
 static int spid_data_add_complete(uint32_t spid, const char *slid);
 static int spid_data_del(struct spid_data *sd);
 static int spid_data_del_by_spid(int32_t spid);
+#ifdef SPMD_DEBUG
 static int spid_data_dump(void);
+#endif
 /*const struct spid_data *spid_data_top(void);*/
 
 
@@ -170,7 +172,7 @@ spmd_pfkey_init(void)
 	struct rcf_selector *sl_head = NULL;
 	struct rcf_selector *sl = NULL;
 	int spd_add_skip = 0;
-	char *fqdn_str = NULL;
+	const char *fqdn_str = NULL;
 	size_t fqdn_strlen = 0;
 	struct rc_addrlist *rcals = NULL, *rcald = NULL;
 	struct task *t = NULL;
@@ -217,10 +219,10 @@ spmd_pfkey_init(void)
 					sl->sl_index->l, sl->sl_index->v);
 				continue;
 			}
-			fqdn_str = (char *)rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
+			fqdn_str = rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
 			fqdn_strlen = strlen(fqdn_str);
 			add_fqdn_db(fqdn_str, fqdn_strlen);
-			fqdn_str = (char *)rc_vmem2str(rcald->a.vstr); /* add dst to fqdn_db */
+			fqdn_str = rc_vmem2str(rcald->a.vstr); /* add dst to fqdn_db */
 			fqdn_strlen = strlen(fqdn_str);
 			add_fqdn_db(fqdn_str, fqdn_strlen);
 			/* add sp_queue */
@@ -236,7 +238,7 @@ spmd_pfkey_init(void)
 					sl->sl_index->l, sl->sl_index->v);
 				continue;
 			}
-			fqdn_str = (char *)rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
+			fqdn_str = rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
 			fqdn_strlen = strlen(fqdn_str);
 			add_fqdn_db(fqdn_str, fqdn_strlen);
 			/* add sp_queue */
@@ -252,7 +254,7 @@ spmd_pfkey_init(void)
 					sl->sl_index->l, sl->sl_index->v);
 				continue;
 			}
-			fqdn_str = (char *)rc_vmem2str(rcald->a.vstr); /* add dst to fqdn_db */
+			fqdn_str = rc_vmem2str(rcald->a.vstr); /* add dst to fqdn_db */
 			fqdn_strlen = strlen(fqdn_str);
 			add_fqdn_db(fqdn_str, fqdn_strlen);
 			/* add sp_queue */
@@ -885,7 +887,7 @@ spmd_migrate(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent)
 
 	if (urgent) {
 		ret = rcpfk_send_migrate(rc);
-		if (rc < 0)
+		if (ret < 0)
 			goto fin;
 		ret = rcpfk_handler(rc);
 	} else {
@@ -1449,10 +1451,10 @@ err:
 static int
 sp_queue_add(const char *sl_index, const struct rc_addrlist *src, const struct rc_addrlist *dst)
 {
-	struct sp_queue *spq = NULL, *new_spq=NULL, *spq_tmp = NULL;
+	struct sp_queue *spq = NULL, *new_spq = NULL, *spq_tmp = NULL;
 	struct fqdn_list *fl = NULL;
-	char *fqdn_str=NULL;
-	size_t fqdn_strlen=0;
+	const char *fqdn_str = NULL;
+	size_t fqdn_strlen = 0;
 
 	spq = sp_queue_search(sl_index);
 	if (spq) {
@@ -1471,7 +1473,7 @@ sp_queue_add(const char *sl_index, const struct rc_addrlist *src, const struct r
 
 	new_spq->src_type = src->type;
 	if (new_spq->src_type == RCT_ADDR_FQDN) {
-		fqdn_str = (char *)rc_vmem2str(src->a.vstr);
+		fqdn_str = rc_vmem2str(src->a.vstr);
 		fqdn_strlen = strlen(fqdn_str);
 		fl = find_fqdn_db(fqdn_str, fqdn_strlen);
 		if (!fl) {
@@ -1487,7 +1489,7 @@ sp_queue_add(const char *sl_index, const struct rc_addrlist *src, const struct r
 
 	new_spq->dst_type = dst->type;
 	if (new_spq->dst_type == RCT_ADDR_FQDN) {
-		fqdn_str = (char *)rc_vmem2str(dst->a.vstr);
+		fqdn_str = rc_vmem2str(dst->a.vstr);
 		fqdn_strlen = strlen(fqdn_str);
 		fl = find_fqdn_db(fqdn_str, fqdn_strlen);
 		if (!fl) {
@@ -2115,6 +2117,7 @@ spmd_spd_delete_by_slid(const char *slid)
 	return ret;
 }
 
+#ifdef SPMD_DEBUG
 /*
  * Show SPID<->SLID elements
  */
@@ -2136,6 +2139,7 @@ spid_data_dump(void)
 
 	return 0;
 }
+#endif
 
 /* pass spmd_data list tree */
 const struct spid_data *
@@ -2181,7 +2185,7 @@ static int spmd_handle_external(struct rcpfk_msg *rc)
 			continue;
 
 		/* Try and match the reqid */
-		if (sl->reqid != rc->reqid)
+		if ((unsigned int)sl->reqid != rc->reqid)
 			continue;
 
 		/* We have found a selector */

@@ -52,7 +52,9 @@ static int shell_banner(int s, const char *challenge);
 static char *shell_gen_challenge(void);
 static char *shell_cfg_get_password(void);
 static int shell_cid_clean(struct spmd_cid *cid);
+#ifdef SPMD_DEBUG
 static int shell_sock_open_sa(const struct sockaddr *sa);
+#endif
 static struct sockaddr *shell_build_sock_unix(const char *path);
 static int shell_sock_open_file(const struct sockaddr *sa);
 int shell_accept(struct task *t);
@@ -209,7 +211,7 @@ shell_build_sock_unix(const char *path)
 	}
 	spmd_free(dir);
 
-	slocal = spmd_calloc(sizeof(struct sockaddr_un));
+	slocal = spmd_calloc(sizeof(*slocal));
 	if (!slocal) {
 		SPMD_PLOG(SPMD_L_INTERR, "Out of memory");
 		return NULL;
@@ -247,7 +249,7 @@ shell_sock_open_file(const struct sockaddr *sa)
 		goto fin; 
 	} 
 
-	if (bind(s, sa, SUN_LEN((struct sockaddr_un *)sa)) < 0) {
+	if (bind(s, sa, SUN_LEN((const struct sockaddr_un *)sa)) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed: bind():%s", strerror(errno));
 		close(s);
 		s = -1;
@@ -354,7 +356,7 @@ shell_init(void)
 						SPMD_PLOG(SPMD_L_INTWARN, "Can't setup spmd interface %s, skip", host);
 						continue;
 					}
-					sh = (struct shell_sock *)spmd_calloc(sizeof(struct shell_sock));
+					sh = spmd_calloc(sizeof(*sh));
 					sh->s = fd;
 					memcpy(&sh->sock.sa, rcl->a.ipaddr, rcs_getsalen(rcl->a.ipaddr));
 					if (!shhead) {
@@ -382,7 +384,7 @@ shell_init(void)
 			break;
 		}
 		
-		sh = (struct shell_sock *)spmd_calloc(sizeof(struct shell_sock));
+		sh = spmd_calloc(sizeof(*sh));
 		sh->s = fd;
 		memcpy(&sh->sock.sa, rcl->a.ipaddr, rcs_getsalen(rcl->a.ipaddr));
 		if (!shhead) {
@@ -457,7 +459,7 @@ shell_accept(struct task *t)
 	}
 
 	/* display banner message */
-	cid = (struct spmd_cid *)spmd_calloc(sizeof(struct spmd_cid));
+	cid = spmd_calloc(sizeof(*cid));
 	if (!cid) {
 		SPMD_PLOG(SPMD_L_INTERR, "Out of memory");
 		close(cli_sock);
@@ -519,7 +521,7 @@ shell_interpreter(struct task *t)
 		goto fin;
 	}
 
-	bufhead = buf = (char *)spmd_calloc(n);
+	bufhead = buf = spmd_calloc(n);
 	if (!bufhead) {
 		SPMD_PLOG(SPMD_L_INTERR, "Out of memory");
 		ret = -1;
@@ -529,7 +531,7 @@ shell_interpreter(struct task *t)
 	cp = cmd;
 
 	/* skip head space */
-	while (*cp && isblank(*cp)) cp++;
+	while (*cp && isblank((unsigned char)*cp)) cp++;
 
 	if (!*cp) { /* empty line, never reach */
 		SPMD_PLOG(SPMD_L_INTWARN, "Get empty line from client");
@@ -545,7 +547,7 @@ shell_interpreter(struct task *t)
 	sh_argv[sh_argc] = buf;
 	while (*cp) {
 		if (isspace(*(unsigned char *)cp)) {
-			while (*cp && isblank(*cp)) cp++;
+			while (*cp && isblank((unsigned char)*cp)) cp++;
 			*buf = '\0';
 			if (*cp == '\r') 
 				break;
@@ -650,12 +652,12 @@ shell_gen_challenge(void)
 	char *seed; 
 	size_t seed_len = SPMD_CID_SEED_LEN;
 	size_t ret;
-	char *challenge;
+	char *challenge = NULL;
 	size_t challenge_len;
 	char *p;
-	int i;
+	size_t i;
 	const EVP_MD *m;
-	EVP_MD_CTX *ctx;
+	EVP_MD_CTX *ctx = NULL;
 	unsigned char digest[EVP_MAX_MD_SIZE];
 	unsigned int digest_len;
 
@@ -710,7 +712,7 @@ shell_gen_challenge(void)
 		SPMD_PLOG(SPMD_L_INTERR, "Failed to get Message Digest value");
 		goto fin;
 	}
-	if (digest_len != EVP_MD_CTX_size(ctx)) {
+	if (digest_len != (size_t)EVP_MD_CTX_size(ctx)) {
 		SPMD_PLOG(SPMD_L_INTERR, "Message Digest length is not enough");
 		goto fin;
 	}
@@ -722,7 +724,7 @@ shell_gen_challenge(void)
 		goto fin;
 	}
 	p = challenge;
-        for (i=0;i<digest_len;i++) {
+        for (i = 0; i < digest_len; i++) {
 		snprintf(p, challenge_len, "%02X", digest[i]);
 		p += 2; 
 		challenge_len -= 2;
@@ -739,7 +741,7 @@ static char *
 shell_cfg_get_password(void)
 {
 	rc_vchar_t *vpasswd = NULL;
-	int i;
+	size_t i;
 	char *dp = NULL;
 	uint8_t *sp = NULL;
 	size_t plen = 0;
@@ -757,8 +759,8 @@ shell_cfg_get_password(void)
 		SPMD_PLOG(SPMD_L_INTERR, "Out of memory");
 		return NULL;
 	}
-	sp = (uint8_t *)vpasswd->v;
-	for (i=0; i<vpasswd->l; i++) { 
+	sp = vpasswd->u;
+	for (i = 0; i < vpasswd->l; i++) { 
 		snprintf(dp, plen, "%02X", sp[i]);
 		dp +=2;
 		plen -= 2;
@@ -786,12 +788,11 @@ shell_cid_clean(struct spmd_cid *cid)
 static int
 spmd_passwd_check(char *str, struct spmd_cid *cid)
 {
-	size_t ret;
+	size_t ret = -1;
 	size_t plen,slen;
 	char *passwd = shell_cfg_get_password();
 
 	if (!str||!cid||!passwd) {
-		ret = -1;
 		goto fin;
 	}
 
@@ -813,14 +814,12 @@ spmd_passwd_check(char *str, struct spmd_cid *cid)
 	slen = strlen(str);
 
 	if (slen < plen) {
-		ret = -1;
 		goto fin;
 	}
 
 	ret = strncmp(cid->hash, str, plen); 
 
 fin:
-
 	return ret;
 }
 
@@ -1498,7 +1497,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		if (spmd_spd_update(sl1, rc1, not_urgent)<0) {
 			strlcpy(status, "550 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n", 
-							status, (int)sl1->sl_index->l, sl1->sl_index->v);
+							status, (int)sl1->sl_index->l, sl1->sl_index->s);
 			goto err_fin;
 		}
 
@@ -1528,13 +1527,13 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		if (spmd_spd_update(sl2, rc2, not_urgent)<0) {
 			strlcpy(status, "550 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n", 
-							status, (int)sl2->sl_index->l, sl2->sl_index->v);
+							status, (int)sl2->sl_index->l, sl2->sl_index->s);
 			goto err_fin;
 		}
 
 		strlcpy(status, "250 ", sizeof(status));
 		snprintf(buf, sizeof(buf), "%sPolicy Added %.*s and %.*s\r\n", 
-			status, (int)sl1->sl_index->l, sl1->sl_index->v, (int)sl2->sl_index->l, sl2->sl_index->v);
+			status, (int)sl1->sl_index->l, sl1->sl_index->s, (int)sl2->sl_index->l, sl2->sl_index->s);
 		goto fin;
 	} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) { 
 		if (sh_argc != 2) {
@@ -1704,13 +1703,13 @@ shell_migrate_handler(int sh_argc, char **sh_argv, struct task *t)
 		strlcpy(status, "550 ", sizeof(status));
 		snprintf(buf, sizeof(buf),
 			 "%sOperation Failed(sl_index=%.*s)\r\n",
-			 status, (int)sl->sl_index->l, sl->sl_index->v);
+			 status, (int)sl->sl_index->l, sl->sl_index->s);
 		goto err_fin;
 	}
 
 	strlcpy(status, "250 ", sizeof(status));
 	snprintf(buf, sizeof(buf), "%sMigrate %.*s\r\n",
-		 status, (int)sl->sl_index->l, sl->sl_index->v);
+		 status, (int)sl->sl_index->l, sl->sl_index->s);
 	goto fin;
 
     err_fin:

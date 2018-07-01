@@ -74,11 +74,11 @@ qstat_t qstat[] =
 };
 
 static struct query_q *top_q = NULL;
-const static struct query_q *find_query_q(uint16_t id);
+static const struct query_q *find_query_q(uint16_t id);
 static int add_query_q(uint16_t id, struct sockaddr *sa, int s);
 static struct query_q *del_query_q(struct query_q *q);
 
-const static struct query_q *
+static const struct query_q *
 find_query_q(uint16_t id)
 {
 	struct query_q *q;
@@ -309,7 +309,7 @@ fin:
 int
 query_send(struct task *t)
 {
-	int wlen;
+	ssize_t wlen;
 	struct dns_server *dns;
 	struct task *newt;
 
@@ -328,7 +328,7 @@ query_send(struct task *t)
 		return -1;
 	}
 
-	if (len != wlen) {
+	if (len != (size_t)wlen) {
 		if (dns->next == NULL) {
 			SPMD_PLOG(SPMD_L_INTERR, "Can't change DNS server");
 			return -1;

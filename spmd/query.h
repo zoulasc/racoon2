@@ -44,7 +44,7 @@ enum qtype {Q_QUERY, Q_RESPONSE, Q_QUERY_PROXY,
 typedef struct spmd_stat {
 	enum qtype type; 
 	uint32_t number;
-	char *name;
+	const char *name;
 } qstat_t;
 extern qstat_t qstat[]; 
 

@@ -273,7 +273,7 @@ task_run(void)
 	return 0;
 }
 
-void
+static void
 task_destruct(void)
 {
 	struct task *t;

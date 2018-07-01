@@ -65,15 +65,15 @@ int add_fqdn_addr_list(struct fqdn_list **flp, const struct sockaddr *sa);
 
 void fqdn_db_init(void);
 int fqdn_match(const char *fqdn1, const char *fqdn2);
-int add_fqdn_db(char *name, size_t len);
+int add_fqdn_db(const char *name, size_t len);
 int del_fqdn_db(struct fqdn_list *fl);
-struct fqdn_list *find_fqdn_db(char *name, size_t len);
+struct fqdn_list *find_fqdn_db(const char *name, size_t len);
 struct fqdn_list *get_fqdn_db_top(void);
 void flush_fqdn_db(void);
 
-int add_fqdn(struct fqdn_list **topp, char *name, size_t len);
+int add_fqdn(struct fqdn_list **topp, const char *name, size_t len);
 int del_fqdn(struct fqdn_list **topp, struct fqdn_list *fl);
-int find_fqdn(struct fqdn_list **topp, char *name, size_t len);
+int find_fqdn(struct fqdn_list **topp, const char *name, size_t len);
 void flush_fqdn(struct fqdn_list **topp);
 
 struct cache_entry {
@@ -89,7 +89,7 @@ struct cache_entry {
 
 struct cache_entry *alloc_cache_entry(void);
 void free_cache_entry(struct cache_entry *ce);
-const struct cache_entry *find_cache_entry(const struct sockaddr *sa);
+struct cache_entry *find_cache_entry(const struct sockaddr *sa);
 /* you have to call find_cach_entry before add for dup checking */
 int add_cache_entry(struct cache_entry *ce);
 int del_cache_entry(struct cache_entry *ce);
@@ -108,6 +108,6 @@ enum ctype { C_ADDRESS, C_FQDN, C_TOTAL_FQDN, C_END };
 typedef struct cache_stat { 
 	enum ctype type; 
 	uint32_t number; 
-	char *name;
+	const char *name;
 } cstat_t;
 extern cstat_t cstat[]; 
