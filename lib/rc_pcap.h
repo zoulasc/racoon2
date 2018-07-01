@@ -30,4 +30,4 @@
 
 extern void rc_pcap_push(struct sockaddr *src, struct sockaddr *dst,
     rc_vchar_t *data);
-extern int rc_pcap_init(char *fname, char *fmode);
+extern int rc_pcap_init(const char *fname, const char *fmode);

@@ -135,7 +135,7 @@ struct cf_lists {
 
 extern int yyparse (void);
 extern int yylex (void);
-extern void yyerror (char *s, ...);
+extern void yyerror (const char *s, ...);
 extern int rcf_incstack_set (const char *);
 extern struct cf_list *rcf_mkelm (rcf_t);
 extern int rcf_init (int);

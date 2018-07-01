@@ -147,7 +147,8 @@ int
 rc_read_pidfile(pid_t *pid, const char *filename)
 {
 	char buf[16];
-	int fd, ret, intpid;
+	int fd, intpid;
+	ssize_t ret;
 
 	fd = open(filename, O_RDONLY, 0);
 	if (fd == -1) {

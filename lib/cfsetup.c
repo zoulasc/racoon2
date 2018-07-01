@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <netdb.h>		/* EAI_NONAME */
 #include <string.h>
+#include <stddef.h>
+#include <limits.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -56,67 +58,67 @@ do { \
 	} \
 	if ((*func)((cl), (dd))) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_VDUP(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rc_vdup(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_KMP(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_kmp(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_PKLIST(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_pklist(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_ADDRLIST(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_addrlist(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_IDLIST(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_idlist(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_ALGLIST(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_alglist(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_POLICY(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_policy(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_IPSEC(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_ipsec(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_SA(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_sa(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 #define DEEPCOPY_LOG(src, dst) \
 do { \
 	if ((src) != 0 && ((dst) = rcf_deepcopy_log(src)) == 0) \
 		goto err; \
-} while(0)
+} while (/*CONSTCOND*/0)
 
 extern struct cf_lists *cf_lists;
 
@@ -128,7 +130,7 @@ struct rcf_remote *rcf_remote_head = 0;
 struct rcf_selector *rcf_selector_head = 0;
 struct rcf_addresspool *rcf_addresspool_head = 0;
 
-static int (*rcf_get_tdf (rcf_tdir))();
+static int (*rcf_get_tdf (rcf_tdir))(struct cf_list *, void *);
 	/* setval */
 static int rcf_fix_setval (struct rcf_setval **);
 static void rcf_clean_setval_list (struct rcf_setval *);
@@ -403,9 +405,9 @@ struct rcf_tdf_t {
 	{ CFD_SPI,			rcf_fix_spi, },
 };
 
-static int (*rcf_get_tdf(rcf_tdir dir))()
+static int (*rcf_get_tdf(rcf_tdir dir))(struct cf_list *, void *)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < ARRAYLEN(rcf_tdf); i++) {
 		if (rcf_tdf[i].type == dir)
@@ -413,6 +415,24 @@ static int (*rcf_get_tdf(rcf_tdir dir))()
 	}
 
 	return (void *)0;
+}
+
+static int
+rcf_cvt_int(int *r, const struct cf_list *n)
+{
+	if (n->d.num > INT_MAX || n->d.num < INT_MIN)
+		return -1;
+	*r = (int)n->d.num;
+	return 0;
+}
+
+static int
+rcf_cvt_size_t(size_t *r, const struct cf_list *n)
+{
+	if ((uintmax_t)n->d.num > SIZE_T_MAX)
+		return -1;
+	*r = (size_t)n->d.num;
+	return 0;
 }
 
 
@@ -495,7 +515,7 @@ rcf_read(const char *file, int flag)
  * clean the configuration trees
  */
 int
-rcf_clean()
+rcf_clean(void)
 {
 	rcf_clean_setval_list(rcf_setval_head);
 	rcf_clean_default_list(rcf_default_head);
@@ -1671,7 +1691,7 @@ static int
 rcf_fix_script(struct cf_list *head, void *dst0)
 {
 	struct cf_list	*s;
-	long long	script;
+	size_t script;
 	struct rcf_kmp	*dst = (struct rcf_kmp *)dst0;
 
 	if (rcf_check_cfd(head, CFD_SCRIPT))
@@ -1679,7 +1699,8 @@ rcf_fix_script(struct cf_list *head, void *dst0)
 	for (s = head->nextp; s; s = s->nextp) {
 		if (rcf_check_cft(s, CFT_NUMBER))
 			return -1;
-		script = s->d.num;
+		if (rcf_cvt_size_t(&script, s))
+			return -1;
 		if (rcf_check_cft(s->nexts, CFT_STRING))
 			return -1;
 		if (rc_strex(s->nexts->d.str, &dst->script[script]))
@@ -1941,7 +1962,8 @@ rcf_fix_upper_layer_protocol(struct cf_list *head, void *dst0)
 		if (n->type != CFT_NUMBER)
 			return -1;
 		for (al = dst->src; al; al = al->next)
-			al->port = n->d.num;
+			if (rcf_cvt_int(&al->port, n) == -1)
+				return -1;
 
 		n = n->nexts;
 		if (!n)
@@ -1949,7 +1971,8 @@ rcf_fix_upper_layer_protocol(struct cf_list *head, void *dst0)
 		if (n->type != CFT_NUMBER)
 			return -1;
 		for (al = dst->dst; al; al = al->next)
-			al->port = n->d.num;
+			if (rcf_cvt_int(&al->port, n) == -1)
+				return -1;
 		break;
 	case IPPROTO_MH:
 		n = head->nextp->nexts;
@@ -1958,7 +1981,8 @@ rcf_fix_upper_layer_protocol(struct cf_list *head, void *dst0)
 		if (n->type != CFT_NUMBER)
 			return -1;
 		for (al = dst->src; al; al = al->next)
-			al->port = n->d.num;
+			if (rcf_cvt_int(&al->port, n) == -1)
+				return -1;
 		if (n->nexts)
 			plog(PLOG_INTWARN, PLOGLOC, NULL,
 			     "spurious extra ulp parameter at %d in %s\n",
@@ -2005,10 +2029,7 @@ rcf_setproto(rc_vchar_t *proto, int *num)
 	char *bp;
 
 	name = rc_vmem2str(proto);
-	if (name[0] == '0' && name[1] == 'x')
-		*num = strtol(name, &bp, 16);
-	else
-		*num = strtol(name, &bp, 10);
+	*num = (int)strtol(name, &bp, 0);
 	if (*bp == '\0')
 		return 0;
 
@@ -2332,7 +2353,7 @@ rcf_deepcopy_ipsec(struct rcf_ipsec *src)
 		DEEPCOPY_SA(n->sa_esp, new->sa_esp);
 		DEEPCOPY_SA(n->sa_ipcomp, new->sa_ipcomp);
 		for (p = new_head; p && p->next; p = p->next)
-			;
+			continue;
 		if (p)
 			p->next = new;
 		else
@@ -2597,7 +2618,7 @@ static int
 str2addr(rc_vchar_t *str, int *af, uint8_t *addr)
 {
 	const char	*s;
-	uint8_t	*a;
+	void	*a;
 	size_t		alen;
 	struct addrinfo hint;
 	struct addrinfo *info;
@@ -2632,12 +2653,14 @@ str2addr(rc_vchar_t *str, int *af, uint8_t *addr)
 
 		switch (p->ai_addr->sa_family) {
 		case AF_INET:
-			a = (uint8_t *)&((struct sockaddr_in *)p->ai_addr)->sin_addr;
+			a = ((uint8_t *)(void *)p->ai_addr)
+			    + offsetof(struct sockaddr_in, sin_addr);
 			alen = sizeof(struct in_addr);
 			break;
 #ifdef INET6
 		case AF_INET6:
-			a = (uint8_t *)&((struct sockaddr_in6 *)p->ai_addr)->sin6_addr;
+			a = ((uint8_t *)(void *)p->ai_addr)
+			    + offsetof(struct sockaddr_in6, sin6_addr);
 			alen = sizeof(struct in6_addr);
 			break;
 #endif
@@ -3507,9 +3530,7 @@ rcf_fix_number(struct cf_list *n, int *num)
 {
 	if (rcf_check_cft(n, CFT_NUMBER))
 		return -1;
-	*num = n->d.num;
-
-	return 0;
+	return rcf_cvt_int(num, n);
 }
 
 /*
@@ -3553,16 +3574,16 @@ static struct cf_list *
 rcf_get_cf_policy(rc_vchar_t *pl_index)
 {
 	struct cf_list *n;
-	rc_vchar_t *index;
+	rc_vchar_t *idx;
 
 	for (n = cf_lists->cf_policy_head; n; n = n->nexts) {
-		if (rcf_fix_string(n, &index))
+		if (rcf_fix_string(n, &idx))
 			return 0;
-		if (rc_vmemcmp(pl_index, index) == 0) {
-			rc_vfree(index);
+		if (rc_vmemcmp(pl_index, idx) == 0) {
+			rc_vfree(idx);
 			return n;
 		}
-		rc_vfree(index);
+		rc_vfree(idx);
 	}
 
 	return 0;
@@ -3572,16 +3593,16 @@ static struct cf_list *
 rcf_get_cf_ipsec(rc_vchar_t *ips_index)
 {
 	struct cf_list *n;
-	rc_vchar_t *index;
+	rc_vchar_t *idx;
 
 	for (n = cf_lists->cf_ipsec_head; n; n = n->nexts) {
-		if (rcf_fix_string(n, &index))
+		if (rcf_fix_string(n, &idx))
 			return 0;
-		if (rc_vmemcmp(ips_index, index) == 0) {
-			rc_vfree(index);
+		if (rc_vmemcmp(ips_index, idx) == 0) {
+			rc_vfree(idx);
 			return n;
 		}
-		rc_vfree(index);
+		rc_vfree(idx);
 	}
 
 	return 0;
@@ -3591,16 +3612,16 @@ static struct cf_list *
 rcf_get_cf_sa(rc_vchar_t *sa_index)
 {
 	struct cf_list *n;
-	rc_vchar_t *index;
+	rc_vchar_t *idx;
 
 	for (n = cf_lists->cf_sa_head; n; n = n->nexts) {
-		if (rcf_fix_string(n, &index))
+		if (rcf_fix_string(n, &idx))
 			return 0;
-		if (rc_vmemcmp(sa_index, index) == 0) {
-			rc_vfree(index);
+		if (rc_vmemcmp(sa_index, idx) == 0) {
+			rc_vfree(idx);
 			return n;
 		}
-		rc_vfree(index);
+		rc_vfree(idx);
 	}
 
 	return 0;
@@ -3823,7 +3844,7 @@ rcf_get_dns_queries(struct rc_addrlist **dst)
 }
 
 int
-rcf_spmd_resolver()
+rcf_spmd_resolver(void)
 {
 	if (!rcf_resolver_head)
 		return 0;
@@ -3886,7 +3907,7 @@ rcf_readfile(const char *path, const char *errloc, int secret)
 	do {
 		if ((buf = rc_vreallocf(buf, pos + BUFSIZ)) == NULL)
 			goto fail_nomem;
-		num = fread(buf->v + pos, 1, BUFSIZ, fp);
+		num = fread(buf->u + pos, 1, BUFSIZ, fp);
 		pos += num;
 	} while (num == BUFSIZ);
 	if (ferror(fp)) {

@@ -99,7 +99,7 @@ static struct sadb_supported *supported_map_comp = NULL;
 
 static rc_vchar_t *rcpfk_recv (struct rcpfk_msg *);
 static int rcpfk_send_spdaddx (struct rcpfk_msg *, int);
-static int rcpfk_check_ext_content (struct sadb_ext *, caddr_t);
+static int rcpfk_check_ext_content (struct sadb_ext *, uint8_t *);
 static int rcpfk_open (struct rcpfk_msg *);
 static int rcpfk_close (struct rcpfk_msg *);
 static int rcpfk_send (struct rcpfk_msg *, rc_vchar_t *);
@@ -127,31 +127,31 @@ static int rcpfk_set_sadb_x_natport (rc_vchar_t **, struct rcpfk_msg *,
 					 int);
 #endif
 
-static int rcpfk_recv_getspi (caddr_t *, struct rcpfk_msg *);
+static int rcpfk_recv_getspi (uint8_t **, struct rcpfk_msg *);
 static int rcpfk_send_addx (struct rcpfk_msg *, int);
-static int rcpfk_recv_update (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_add (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_expire (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_acquire (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_delete (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_get (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_register (caddr_t *, struct rcpfk_msg *);
-static int set_supported_algorithm (caddr_t, struct sadb_supported **);
-static int rcpfk_recv_spdupdate (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spdadd (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spddelete (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spddelete2 (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spddump (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spdexpire (caddr_t *, struct rcpfk_msg *);
-static int rcpfk_recv_spdget (caddr_t *, struct rcpfk_msg *);
+static int rcpfk_recv_update (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_add (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_expire (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_acquire (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_delete (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_get (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_register (uint8_t **, struct rcpfk_msg *);
+static int set_supported_algorithm (uint8_t *, struct sadb_supported **);
+static int rcpfk_recv_spdupdate (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spdadd (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spddelete (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spddelete2 (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spddump (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spdexpire (uint8_t **, struct rcpfk_msg *);
+static int rcpfk_recv_spdget (uint8_t **, struct rcpfk_msg *);
 static struct sadb_alg *findsupportedalg (struct sadb_supported *, int);
 #ifdef SADB_X_MIGRATE
-static int rcpfk_recv_migrate (caddr_t *, struct rcpfk_msg *);
+static int rcpfk_recv_migrate (uint8_t **, struct rcpfk_msg *);
 #endif
 
 static struct pfkey_msgtype {
-	char *name;
-	int (*recvfunc) (caddr_t *, struct rcpfk_msg *);
+	const char *name;
+	int (*recvfunc) (uint8_t **, struct rcpfk_msg *);
 } rcpfk_msg[] = {
 	{ "",			0, },
 	{ "GETSPI",		rcpfk_recv_getspi, },
@@ -184,6 +184,18 @@ static struct pfkey_msgtype {
 #endif
 };
 
+#define SADB_MSG(buf)	((struct sadb_msg *)(buf)->v)
+
+static int
+rcpfk_samode(const void *v)
+{
+	const struct sadb_x_sa2 *sa = v;
+	
+	if (sa == NULL)
+		return IPSEC_MODE_ANY;
+	return sa->sadb_x_sa2_mode;
+}
+
 /*
  * PF_KEY packet handler
  * IN: rcpfk_con must be allocated.
@@ -197,9 +209,10 @@ rcpfk_handler(struct rcpfk_msg *rc)
 	rc_vchar_t *msg;
 	struct sadb_msg *base;
 	struct sadb_ext *ext;
-	caddr_t p, ep;
-	caddr_t mhp[SADB_EXT_MAX + 1];
-	int i, for_me;
+	uint8_t *p, *ep;
+	uint8_t *mhp[SADB_EXT_MAX + 1];
+	size_t i;
+	int for_me;
 
 	/* receive pfkey message. */
 	if ((msg = rcpfk_recv(rc)) == NULL)
@@ -209,18 +222,18 @@ rcpfk_handler(struct rcpfk_msg *rc)
 	for (i = 0; i < sizeof(mhp)/sizeof(mhp[0]); i++)
 		mhp[i] = 0;
 	mhp[0] = msg->v;
-	p = (caddr_t)msg->v;
+	p = msg->v;
 	ep = p + msg->l;
 
 	/* skip base header */
 	p += sizeof(struct sadb_msg);
 
 	while (p < ep) {
-		ext = (struct sadb_ext *)p;
+		ext = (void *)p;
 
 		/* length check */
 		if (ep < p + sizeof(*ext) ||
-		    PFKEY_EXTLEN(ext) < sizeof(*ext) ||
+		    (size_t)PFKEY_EXTLEN(ext) < sizeof(*ext) ||
 		    ep < p + PFKEY_EXTLEN(ext)) {
 			rcpfk_seterror(rc, EINVAL,
 			    "invalid pfkey extension format");
@@ -245,7 +258,7 @@ rcpfk_handler(struct rcpfk_msg *rc)
 			goto err;
 		}
 
-		mhp[ext->sadb_ext_type] = (caddr_t)ext;
+		mhp[ext->sadb_ext_type] = (void *)ext;
 
 		p += PFKEY_EXTLEN(ext);
 	}
@@ -254,8 +267,8 @@ rcpfk_handler(struct rcpfk_msg *rc)
 		goto err;
 	}
 
-	base = (struct sadb_msg *)msg->v;
-	if (base->sadb_msg_type <=0 ||
+	base = msg->v;
+	if (base->sadb_msg_type == 0 ||
 	    ARRAYLEN(rcpfk_msg) < base->sadb_msg_type) {
 		rcpfk_seterror(rc, EOPNOTSUPP,
 		    "unknown message type %d", base->sadb_msg_type);
@@ -266,7 +279,7 @@ rcpfk_handler(struct rcpfk_msg *rc)
 	 * the message has to be processed or not ?
 	 * pid == 0 means that the message initiated from the kernel.
 	 */
-	for_me = base->sadb_msg_pid == 0 || base->sadb_msg_pid == pid;
+	for_me = base->sadb_msg_pid == 0 || (pid_t)base->sadb_msg_pid == pid;
 #ifdef SADB_X_MIGRATE
 	for_me |= base->sadb_msg_type == SADB_X_MIGRATE;
 #endif
@@ -313,19 +326,19 @@ rcpfk_recv(struct rcpfk_msg *rc)
 {
 	rc_vchar_t *buf;
 	struct sadb_msg base;
-	int len, reallen;
+	ssize_t len, reallen;
 
-	len = recv(rc->so, (caddr_t)&base, sizeof(base), MSG_PEEK);
+	len = recv(rc->so, &base, sizeof(base), MSG_PEEK);
 	if (len < 0) {
 		rcpfk_seterror(rc, errno, "%s", strerror(errno));
 		return NULL;
-	} else if (len < sizeof(base)) {
+	} else if ((size_t)len < sizeof(base)) {
 		rcpfk_seterror(rc, EINVAL, "invalid message length");
 		return NULL;
 	}
 
 	reallen = PFKEY_UNUNIT64(base.sadb_msg_len);
-	if ((buf = rc_vmalloc(reallen)) == NULL) {
+	if ((buf = rc_vmalloc((size_t)reallen)) == NULL) {
 		rcpfk_seterror(rc, errno, "%s", strerror(errno));
 		return NULL;
 	}
@@ -347,7 +360,7 @@ rcpfk_recv(struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_check_ext_content(struct sadb_ext *ext, caddr_t ep)
+rcpfk_check_ext_content(struct sadb_ext *ext, uint8_t *ep)
 {
 	struct sadb_address *addr;
 	struct sockaddr *sa;
@@ -385,7 +398,7 @@ rcpfk_check_ext_content(struct sadb_ext *ext, caddr_t ep)
 		break;
 	case SADB_EXT_SUPPORTED_AUTH:
 	case SADB_EXT_SUPPORTED_ENCRYPT:
-		sup = (struct sadb_supported *)ext;
+		sup = (void *)ext;
 		if ((PFKEY_UNUNIT64(sup->sadb_supported_len) - sizeof(*sup)) %
 		    sizeof(struct sadb_alg) != 0)
 			return -1;
@@ -396,9 +409,9 @@ rcpfk_check_ext_content(struct sadb_ext *ext, caddr_t ep)
 #ifdef SADB_X_NAT_T_TYPE
 	case SADB_X_EXT_NAT_T_OA:
 #endif
-		addr = (struct sadb_address *)ext;
-		sa = (struct sockaddr *)(addr + 1);
-		if (ep < (caddr_t)sa + SA_LEN(sa))
+		addr = (void *)ext;
+		sa = (void *)(addr + 1);
+		if (ep < (uint8_t *)(void *)sa + SA_LEN(sa))
 			return -1;
 		break;
 	default:
@@ -486,8 +499,8 @@ rcpfk_open(struct rcpfk_msg *rc)
 	 * This is a temporary workaround for KAME PR 154.
 	 * Don't really care even if it fails.
 	 */
-	if (setsockopt(rc->so, SOL_SOCKET, SO_SNDBUF, &len, sizeof(len)) &&
-	    setsockopt(rc->so, SOL_SOCKET, SO_RCVBUF, &len, sizeof(len))) {
+	if (setsockopt(rc->so, SOL_SOCKET, SO_SNDBUF, &len, (socklen_t)sizeof(len)) &&
+	    setsockopt(rc->so, SOL_SOCKET, SO_RCVBUF, &len, (socklen_t)sizeof(len))) {
 		rcpfk_seterror(rc, errno, "%s", strerror(errno));
 		rcpfk_close(rc);
 		return -1;
@@ -513,7 +526,7 @@ rcpfk_send(struct rcpfk_msg *rc, rc_vchar_t *buf)
 	/*
 	 * set final message length (XXX here?)
 	 */
-	((struct sadb_msg *)buf->v)->sadb_msg_len = PFKEY_UNIT64(buf->l);
+	SADB_MSG(buf)->sadb_msg_len = PFKEY_UNIT64_U16(buf->l);
 
 	if (send(rc->so, buf->v, buf->l, 0) == -1) {
 		rcpfk_seterror(rc, errno, "%s", strerror(errno));
@@ -621,8 +634,8 @@ rcpfk_send_addx(struct rcpfk_msg *rc, int type)
 #ifdef ENABLE_NATT
 	if (rc->sa_src->sa_family == AF_INET &&
 	    rc->sa_dst->sa_family == AF_INET &&
-	    (rcs_getsaport(rc->sa_src) == htons(RC_PORT_IKE_NATT) ||
-	     rcs_getsaport(rc->sa_dst) == htons(RC_PORT_IKE_NATT))) {
+	    (*rcs_getsaport(rc->sa_src) == htons(RC_PORT_IKE_NATT) ||
+	     *rcs_getsaport(rc->sa_dst) == htons(RC_PORT_IKE_NATT))) {
 		if (rcpfk_set_sadb_x_nattype(&buf, rc))
 			goto err;
 
@@ -744,7 +757,7 @@ rcpfk_send_acquire(struct rcpfk_msg *rc)
 		return -1;
 	}
 
-	((struct sadb_msg *)buf->v)->sadb_msg_errno = rc->eno;
+	SADB_MSG(buf)->sadb_msg_errno = rc->eno;
 
 	if (rcpfk_send(rc, buf)) {
 		rc_vfree(buf);
@@ -823,7 +836,7 @@ rcpfk_send_spdaddx(struct rcpfk_msg *rc, int type)
 	if (rcpfk_set_sadbxpolicy(&buf, rc, SADB_X_SPDUPDATE))
 		goto err;
 
-	((struct sadb_msg *)buf->v)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
+	SADB_MSG(buf)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
 
 	if (rcpfk_send(rc, buf)) {
 		rc_vfree(buf);
@@ -850,6 +863,7 @@ rcpfk_send_spdadd(struct rcpfk_msg *rc)
  * send a SADB_SPDDELETE to kernel.
  */
 int
+/*ARGSUSED*/
 rcpfk_send_spddelete(struct rcpfk_msg *rc)
 {
 	return 0;
@@ -874,7 +888,7 @@ rcpfk_send_spddelete2(struct rcpfk_msg *rc)
 	if (rcpfk_set_sadbxpolicy(&buf, rc, SADB_X_SPDDELETE2))
 		goto err;
 
-	((struct sadb_msg *)buf->v)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
+	SADB_MSG(buf)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
 
 	if (rcpfk_send(rc, buf)) {
 		rc_vfree(buf);
@@ -942,7 +956,7 @@ rcpfk_send_migrate(struct rcpfk_msg *rc)
 	if (rcpfk_set_sadbxpolicy(&buf, rc, SADB_X_MIGRATE))
 		goto err;
 
-	((struct sadb_msg *)buf->v)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
+	SADB_MSG(buf)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
 
 	if (rcpfk_send(rc, buf)) {
 		rc_vfree(buf);
@@ -973,7 +987,7 @@ rcpfk_set_sadbmsg(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	p = (struct sadb_msg *)buf->v;
+	p = buf->v;
 	p->sadb_msg_version = PF_KEY_V2;
 	p->sadb_msg_type = type;
 	p->sadb_msg_errno = 0;
@@ -1012,7 +1026,7 @@ rcpfk_set_sadbsa(rc_vchar_t **msg, struct rcpfk_msg *rc, int spionly)
 {
 	rc_vchar_t *buf;
 	struct sadb_sa *p;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(struct sadb_sa);
 	prevlen = (*msg)->l;
@@ -1022,8 +1036,8 @@ rcpfk_set_sadbsa(rc_vchar_t **msg, struct rcpfk_msg *rc, int spionly)
 		return -1;
 	}
 
-	p = (struct sadb_sa *)(buf->v + prevlen);
-	p->sadb_sa_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_sa_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_sa_exttype = SADB_EXT_SA;
 	p->sadb_sa_spi = rc->spi;
 	if (spionly) {
@@ -1058,7 +1072,7 @@ rcpfk_set_sadbaddress(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	struct sadb_address *p;
 	struct sockaddr *sa;
 	int pref;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	switch (type) {
 	case SADB_EXT_ADDRESS_SRC:
@@ -1083,8 +1097,8 @@ rcpfk_set_sadbaddress(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	p = (struct sadb_address *)(buf->v + prevlen);
-	p->sadb_address_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_address_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_address_exttype = type & 0xffff;
 	p->sadb_address_proto = rct2pfk_proto(rc->ul_proto) & 0xff;
 	p->sadb_address_prefixlen = pref;
@@ -1092,7 +1106,7 @@ rcpfk_set_sadbaddress(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	memcpy(p + 1, sa, SA_LEN(sa));
 
 	if (rc->flags & PFK_FLAG_NOPORTS)
-		rcs_setsaport((struct sockaddr *)(p + 1), RC_PORT_IKE);
+		*rcs_getsaport((void *)(p + 1)) = RC_PORT_IKE;
 
 	*msg = buf;
 	return 0;
@@ -1109,7 +1123,7 @@ rcpfk_set_sadbspirange(rc_vchar_t **msg, struct rcpfk_msg *rc,
 {
 	rc_vchar_t *buf;
 	struct sadb_spirange *p;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(struct sadb_spirange);
 	prevlen = (*msg)->l;
@@ -1119,8 +1133,8 @@ rcpfk_set_sadbspirange(rc_vchar_t **msg, struct rcpfk_msg *rc,
 		return -1;
 	}
 
-	p = (struct sadb_spirange *)(buf->v + prevlen);
-	p->sadb_spirange_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_spirange_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_spirange_exttype = SADB_EXT_SPIRANGE;
 	p->sadb_spirange_min = min;
 	p->sadb_spirange_max = max;
@@ -1140,8 +1154,8 @@ rcpfk_set_sadbkey(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	rc_vchar_t *buf;
 	struct sadb_key *p;
 	size_t keylen;
-	caddr_t key;
-	int len, prevlen, extlen;
+	char *key;
+	size_t len, prevlen, extlen;
 
 	switch (type) {
 	case SADB_EXT_KEY_AUTH:
@@ -1164,10 +1178,10 @@ rcpfk_set_sadbkey(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	p = (struct sadb_key *)(buf->v + prevlen);
-	p->sadb_key_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_key_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_key_exttype = type & 0xffff;
-	p->sadb_key_bits = keylen << 3;
+	p->sadb_key_bits = PFKEY_UNUNIT64_U16(keylen);
 	p->sadb_key_reserved = 0;
 	memcpy(p + 1, key, keylen);
 
@@ -1185,7 +1199,7 @@ rcpfk_set_sadblifetime(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	rc_vchar_t *buf;
 	struct sadb_lifetime *p;
 	uint64_t lft_time, lft_bytes;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	switch (type) {
 	case SADB_EXT_LIFETIME_SOFT:
@@ -1208,8 +1222,8 @@ rcpfk_set_sadblifetime(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	p = (struct sadb_lifetime *)(buf->v + prevlen);
-	p->sadb_lifetime_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_lifetime_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_lifetime_exttype = type & 0xffff;
 	p->sadb_lifetime_allocations = 0;
 	p->sadb_lifetime_bytes = lft_bytes;
@@ -1229,7 +1243,7 @@ rcpfk_set_sadbxsa2(rc_vchar_t **msg, struct rcpfk_msg *rc)
 {
 	rc_vchar_t *buf;
 	struct sadb_x_sa2 *p;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(struct sadb_x_sa2);
 	prevlen = (*msg)->l;
@@ -1239,8 +1253,8 @@ rcpfk_set_sadbxsa2(rc_vchar_t **msg, struct rcpfk_msg *rc)
 		return -1;
 	}
 
-	p = (struct sadb_x_sa2 *)(buf->v + prevlen);
-	p->sadb_x_sa2_len = PFKEY_UNIT64(extlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
+	p->sadb_x_sa2_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_x_sa2_exttype = SADB_X_EXT_SA2;
 	p->sadb_x_sa2_mode = rct2pfk_samode(rc->samode);
 	p->sadb_x_sa2_reqid = rc->reqid;
@@ -1293,12 +1307,12 @@ rcpfk_set_sadbxpolicy(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 
 #define SETXISR(p, l, t, m, le, r) \
 do { \
-	(p)->sadb_x_ipsecrequest_len = PFKEY_ALIGN8((l)); \
+	(p)->sadb_x_ipsecrequest_len = PFKEY_ALIGN8_U16((l)); \
 	(p)->sadb_x_ipsecrequest_proto = rct2ipproto_satype((t)); \
 	(p)->sadb_x_ipsecrequest_mode = rct2pfk_samode((m)); \
         (p)->sadb_x_ipsecrequest_level = rct2pfk_seclevel((le)); \
 	(p)->sadb_x_ipsecrequest_reqid = (r); \
-} while (0)
+} while (/*CONSTCOND*/0)
 
 static int
 rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
@@ -1307,7 +1321,7 @@ rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
 	rc_vchar_t *buf;
 	struct sadb_x_policy *xpl;
 	struct sadb_x_ipsecrequest *xisr;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(*xpl);
 	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2) {
@@ -1338,8 +1352,8 @@ rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
 		return -1;
 	}
 
-	xpl = (struct sadb_x_policy *)(buf->v + prevlen);
-	xpl->sadb_x_policy_len = PFKEY_UNIT64(extlen);
+	xpl = (void *)((uint8_t *)buf->v + prevlen);
+	xpl->sadb_x_policy_len = PFKEY_UNIT64_U16(extlen);
 	xpl->sadb_x_policy_exttype = SADB_X_EXT_POLICY;
 	xpl->sadb_x_policy_type = IPSEC_POLICY_IPSEC;
 	xpl->sadb_x_policy_dir = rct2pfk_dir(rc->dir);
@@ -1348,7 +1362,7 @@ rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
 	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2)
 		goto end;
 
-	xisr = (struct sadb_x_ipsecrequest *)(xpl + 1);
+	xisr = (void *)(xpl + 1);
 	switch (rc->satype) {
 	case RCT_SATYPE_AH:
 	case RCT_SATYPE_ESP:
@@ -1394,8 +1408,8 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	rc_vchar_t *buf;
 	struct sadb_x_policy *xpl;
 	struct sadb_x_ipsecrequest *xisr;
-	int len, prevlen, extlen;
-	caddr_t p;
+	size_t len, prevlen, extlen;
+	uint8_t *p;
 
 	extlen = sizeof(*xpl);
 	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2) {
@@ -1437,8 +1451,8 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	xpl = (struct sadb_x_policy *)(buf->v + prevlen);
-	xpl->sadb_x_policy_len = PFKEY_UNIT64(extlen);
+	xpl = (void *)((uint8_t *)buf->v + prevlen);
+	xpl->sadb_x_policy_len = PFKEY_UNIT64_U16(extlen);
 	xpl->sadb_x_policy_exttype = SADB_X_EXT_POLICY;
 	xpl->sadb_x_policy_type = IPSEC_POLICY_IPSEC;
 	xpl->sadb_x_policy_dir = rct2pfk_dir(rc->dir);
@@ -1447,7 +1461,7 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2)
 		goto end;
 
-	xisr = (struct sadb_x_ipsecrequest *)(xpl + 1);
+	xisr = (void *)(xpl + 1);
 	len =  sizeof(*xisr) + SA_LEN(rc->sa_src) + SA_LEN(rc->sa_dst);
 #ifdef SADB_X_MIGRATE
 	if (type == SADB_X_MIGRATE)
@@ -1458,7 +1472,7 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	case RCT_SATYPE_ESP:
 	case RCT_SATYPE_IPCOMP:
 		SETXISR(xisr, len, rc->satype, RCT_IPSM_TUNNEL, rc->ipsec_level, rc->reqid);
-		p = (caddr_t)(xisr + 1);
+		p = (void *)(xisr + 1);
 		memcpy(p, rc->sa_src, SA_LEN(rc->sa_src));
 		p += SA_LEN(rc->sa_src);
 		memcpy(p, rc->sa_dst, SA_LEN(rc->sa_dst));
@@ -1473,43 +1487,43 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		break;
 	case RCT_SATYPE_AH_ESP:
 		SETXISR(xisr, len, RCT_SATYPE_ESP, RCT_IPSM_TUNNEL, rc->ipsec_level, rc->reqid);
-		p = (caddr_t)(xisr + 1);
+		p = (void *)(xisr + 1);
 		memcpy(p, rc->sa_src, SA_LEN(rc->sa_src));
 		p += SA_LEN(rc->sa_src);
 		memcpy(p, rc->sa_dst, SA_LEN(rc->sa_dst));
 		p += SA_LEN(rc->sa_dst);
-		xisr = (struct sadb_x_ipsecrequest *)p;
+		xisr = (void *)p;
 		SETXISR(xisr, sizeof(*xisr), RCT_SATYPE_AH, RCT_IPSM_TRANSPORT, rc->ipsec_level, rc->reqid);
 		break;
 	case RCT_SATYPE_AH_IPCOMP:
 		SETXISR(xisr, len, RCT_SATYPE_IPCOMP, RCT_IPSM_TUNNEL, rc->ipsec_level, rc->reqid);
-		p = (caddr_t)(xisr + 1);
+		p = (void *)(xisr + 1);
 		memcpy(p, rc->sa_src, SA_LEN(rc->sa_src));
 		p += SA_LEN(rc->sa_src);
 		memcpy(p, rc->sa_dst, SA_LEN(rc->sa_dst));
 		p += SA_LEN(rc->sa_dst);
-		xisr = (struct sadb_x_ipsecrequest *)p;
+		xisr = (void *)p;
 		SETXISR(xisr, sizeof(*xisr), RCT_SATYPE_AH, RCT_IPSM_TRANSPORT, rc->ipsec_level, rc->reqid);
 		break;
 	case RCT_SATYPE_ESP_IPCOMP:
 		SETXISR(xisr, len, RCT_SATYPE_ESP, RCT_IPSM_TUNNEL, rc->ipsec_level, rc->reqid);
-		p = (caddr_t)(xisr + 1);
+		p = (void *)(xisr + 1);
 		memcpy(p, rc->sa_src, SA_LEN(rc->sa_src));
 		p += SA_LEN(rc->sa_src);
 		memcpy(p, rc->sa_dst, SA_LEN(rc->sa_dst));
 		p += SA_LEN(rc->sa_dst);
-		xisr = (struct sadb_x_ipsecrequest *)p;
+		xisr = (void *)p;
 		SETXISR(xisr, sizeof(*xisr), RCT_SATYPE_IPCOMP,
 		    RCT_IPSM_TRANSPORT, rc->ipsec_level, rc->reqid);
 		break;
 	case RCT_SATYPE_AH_ESP_IPCOMP:
 		SETXISR(xisr, len, RCT_SATYPE_ESP, RCT_IPSM_TUNNEL, rc->ipsec_level, rc->reqid);
-		p = (caddr_t)(xisr + 1);
+		p = (void *)(xisr + 1);
 		memcpy(p, rc->sa_src, SA_LEN(rc->sa_src));
 		p += SA_LEN(rc->sa_src);
 		memcpy(p, rc->sa_dst, SA_LEN(rc->sa_dst));
 		p += SA_LEN(rc->sa_dst);
-		xisr = (struct sadb_x_ipsecrequest *)p;
+		xisr = (void *)p;
 		SETXISR(xisr, sizeof(*xisr), RCT_SATYPE_IPCOMP,
 		    RCT_IPSM_TRANSPORT, rc->ipsec_level, rc->reqid);
 		xisr++;
@@ -1531,7 +1545,7 @@ rcpfk_set_sadbxpolicy_io(rc_vchar_t **msg, struct rcpfk_msg *rc)
 {
 	rc_vchar_t *buf;
 	struct sadb_x_policy *xpl;
-	int len, prevlen, extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(*xpl);
 	prevlen = (*msg)->l;
@@ -1541,8 +1555,8 @@ rcpfk_set_sadbxpolicy_io(rc_vchar_t **msg, struct rcpfk_msg *rc)
 		return -1;
 	}
 
-	xpl = (struct sadb_x_policy *)(buf->v + prevlen);
-	xpl->sadb_x_policy_len = PFKEY_UNIT64(extlen);
+	xpl = (void *)((uint8_t *)buf->v + prevlen);
+	xpl->sadb_x_policy_len = PFKEY_UNIT64_U16(extlen);
 	xpl->sadb_x_policy_exttype = SADB_X_EXT_POLICY;
 	xpl->sadb_x_policy_type = rct2app_action(rc->pltype);
 	xpl->sadb_x_policy_dir = rct2pfk_dir(rc->dir);
@@ -1553,6 +1567,7 @@ rcpfk_set_sadbxpolicy_io(rc_vchar_t **msg, struct rcpfk_msg *rc)
 }
 
 static int
+/*ARGSUSED*/
 rcpfk_set_sadbxtag(rc_vchar_t **msg, struct rcpfk_msg *rc)
 {
 #ifdef SADB_X_EXT_TAG
@@ -1589,13 +1604,12 @@ rcpfk_set_sadbxtag(rc_vchar_t **msg, struct rcpfk_msg *rc)
 
 #ifdef ENABLE_NATT
 static int
+/*ARGSUSED*/
 rcpfk_set_sadb_x_nattype(rc_vchar_t **msg, struct rcpfk_msg *rc)
 {
 	rc_vchar_t *buf = NULL;
 	struct sadb_x_nat_t_type *p;
-	int len;
-	int prevlen;
-	int extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(*p);
 	prevlen = (*msg)->l;
@@ -1605,9 +1619,9 @@ rcpfk_set_sadb_x_nattype(rc_vchar_t **msg, struct rcpfk_msg *rc)
 		return -1;
 	}
 
-	p = (struct sadb_x_nat_t_type *)(buf->v + prevlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
 
-	p->sadb_x_nat_t_type_len = PFKEY_UNIT64(extlen);
+	p->sadb_x_nat_t_type_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_x_nat_t_type_exttype = SADB_X_EXT_NAT_T_TYPE;
 	p->sadb_x_nat_t_type_type = UDP_ENCAP_ESPINUDP;
 	bzero(p->sadb_x_nat_t_type_reserved,
@@ -1622,10 +1636,7 @@ rcpfk_set_sadb_x_natport(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	rc_vchar_t *buf = NULL;
 	struct sadb_x_nat_t_port *p;
 	struct sockaddr *sa;
-	unsigned short port;
-	int len;
-	int prevlen;
-	int extlen;
+	size_t len, prevlen, extlen;
 
 	extlen = sizeof(*p);
 	prevlen = (*msg)->l;
@@ -1635,7 +1646,7 @@ rcpfk_set_sadb_x_natport(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	p = (struct sadb_x_nat_t_port *)(buf->v + prevlen);
+	p = (void *)((uint8_t *)buf->v + prevlen);
 
 	switch (type) {
 	case SADB_X_EXT_NAT_T_SPORT:
@@ -1648,21 +1659,13 @@ rcpfk_set_sadb_x_natport(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		return -1;
 	}
 
-	switch (sa->sa_family) {
-	case AF_INET:
-		port = ((struct sockaddr_in *)sa)->sin_port;
-		break;
-#ifdef INET6
-	case AF_INET6:
-#endif
-	default:
+	if (sa->sa_family != AF_INET)
 		return -1;
-	}
 
-	p->sadb_x_nat_t_port_len = PFKEY_UNIT64(extlen);
+	p->sadb_x_nat_t_port_len = PFKEY_UNIT64_U16(extlen);
 	p->sadb_x_nat_t_port_exttype = type;
 	p->sadb_x_nat_t_port_reserved = 0;
-	p->sadb_x_nat_t_port_port = port;
+	p->sadb_x_nat_t_port_port = *rcs_getsaport(sa);
 
 	*msg = buf;
 	return 0;
@@ -1682,7 +1685,7 @@ rcpfk_set_sadb_x_natport(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
  *     rc->sa_dst
  */
 static int
-rcpfk_recv_getspi(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_getspi(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -1697,8 +1700,8 @@ rcpfk_recv_getspi(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate GETSPI message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
+	base = (void *)mhp[0];
+	sa = (void *)mhp[SADB_EXT_SA];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
 
@@ -1707,8 +1710,8 @@ rcpfk_recv_getspi(caddr_t *mhp, struct rcpfk_msg *rc)
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
 
@@ -1723,7 +1726,7 @@ rcpfk_recv_getspi(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_update(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_update(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -1743,8 +1746,8 @@ rcpfk_recv_update(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate UPDATE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
+	base = (void *)mhp[0];
+	sa = (void *)mhp[SADB_EXT_SA];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
 
@@ -1753,13 +1756,11 @@ rcpfk_recv_update(caddr_t *mhp, struct rcpfk_msg *rc)
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
-	samode = mhp[SADB_X_EXT_SA2] == 0 ?
-	    IPSEC_MODE_ANY :
-	    ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode;
+	samode = rcpfk_samode(mhp[SADB_X_EXT_SA2]);
 	rc->samode = pfk2rct_samode(samode);
 
 	if (cb->cb_update != 0 && cb->cb_update(rc) < 0)
@@ -1773,7 +1774,7 @@ rcpfk_recv_update(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_add(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_add(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -1793,23 +1794,21 @@ rcpfk_recv_add(caddr_t *mhp, struct rcpfk_msg *rc)
 		    EINVAL, "inappropriate ADD message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
+	base = (void *)mhp[0];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
+	sa = (void *)mhp[SADB_EXT_SA];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->satype = pfk2rct_satype(base->sadb_msg_satype);
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
-	samode = mhp[SADB_X_EXT_SA2] == 0 ?
-	    IPSEC_MODE_ANY :
-	    ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode;
+	samode = rcpfk_samode(mhp[SADB_X_EXT_SA2]);
 	rc->samode = pfk2rct_samode(samode);
 
 	if (cb->cb_add != 0 && cb->cb_add(rc) < 0)
@@ -1823,7 +1822,7 @@ rcpfk_recv_add(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_expire(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_expire(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -1847,26 +1846,24 @@ rcpfk_recv_expire(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate EXPIRE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
+	base = (void *)mhp[0];
+	sa = (void *)mhp[SADB_EXT_SA];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
-	lft_current = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_CURRENT];
-	lft_hard = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_HARD];
-	lft_soft = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_SOFT];
+	lft_current = (void *)mhp[SADB_EXT_LIFETIME_CURRENT];
+	lft_hard = (void *)mhp[SADB_EXT_LIFETIME_HARD];
+	lft_soft = (void *)mhp[SADB_EXT_LIFETIME_SOFT];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->satype = pfk2rct_satype(base->sadb_msg_satype);
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
-	samode = mhp[SADB_X_EXT_SA2] == 0 ?
-	    IPSEC_MODE_ANY :
-	    ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode;
+	samode = rcpfk_samode(mhp[SADB_X_EXT_SA2]);
 	rc->samode = pfk2rct_samode(samode);
 	rc->expired = mhp[SADB_EXT_LIFETIME_HARD] != 0 ? 2 : 1;
 
@@ -1900,11 +1897,12 @@ rcpfk_recv_expire(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_acquire(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
 	struct sockaddr *src, *dst;
+	void *saddr;
 #if defined(SADB_X_EXT_PACKET) && defined(INET6)
 	struct sadb_x_packet *pkt;
 	struct ip6_hdr *ip;
@@ -1930,8 +1928,8 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate ACQUIRE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
 
@@ -1942,12 +1940,13 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 		return 0;
 	}
 
+	saddr = rcs_getsaaddr(dst);
 	/* ignore it if src is multicast address */
 	if ((dst->sa_family == AF_INET &&
-	    IN_MULTICAST(ntohl(((struct sockaddr_in *)dst)->sin_addr.s_addr)))
+	    IN_MULTICAST(ntohl(((struct in_addr *)saddr)->s_addr)))
 #ifdef INET6
 	    || (dst->sa_family == AF_INET6 &&
-	    IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)dst)->sin6_addr))
+	    IN6_IS_ADDR_MULTICAST(((struct in6_addr *)saddr)))
 #endif
 	) {
 		rcpfk_seterror(rc, 0, "ignore ACQUIRE message "
@@ -1959,14 +1958,12 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 	rc->satype = pfk2rct_satype(base->sadb_msg_satype);
 	if (rc->satype == 0)
 		return -1;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
 #if 0	/* does acquire have sa2? */
-	rc->samode = pfk2rct_samode(mhp[SADB_X_EXT_SA2] == 0
-		? IPSEC_MODE_ANY
-		: ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode);
+	rc->samode = pfk2rct_samode(rcpfk_samode(mhp[SADB_X_EXT_SA2]));
 #endif
 	rc->slid = xpl->sadb_x_policy_id;
 
@@ -2000,11 +1997,11 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 		case IPPROTO_HOPOPTS:
 		case IPPROTO_ROUTING:
 		case IPPROTO_FRAGMENT:
-			l = (ep->ip6e_len + 1) << 3;
+			l = PFKEY_UNUNIT64(ep->ip6e_len + 1);
 		skip:
 			nxt = ep->ip6e_nxt;
 			len -= l;
-			ep = (struct ip6_ext *)((caddr_t)ep + l);
+			ep = (struct ip6_ext *)((uint8_t *)ep + l);
 			break;
 
 		case IPPROTO_AH:
@@ -2018,7 +2015,7 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 			goto skippa;
 
 		case IPPROTO_DSTOPTS:
-			l = (ep->ip6e_len + 1) << 3;
+			l = PFKEY_UNUNIT64(ep->ip6e_len + 1);
 			if (l > len)
 				goto skippa;
 			op = (struct ip6_opt *)(ep + 1);
@@ -2027,7 +2024,7 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 				switch (op->ip6o_type) {
 				case IP6OPT_PAD1:
 					l -= 1;
-					op = (struct ip6_opt *)((caddr_t)op + 1);
+					op = (struct ip6_opt *)((uint8_t *)op + 1);
 					break;
 
 				case IP6OPT_HOME_ADDRESS:
@@ -2037,13 +2034,13 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
 				case IP6OPT_PADN:
 				default:
 					l -= 2 + op->ip6o_len;
-					op = (struct ip6_opt *)((caddr_t)op + 2 + op->ip6o_len);
+					op = (struct ip6_opt *)((uint8_t *)op + 2 + op->ip6o_len);
 				}
-			l = (ep->ip6e_len + 1) << 3;
+			l = PFKEY_UNUNIT64(ep->ip6e_len + 1);
 			goto skip;
 
 		case IPPROTO_MH:
-			l = (ep->ip6e_len + 1) << 3;
+			l = PFKEY_UNUNIT64(ep->ip6e_len + 1);
 			hrbu = (struct ip6_mh_binding_update *)ep;
 			mh = &hrbu->ip6mhbu_hdr;
 			if (l > len || l < sizeof(*hrbu))
@@ -2088,7 +2085,7 @@ rcpfk_recv_acquire(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_delete(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_delete(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -2107,8 +2104,8 @@ rcpfk_recv_delete(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate DELETE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
+	base = (void *)mhp[0];
+	sa = (void *)mhp[SADB_EXT_SA];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
 
@@ -2117,14 +2114,12 @@ rcpfk_recv_delete(caddr_t *mhp, struct rcpfk_msg *rc)
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
 #if 0	/* does delete have sa2? */
-	rc->samode = pfk2rct_samode(mhp[SADB_X_EXT_SA2] == 0
-		? IPSEC_MODE_ANY
-		: ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode);
+	rc->samode = pfk2rct_samode(rcpfk_samode(mhp[SADB_X_EXT_SA2]));
 #endif
 
 	if (cb->cb_delete != 0 && cb->cb_delete(rc) < 0)
@@ -2138,7 +2133,7 @@ rcpfk_recv_delete(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_get(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_get(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_sa *sa;
@@ -2159,24 +2154,22 @@ rcpfk_recv_get(caddr_t *mhp, struct rcpfk_msg *rc)
 		    EINVAL, "inappropriate GET message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
+	base = (void *)mhp[0];
 	src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
 	dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
-	sa = (struct sadb_sa *)mhp[SADB_EXT_SA];
-        curlifetime = (struct sadb_lifetime*)mhp[SADB_EXT_LIFETIME_CURRENT];
+	sa = (void *)mhp[SADB_EXT_SA];
+        curlifetime = (void *)mhp[SADB_EXT_LIFETIME_CURRENT];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->satype = pfk2rct_satype(base->sadb_msg_satype);
 	if (rc->satype == 0)
 		return -1;
 	rc->spi = sa->sadb_sa_spi;
-	rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
-	rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+	rc->sa_src = (void *)&rc->sa_src_storage;
+	rc->sa_dst = (void *)&rc->sa_dst_storage;
 	memcpy(rc->sa_src, src, SA_LEN(src));
 	memcpy(rc->sa_dst, dst, SA_LEN(dst));
-	samode = mhp[SADB_X_EXT_SA2] == 0 ?
-	    IPSEC_MODE_ANY :
-	    ((struct sadb_x_sa2 *)mhp[SADB_X_EXT_SA2])->sadb_x_sa2_mode;
+	samode = rcpfk_samode(mhp[SADB_X_EXT_SA2]);
 	rc->samode = pfk2rct_samode(samode);
 	rc->lft_current_bytes = curlifetime->sadb_lifetime_bytes;
 
@@ -2191,7 +2184,7 @@ rcpfk_recv_get(caddr_t *mhp, struct rcpfk_msg *rc)
  * OUT:
  */
 static int
-rcpfk_recv_register(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_register(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 
@@ -2201,7 +2194,7 @@ rcpfk_recv_register(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "an invalid REGISTER message was passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
+	base = (void *)mhp[0];
 
 	if (mhp[SADB_EXT_SUPPORTED_AUTH]) {
 		if (set_supported_algorithm(mhp[SADB_EXT_SUPPORTED_AUTH],
@@ -2229,9 +2222,9 @@ rcpfk_recv_register(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-set_supported_algorithm(caddr_t m, struct sadb_supported **dstsup)
+set_supported_algorithm(uint8_t * m, struct sadb_supported **dstsup)
 {
-	struct sadb_supported *srcsup = (struct sadb_supported *)m;
+	struct sadb_supported *srcsup = (void *)m;
 	struct sadb_supported *sup;
 	size_t len;
 
@@ -2254,7 +2247,7 @@ set_supported_algorithm(caddr_t m, struct sadb_supported **dstsup)
  * addresses to an appropriate daemon.
  */
 static int
-rcpfk_recv_spdupdate(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spdupdate(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2266,8 +2259,8 @@ rcpfk_recv_spdupdate(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDUPDATE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2279,7 +2272,7 @@ rcpfk_recv_spdupdate(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spdadd(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spdadd(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2291,8 +2284,8 @@ rcpfk_recv_spdadd(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDADD message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2303,7 +2296,7 @@ rcpfk_recv_spdadd(caddr_t *mhp, struct rcpfk_msg *rc)
 	{
 		struct sadb_x_ipsecrequest *xisr;
 
-		xisr = (struct sadb_x_ipsecrequest *)(xpl + 1);
+		xisr = (void *)(xpl + 1);
 		rc->reqid = xisr->sadb_x_ipsecrequest_reqid;
 	}
 
@@ -2314,7 +2307,7 @@ rcpfk_recv_spdadd(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spddelete(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spddelete(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2326,8 +2319,8 @@ rcpfk_recv_spddelete(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDDELETE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2339,7 +2332,7 @@ rcpfk_recv_spddelete(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spddelete2(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spddelete2(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2351,8 +2344,8 @@ rcpfk_recv_spddelete2(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDDELETE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2364,7 +2357,7 @@ rcpfk_recv_spddelete2(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spdexpire(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spdexpire(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2376,8 +2369,8 @@ rcpfk_recv_spdexpire(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDEXPIRE message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2389,7 +2382,7 @@ rcpfk_recv_spdexpire(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spdget(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2400,8 +2393,8 @@ rcpfk_recv_spdget(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDGET message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 
 	rc->seq = base->sadb_msg_seq;
 	rc->slid = xpl->sadb_x_policy_id;
@@ -2413,7 +2406,7 @@ rcpfk_recv_spdget(caddr_t *mhp, struct rcpfk_msg *rc)
 }
 
 static int
-rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_spddump(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
@@ -2443,15 +2436,15 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 		    "inappropriate SPDDUMP message passed");
 		return -1;
 	}
-	base = (struct sadb_msg *)mhp[0];
-	xpl = (struct sadb_x_policy *)mhp[SADB_X_EXT_POLICY];
+	base = (void *)mhp[0];
+	xpl = (void *)mhp[SADB_X_EXT_POLICY];
 	sp_src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
-	addr_src = (struct sadb_address *)mhp[SADB_EXT_ADDRESS_SRC];
+	addr_src = (void *)mhp[SADB_EXT_ADDRESS_SRC];
 	sp_dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
-	addr_dst = (struct sadb_address *)mhp[SADB_EXT_ADDRESS_DST];
-	lft_current = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_CURRENT];
-	lft_hard = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_HARD];
-	lft_soft = (struct sadb_lifetime *)mhp[SADB_EXT_LIFETIME_SOFT];
+	addr_dst = (void *)mhp[SADB_EXT_ADDRESS_DST];
+	lft_current = (void *)mhp[SADB_EXT_LIFETIME_CURRENT];
+	lft_hard = (void *)mhp[SADB_EXT_LIFETIME_HARD];
+	lft_soft = (void *)mhp[SADB_EXT_LIFETIME_SOFT];
 
 	/* ignore if type is not IPSEC_POLICY_IPSEC (per-socket policy?) */
 	if (xpl->sadb_x_policy_type != IPSEC_POLICY_IPSEC) {
@@ -2463,10 +2456,10 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 
 	rc->seq = base->sadb_msg_seq;
 
-	rc->sp_src = (struct sockaddr *)&rc->sp_src_storage;
+	rc->sp_src = (void *)&rc->sp_src_storage;
 	memcpy(rc->sp_src, sp_src, SA_LEN(sp_src));
 	rc->pref_src = addr_src->sadb_address_prefixlen;
-	rc->sp_dst = (struct sockaddr *)&rc->sp_dst_storage;
+	rc->sp_dst = (void *)&rc->sp_dst_storage;
 	memcpy(rc->sp_dst, sp_dst, SA_LEN(sp_dst));
 	rc->pref_dst = addr_dst->sadb_address_prefixlen;
 	if (addr_dst->sadb_address_proto != addr_src->sadb_address_proto) {
@@ -2498,7 +2491,7 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 	}
 	rc->dir = pfk2rct_dir(xpl->sadb_x_policy_dir);
 
-	xisr = (struct sadb_x_ipsecrequest *)(xpl + 1); 
+	xisr = (void *)(xpl + 1); 
 	xisr_len = PFKEY_EXTLEN(xpl) - sizeof(*xpl);
 	while (xisr_len > 0) { 
 		/* 
@@ -2519,7 +2512,6 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 		default:
 			rcpfk_seterror(rc, 0, "unknown IPsec proto");
 			return 0;
-			break;
 		}
 		 /* 
 		  * all policies under racoon2 policy management, 
@@ -2539,7 +2531,6 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 		default:
 			rcpfk_seterror(rc, 0, "unknown IPsec Level");
 			return 0;
-			break;
 		}
 		/*
 		 * in kame pfkey, a tunnel mode policy is specfied 
@@ -2558,18 +2549,17 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 		case IPSEC_MODE_TUNNEL:
 			ipsec_mode = RCT_IPSM_TUNNEL;
 			xisr_len -= xisr->sadb_x_ipsecrequest_len; /* not 64-bit unit */
-			sa_src = (struct sockaddr *)(xisr+1);
-			sa_dst = (struct sockaddr *)((uint8_t *)sa_src + SA_LEN(sa_src));
-			xisr = (struct sadb_x_ipsecrequest *)((uint8_t *)sa_dst + SA_LEN(sa_dst));
-			rc->sa_src = (struct sockaddr *)&rc->sa_src_storage;
+			sa_src = (void *)(xisr+1);
+			sa_dst = (void *)((uint8_t *)(void *)sa_src + SA_LEN(sa_src));
+			xisr = (void *)((uint8_t *)(void *)sa_dst + SA_LEN(sa_dst));
+			rc->sa_src = (void *)&rc->sa_src_storage;
 			memcpy(rc->sa_src, sa_src, SA_LEN(sa_src));
-			rc->sa_dst = (struct sockaddr *)&rc->sa_dst_storage;
+			rc->sa_dst = (void *)&rc->sa_dst_storage;
 			memcpy(rc->sa_dst, sa_dst, SA_LEN(sa_dst));
 			break;
 		default:
 			rcpfk_seterror(rc, 0, "unknown IPsec mode");
 			return 0;
-			break;
 		}
 				
 	}
@@ -2602,7 +2592,7 @@ rcpfk_recv_spddump(caddr_t *mhp, struct rcpfk_msg *rc)
 
 #ifdef SADB_X_MIGRATE
 static int
-rcpfk_recv_migrate(caddr_t *mhp, struct rcpfk_msg *rc)
+rcpfk_recv_migrate(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_address *addr_src, *addr_dst;
@@ -2750,13 +2740,13 @@ rcpfk_supported_comp(int algtype)
 static struct sadb_alg *
 findsupportedalg(struct sadb_supported *sup, int alg_id)
 {
-	int tlen;
+	size_t tlen;
 	struct sadb_alg *a;
 
 	if (!sup)
 		return NULL;
 
-	a = (struct sadb_alg *)(sup + 1);
+	a = (void *)(sup + 1);
 	tlen = PFKEY_UNUNIT64(sup->sadb_supported_len) - sizeof(*sup);
 	for ( ; tlen > 0; ++a, tlen -= sizeof(*a)) {
 		if (tlen < sizeof(*a)) {

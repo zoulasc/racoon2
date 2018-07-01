@@ -53,7 +53,7 @@ rc_safefile_strerror(int err)
 
 	if (err == RC_SAFEFILE_ERRNO)
 		return strerror(errno);
-	else if (err < 0 || err >= ARRAYLEN(msgs))
+	else if (err < 0 || (size_t)err >= ARRAYLEN(msgs))
 		return "unknown error";
 	else
 		return msgs[err];

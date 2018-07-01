@@ -110,7 +110,7 @@ rbuf_clean(void)
 }
 
 rc_vchar_t *
-rbuf_getsb()
+rbuf_getsb(void)
 {
 	sbuf_num++;
 	if (sbuf_num >= sbuf_maxnum)
@@ -119,7 +119,7 @@ rbuf_getsb()
 }
 
 rc_vchar_t *
-rbuf_getlb()
+rbuf_getlb(void)
 {
 	lbuf_num++;
 	if (lbuf_num >= lbuf_maxnum)
@@ -128,7 +128,7 @@ rbuf_getlb()
 }
 
 rc_vchar_t *
-rbuf_getvb(int len)
+rbuf_getvb(size_t len)
 {
 	vbuf_num++;
 	if (vbuf_num >= vbuf_maxnum)

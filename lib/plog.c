@@ -69,7 +69,7 @@ static void plog_output (int, struct rc_log *, const char *);
 
 static struct plogtags {
 	int tag;
-	char *name;
+	const char *name;
 	int priority;	/* syslog(3) priority */
 } ptab[] = {
 	{ PLOG_INFO,		"INFO",			LOG_INFO, },
@@ -84,9 +84,9 @@ static struct plogtags {
 static char *
 plog_getheader(int tag, const char *location)
 {
-	int n;
-	char *name;
-	int tlen, reslen, len;
+	size_t n;
+	const char *name;
+	size_t tlen, reslen, len;
 	char *buf, *p;
 
 	name = "INTERNAL_WARN";	/* XXX */
@@ -157,7 +157,8 @@ plog_output(int tag, struct rc_log *plg, const char *msg)
 	char timestamp[20];	/* "%Y-%m-%d %T" */
 	struct tm *tm;
 	time_t t;
-	int i, found, pri;
+	int found, pri;
+	size_t i;
 
 	t = time(NULL);
 	tm = localtime(&t);
@@ -211,7 +212,7 @@ plogv(int tag, const char *location, struct rc_log *plg,
     const char *fmt, va_list ap)
 {
 	char *header;
-	int hlen;
+	size_t hlen;
 	rc_vchar_t *rbuf;
 
 	if (!plog_need_logging(tag, plg))
@@ -235,7 +236,7 @@ plogv(int tag, const char *location, struct rc_log *plg,
 			p[1] = 'l';
 	}
 #endif
-	vsnprintf(rbuf->v + hlen, rbuf->l - hlen, fmt, ap);
+	vsnprintf(rbuf->s + hlen, rbuf->l - hlen, fmt, ap);
 
 	if (do_output)
 		plog_output(tag, plg, rbuf->v);
@@ -245,14 +246,13 @@ plogv(int tag, const char *location, struct rc_log *plg,
 
 char *
 plogdump(int tag, const char *location, struct rc_log *plg,
-    void *data, size_t datalen)
+    const void *data, size_t datalen)
 {
 	char *header;
 	caddr_t data_buf;
-	size_t data_buflen;
-	int i, j;
+	size_t i, j, data_buflen;
 	rc_vchar_t *rbuf;
-	int reslen, len;
+	size_t reslen, len;
 	char *p;
 
 	if (!plog_need_logging(tag, plg))
@@ -277,7 +277,7 @@ plogdump(int tag, const char *location, struct rc_log *plg,
 		if (j % 4 == 0)
 			data_buf[i++] = ' ';
 		snprintf(&data_buf[i], data_buflen - i, "%02x",
-			((unsigned char *)data)[j] & 0xff);
+			((const unsigned char *)data)[j] & 0xff);
 		i += 2;
 		j++;
 	}
@@ -339,7 +339,7 @@ plog_setmode(int logmode, const char *logfile, const char *pname,
 }
 
 void
-plog_clean()
+plog_clean(void)
 {
 	if (progname != NULL)
 		rc_free(progname);

@@ -46,7 +46,7 @@
 
 #include "racoon.h"
 #include "cfsetup.h"
-#include "y.tab.h"
+#include "cfparse.h"
 
 #include "safefile.h"
 
@@ -91,7 +91,7 @@ static struct rcf_include_stack {
 	YY_BUFFER_STATE state;
 	int lineno;
 	glob_t matches;
-	int matchon;
+	size_t matchon;
 } rcf_istk[CF_INCLUDE_DEPTH];
 static int rcf_istkp = 0;
 
@@ -104,7 +104,7 @@ struct rcf_path_list {
 struct cf_lists *cf_lists = 0;	/* work area to read a configuration */
 int cf_debug = 0;
 
-static void rcf_yyerror (char *, va_list);
+static void rcf_yyerror (const char *, va_list);
 static int rcf_incstack_open (char *);
 static int rcf_incstack_init (void);
 static void rcf_incstack_clean (void);
@@ -234,8 +234,8 @@ selector_index		{ DP; return(SELECTOR_INDEX); }
 acceptable_kmp		{ DP; return(ACCEPTABLE_KMP); }
 	/* each kmp protocol */
 logmode			{ DP; return(LOGMODE); }
-debug			{ DP; return(DEBUG); }
-normal			{ DP; return(NORMAL); }
+debug			{ DP; return(LOGMODE_DEBUG); }
+normal			{ DP; return(LOGMODE_NORMAL); }
 logfile			{ DP; return(RCLOGFILE); }
 passive			{ DP; return(PASSIVE); }
 use_coa			{ DP; return(USE_COA); }
@@ -459,7 +459,7 @@ addresspool		{ DP; return(ADDRESSPOOL); }
 %%
 
 static void
-rcf_yyerror(char *fmt, va_list ap)
+rcf_yyerror(const char *fmt, va_list ap)
 {
 	char buf[BUFSIZ], *bp, *ep;
 	char *lp = 0;
@@ -479,7 +479,7 @@ rcf_yyerror(char *fmt, va_list ap)
 }
 
 void
-yyerror(char *fmt, ...)
+yyerror(const char *fmt, ...)
 {
 	va_list ap;
 #ifdef HAVE_STDARG_H
@@ -571,7 +571,7 @@ rcf_incstack_open(char *tmppath)
 }
 
 static int
-rcf_incstack_init()
+rcf_incstack_init(void)
 {
 	int i;
 
@@ -583,7 +583,7 @@ rcf_incstack_init()
 }
 
 static void
-rcf_incstack_clean()
+rcf_incstack_clean(void)
 {
 	if (rcf_istkp != 0) {
 		/* rcf_istk[rcf_istkp] does not have <matches>. */
@@ -682,7 +682,7 @@ rcf_init(int flag)
  * clean the work trees to read the configuration
  */
 int
-rcf_clean_cf()
+rcf_clean_cf(void)
 {
 	if (cf_lists) {
 		/* free mature elements */

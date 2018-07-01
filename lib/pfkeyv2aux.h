@@ -127,3 +127,6 @@
 #define	PFKEY_UNUNIT64(a)	((a) << 3)
 #define	PFKEY_UNIT64(a)		((a) >> 3)
 #endif
+#define PFKEY_UNIT64_U16(a) (uint16_t)PFKEY_UNIT64(a)
+#define PFKEY_UNUNIT64_U16(a) (uint16_t)PFKEY_UNUNIT64(a)
+#define PFKEY_ALIGN8_U16(a) (uint16_t)PFKEY_ALIGN8(a)

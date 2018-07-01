@@ -47,7 +47,7 @@ atoll.o: missing/atoll.c
 .y.c:
 	$(YACC) $(YFLAGS) $<
 	mv y.tab.c $*.c
-#	mv y.tab.h $*.h
+	mv y.tab.h $*.h
 
 .l.c:
 	$(LEX) -t $< > $@

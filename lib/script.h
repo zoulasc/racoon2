@@ -12,7 +12,7 @@
 #define SCRIPT_MAX		6
 #define	SCRIPT_NUM		(SCRIPT_MAX + 1)
 
-extern char *script_names[SCRIPT_NUM];
+extern const char *script_names[SCRIPT_NUM];
 
 extern int script_env_append(char ***, int *, const char *, const char *);
 extern void script_env_free(char **);

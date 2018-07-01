@@ -9,8 +9,8 @@ static char *strex_setval(char *, size_t);
 static char *strex_env(char *, size_t);
 
 struct strex_t {
-	char *begin;
-	char *end;
+	const char *begin;
+	const char *end;
 	char *(*getval)(char *, size_t);
 } strex[] = {
 	{ "${", "}", strex_setval, },
@@ -114,21 +114,22 @@ rc_strex(char *src, char **dst)
 	char *vs, *ve, *vv;
 	size_t reslen;
 	struct strex_t *st;
-	int i;
+	size_t i;
 
 	if ((mid = strdup(src)) == NULL)
 		return -1;
 
 	for (i = 0; i < sizeof(strex)/sizeof(strex[0]); i++) {
 		st = &strex[i];
-		while (1) {
+		for (;;) {
 			res = 0;
 			reslen = 0;
 			vs = ve = mid;
 			while ((ve = strstr(vs, st->begin)) != NULL) {
 				/* copy the prepended data */
 				if (ve - vs != 0 &&
-				    rc_strzcat(&res, &reslen, vs, ve - vs)) {
+				    rc_strzcat(&res, &reslen, vs,
+					(size_t)(ve - vs))) {
 					rc_free(mid);
 					return -1;
 				}
@@ -138,7 +139,8 @@ rc_strex(char *src, char **dst)
 					return -2;	/* invalid format */
 				}
 				/* copy the expanded data */
-				if ((vv = (st->getval)(vs, ve - vs)) == NULL) {
+				if ((vv = (st->getval)(vs,
+					(size_t)(ve - vs))) == NULL) {
 					rc_free(mid);
 					return -3;	/* string not found */
 				}

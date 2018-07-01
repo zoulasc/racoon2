@@ -54,7 +54,7 @@ struct rc_log;
 
 extern char *plog (int, const char *, struct rc_log *, const char *, ...);
 extern char *plogv (int , const char *, struct rc_log *, const char *, va_list);
-extern char *plogdump (int, const char *, struct rc_log *, void *, size_t);
+extern char *plogdump (int, const char *, struct rc_log *, const void *, size_t);
 extern void plog_setmode (int, const char *, const char *, int, int);
 extern void plog_clean (void);
 extern const char *plog_location (const char *file, int line,

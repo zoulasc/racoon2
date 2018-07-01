@@ -31,4 +31,4 @@ extern int rbuf_init (int, int, int, int, int);
 extern void rbuf_clean (void);
 extern rc_vchar_t * rbuf_getsb (void);
 extern rc_vchar_t * rbuf_getlb (void);
-extern rc_vchar_t * rbuf_getvb (int);
+extern rc_vchar_t * rbuf_getvb (size_t);

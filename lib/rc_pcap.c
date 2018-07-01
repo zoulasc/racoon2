@@ -54,9 +54,9 @@
 
 #include "racoon.h"
 
-static FILE *fp = 0;
-static char *dump_file = 0;
-static char *dump_mode = 0;
+static FILE *fp = NULL;
+static const char *dump_file = NULL;
+static const char *dump_mode = NULL;
 
 /*
  * data: udp payload, not include udp header and lower layer headers
@@ -75,19 +75,18 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 
 	/* create dummy ether/ip header */
 	memset(dummy_hdr, 0, sizeof(dummy_hdr));
-	ehdr = (struct ether_header *)dummy_hdr;
+	ehdr = (void *)dummy_hdr;
 	header_len = sizeof(*ehdr);
 	switch (src->sa_family) {
 	case AF_INET:
 		ehdr->ether_type = htons(ETHERTYPE_IP);
-		ip = (struct ip *)&dummy_hdr[header_len];
+		ip = (void *)&dummy_hdr[header_len];
 		ip->ip_hl = sizeof(*ip) >> 2;
 		ip->ip_v = IPVERSION;
-		ip->ip_len = sizeof(*ip) + sizeof(*udp) + data->l;
-		ip->ip_len = htons(ip->ip_len);
+		ip->ip_len = htons(sizeof(*ip) + sizeof(*udp) + data->l);
 		ip->ip_p = IPPROTO_UDP;
-		memcpy(&ip->ip_src, &((struct sockaddr_in *)src)->sin_addr, 4);
-		memcpy(&ip->ip_dst, &((struct sockaddr_in *)dst)->sin_addr, 4);
+		memcpy(&ip->ip_src, rcs_getsaaddr(src), sizeof(ip->ip_src));
+		memcpy(&ip->ip_dst, rcs_getsaaddr(dst), sizeof(ip->ip_dst));
 		header_len += sizeof(*ip);
 		break;
 	case AF_INET6:
@@ -96,17 +95,16 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 #else
 		ehdr->ether_type = htons(ETHERTYPE_IPV6);
 #endif
-		ip6 = (struct ip6_hdr *)&dummy_hdr[header_len];
+		ip6 = (void *)&dummy_hdr[header_len];
 #ifdef __linux__
 		ip6->ip6_vfc = 6;
 #else
 		ip6->ip6_vfc = IPV6_VERSION;
 #endif
-		ip6->ip6_plen = sizeof(*udp) + data->l;
-		ip6->ip6_plen = htons(ip6->ip6_plen);
+		ip6->ip6_plen = htons(sizeof(*udp) + data->l);
 		ip6->ip6_nxt = IPPROTO_UDP;
-		memcpy(&ip6->ip6_src, &((struct sockaddr_in6 *)src)->sin6_addr, 16);
-		memcpy(&ip6->ip6_dst, &((struct sockaddr_in6 *)dst)->sin6_addr, 16);
+		memcpy(&ip6->ip6_src, rcs_getsaaddr(src), sizeof(ip6->ip6_src));
+		memcpy(&ip6->ip6_dst, rcs_getsaaddr(dst), sizeof(ip6->ip6_dst));
 		header_len += sizeof(*ip6);
 		break;
 	default:
@@ -114,7 +112,7 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 		    "unknown protocol %d\n", src->sa_family);
 		return;
 	}
-	udp = (struct udphdr *)&dummy_hdr[header_len];
+	udp = (void *)&dummy_hdr[header_len];
 #ifdef __linux__
 #ifdef ALWAYS_PORT500
 	udp->source = 500;
@@ -132,17 +130,15 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 	udp->uh_sport = htons(udp->uh_sport);
 	udp->uh_dport = udp->uh_sport;
 #else
-	udp->uh_sport = rcs_getsaport(src);
-	udp->uh_dport = rcs_getsaport(dst);
+	udp->uh_sport = *rcs_getsaport(src);
+	udp->uh_dport = *rcs_getsaport(dst);
 #endif
-	udp->uh_ulen = sizeof(*udp) + data->l;
-	udp->uh_ulen = htons(udp->uh_ulen);
+	udp->uh_ulen = htons((uint16_t)(sizeof(*udp) + data->l));
 #endif
 	header_len += sizeof(*udp);
 
 	(void)gettimeofday(&hdr.ts, NULL);
-	hdr.caplen = header_len + data->l;
-	hdr.len = header_len + data->l;
+	hdr.len = hdr.caplen = (uint32_t)(header_len + data->l);
 
 	/* always append the data here */
 	if ((fp = fopen(dump_file, "a")) == NULL) {
@@ -152,7 +148,7 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 	}
 
 	packet = rc_vprepend(data, dummy_hdr, header_len);
-	pcap_dump((unsigned char *)fp, &hdr, (uint8_t *)packet->v);
+	pcap_dump((void *)fp, &hdr, (uint8_t *)packet->v);
 	rc_vfree(packet);
 	fclose(fp);
 }
@@ -162,7 +158,7 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
  *        this function will open fname with append mode if it is NULL.
  */
 int
-rc_pcap_init(char *fname, char *fmode)
+rc_pcap_init(const char *fname, const char *fmode)
 {
 	struct pcap_file_header hdr;
 	struct stat sb;
@@ -204,7 +200,7 @@ rc_pcap_init(char *fname, char *fmode)
 		hdr.snaplen = 0;
 		hdr.sigfigs = 0;
 		hdr.linktype = DLT_EN10MB;
-		if (fwrite((char *)&hdr, sizeof(hdr), 1, fp) != 1) {
+		if (fwrite(&hdr, sizeof(hdr), 1, fp) != 1) {
 			plog(PLOG_INTERR, PLOGLOC, 0,
 			    "failed writing the header to pcap file %s\n",
 			    dump_file);

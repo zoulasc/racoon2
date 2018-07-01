@@ -34,13 +34,13 @@
 #include "version.h"
 
 const char *
-rc_version()
+rc_version(void)
 {
 	return RACOON2_VERSION;
 }
 
 const char *
-rc_startmsg()
+rc_startmsg(void)
 {
 	return "starting racoon2 version " RACOON2_VERSION;
 }

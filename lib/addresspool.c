@@ -57,11 +57,10 @@ af_addrsize(int af)
 static void
 addrbits_incr(int af, uint8_t *octets)
 {
-	int i;
-	size_t len;
+	size_t i, len;
 
 	len = af_addrsize(af);
-	for (i = len; --i >= 0; ) {
+	for (i = len; i-- > 0; ) {
 		if (++octets[i] != 0)
 			return;
 	}
@@ -241,9 +240,9 @@ rc_addrpool_assign_ip6intf(struct rcf_addresspool *conf, uint8_t *addr)
 	struct rcf_address_pool_item	*i;
 	struct in6_addr	a;
 	const size_t ip6prefix_bytes = 8;
-	const int ip6intf_id = ip6prefix_bytes;
+	const int ip6intf_id = (int)ip6prefix_bytes;
 	const size_t ip6intf_id_bytes = 8;
-	int p;
+	size_t p;
 
 	if (!conf) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -272,7 +271,7 @@ rc_addrpool_assign_ip6intf(struct rcf_addresspool *conf, uint8_t *addr)
 			}
 
 			/* try different prefix */
-			for (p = ip6prefix_bytes; --p >= 0; ) {
+			for (p = ip6prefix_bytes; p-- > 0; ) {
 				if (++a.s6_addr[p] != 0)
 					break;
 			}

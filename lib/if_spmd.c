@@ -76,7 +76,7 @@ struct spmif_job {
 		JOB_FQDN_QUERY, JOB_SLID, JOB_MIGRATE
 	} type;
 	union {
-		int (*generic)();
+		int (*generic)(void);
 		int (*policy_add)(void *, int);
 		int (*policy_delete)(void *, int);
 		int (*fqdn_query)(void *, const char *);
@@ -103,7 +103,7 @@ static void parserep_policy_delete(struct spmif_job *job, char **lines, int nlin
 static void parserep_fqdn_query(struct spmif_job *job, char **lines, int nline);
 static void parserep_slid(struct spmif_job *job, char **lines, int nline);
 static void parserep_migrate(struct spmif_job *job, char **lines, int nline);
-static int read_spmif(struct linereader *lr, int fd);
+static ssize_t read_spmif(struct linereader *lr, int fd);
 
 static void job_initqueue(struct spmif_handle *h);
 static struct spmif_job *job_new(enum job_type type);
@@ -130,7 +130,7 @@ static void lr_free(struct linereader *lr);
 static int lr_read(struct linereader *lr, int fd);
 static int find_line(struct linereader *lr);
 static char *search_crlf(char *ptr, char *limit);
-static void lr_consume(struct linereader *lr, int nline);
+static void lr_consume(struct linereader *lr, size_t nline);
 
 
 /*
@@ -311,10 +311,10 @@ open_spmif_local(const char *path)
 	}
 	strcpy(su.sun_path, path);
 #ifdef HAVE_SA_LEN
-	su.sun_len = SUN_LEN(&su);
+	su.sun_len = (unsigned char)SUN_LEN(&su);
 #endif
 
-	if (connect(fd, (struct sockaddr *)&su, SUN_LEN(&su)) == -1) {
+	if (connect(fd, (void *)&su, (socklen_t)SUN_LEN(&su)) == -1) {
 		plog(PLOG_INTWARN, PLOGLOC, NULL,
 		    "connect: %s: %s\n", path, strerror(errno));
 		close(fd);
@@ -328,13 +328,13 @@ login_spmif(int fd)
 {
 	ssize_t ret;
 	struct linereader *lr;
-	int nline, cmdlen, error;
+	int error;
 	struct spmd_cid cid;
 	char cmd[200];
 	rc_vchar_t *vpasswd;
-	int i;
+	size_t i;
 	char *dp;
-	size_t plen;
+	size_t plen, cmdlen, nline;
 
 	error = -1;
 	memset(&cid, 0, sizeof(cid));
@@ -345,7 +345,7 @@ login_spmif(int fd)
 	/* receive initial greeting */
 	for (;;) {
 		nline = read_spmif(lr, fd);
-		if (nline == -1)
+		if (nline == (size_t)-1)
 			goto fail;
 		if (nline == 0)
 			continue;
@@ -384,7 +384,7 @@ login_spmif(int fd)
 	/* make it string */
 	dp = cid.password;
 	for (i = 0; i < vpasswd->l; i++) { 
-		snprintf(dp, plen, "%02X", (unsigned char)vpasswd->v[i]);
+		snprintf(dp, plen, "%02X", ((unsigned char *)vpasswd->v)[i]);
 		dp += 2;
 		plen -= 2;
 	}
@@ -407,7 +407,7 @@ login_spmif(int fd)
 	/* receive reply of LOGIN */
 	for (;;) {
 		nline = read_spmif(lr, fd);
-		if (nline == -1)
+		if (nline == (size_t)-1)
 			goto fail;
 		if (nline == 0)
 			continue;
@@ -451,6 +451,23 @@ spmif_clean(int fd)
  * post messages to spmd
  */
 
+static int __attribute__((__format__(__printf__, 3, 4)))
+saprintf(char **p, char *e, const char *fmt, ...)
+{
+	size_t l = (size_t)(e - *p);
+	int r;
+	va_list ap;
+	va_start(ap, fmt);
+	r = vsnprintf(*p, l, fmt, ap);
+	va_end(ap);
+	if (r < 0 || (size_t)r >= l) {
+		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+		return -1;
+	}
+	*p += r;
+	return 0;
+}
+
 int
 spmif_post_policy_add(int fd, int (*callback)(void *, int), void *tag,
     rc_vchar_t *slid, long lifetime, rc_type samode,
@@ -460,7 +477,6 @@ spmif_post_policy_add(int fd, int (*callback)(void *, int), void *tag,
 {
 	char *bufend, *p;
 	struct spmif_job *job;
-	int len;
 
 	if ((job = job_new(JOB_POLICY_ADD)) == NULL)
 		return -1;
@@ -470,33 +486,21 @@ spmif_post_policy_add(int fd, int (*callback)(void *, int), void *tag,
 	p = &job->buf[0];
 	bufend = &job->buf[0] + sizeof(job->buf);
 
-	len = snprintf(p, bufend - p, "POLICY ADD %s %ld %s %s/%d %s/%d",
+	if (saprintf(&p, bufend, "POLICY ADD %s %ld %s %s/%d %s/%d",
 	    rc_vmem2str(slid), lifetime,
 	    samode == RCT_IPSM_TUNNEL ? "tunnel" : "transport",
 	    rcs_sa2str_wop(sp_src->a.ipaddr), sp_src->prefixlen,
-	    rcs_sa2str_wop(sp_dst->a.ipaddr), sp_dst->prefixlen);
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+	    rcs_sa2str_wop(sp_dst->a.ipaddr), sp_dst->prefixlen))
 		goto fail;
-	}
-	p += len;
 
 	if (samode == RCT_IPSM_TUNNEL) {
-		len = snprintf(p, bufend - p, " %s %s",
-		    rcs_sa2str_wop(sa_src), rcs_sa2str_wop(sa_dst));
-		if (len >= bufend - p) {
-			plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+		if (saprintf(&p, bufend, " %s %s",
+		    rcs_sa2str_wop(sa_src), rcs_sa2str_wop(sa_dst)))
 			goto fail;
-		}
-		p += len;
 	}
 
-	len = snprintf(p, bufend - p, CRLF_STR);
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+	if (saprintf(&p, bufend, CRLF_STR))
 		goto fail;
-	}
-	p += len;
 
 	job->fd = fd;
 	job_post(&spmifh, job);
@@ -513,7 +517,6 @@ spmif_post_policy_delete(int fd, int (*callback)(void *, int),
 {
 	char *bufend, *p;
 	struct spmif_job *job;
-	int len;
 
 	if ((job = job_new(JOB_POLICY_DELETE)) == NULL)
 		return -1;
@@ -523,19 +526,10 @@ spmif_post_policy_delete(int fd, int (*callback)(void *, int),
 	p = &job->buf[0];
 	bufend = &job->buf[0] + sizeof(job->buf);
 
-	len = snprintf(p, bufend - p, "POLICY DELETE %s", rc_vmem2str(slid));
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+	if (saprintf(&p, bufend, "POLICY DELETE %s", rc_vmem2str(slid)))
 		goto fail;
-	}
-	p += len;
-
-	len = snprintf(p, bufend - p, CRLF_STR);
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+	if (saprintf(&p, bufend, CRLF_STR))
 		goto fail;
-	}
-	p += len;
 
 	job->fd = fd;
 	job_post(&spmifh, job);
@@ -560,13 +554,14 @@ spmif_post_fqdn_query(int fd, int (*callback)(void *, const char *),
 	job->callback.fqdn_query = callback;
 	job->tag = tag;
 
-	if ((gai_errno = getnameinfo(sa, SA_LEN(sa),
-	    addrstr, sizeof(addrstr), NULL, 0, NI_NUMERICHOST)) != 0) {
+	if ((gai_errno = getnameinfo(sa, (socklen_t)SA_LEN(sa), addrstr,
+	    (socklen_t)sizeof(addrstr), NULL, 0, NI_NUMERICHOST)) != 0) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
-		    "getnameinfo: %s\n", gai_strerror(errno));
+		    "getnameinfo: %s\n", gai_strerror(gai_errno));
 		goto fail;
 	}
-	used = snprintf(job->buf, sizeof(job->buf), "FQDN QUERY %s" CRLF_STR, addrstr);
+	used = snprintf(job->buf, sizeof(job->buf), "FQDN QUERY %s" CRLF_STR,
+	    addrstr);
 	if (used >= sizeof(job->buf)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "address string is too long: %s\n", addrstr);
@@ -619,7 +614,6 @@ spmif_post_migrate(int fd, int (*callback)(void *, int),
 {
 	char *bufend, *p;
 	struct spmif_job *job;
-	int len;
 
 	if ((job = job_new(JOB_MIGRATE)) == NULL)
 		return -1;
@@ -629,22 +623,13 @@ spmif_post_migrate(int fd, int (*callback)(void *, int),
 	p = &job->buf[0];
 	bufend = p + sizeof(job->buf);
 
-	len = snprintf(p, bufend - p, "MIGRATE %s %s %s %s %s",
+	if (saprintf(&p, bufend, "MIGRATE %s %s %s %s %s",
 		       rc_vmem2str(slid),
 		       rcs_sa2str_wop(sa_src), rcs_sa2str_wop(sa_dst),
-		       rcs_sa2str_wop(sa2_src), rcs_sa2str_wop(sa2_dst));
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+		       rcs_sa2str_wop(sa2_src), rcs_sa2str_wop(sa2_dst)))
 		goto fail;
-	}
-	p += len;
-
-	len = snprintf(p, bufend - p, CRLF_STR);
-	if (len >= bufend - p) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, "short of buffer\n");
+	if (saprintf(&p, bufend, CRLF_STR))
 		goto fail;
-	}
-	p += len;
 
 	job->fd = fd;
 	job_post(&spmifh, job);
@@ -660,7 +645,7 @@ int
 spmif_post_quit(int fd)
 {
 	const char *quit_cmd = "QUIT" CRLF_STR;
-	int ret;
+	ssize_t ret;
 
 	/* send QUIT */
 	ret = write(fd, quit_cmd, strlen(quit_cmd));
@@ -695,7 +680,7 @@ spmif_handler(int fd)
 
 	lr = spmifh.lr;
 
-	nline = read_spmif(lr, fd);
+	nline = (int)read_spmif(lr, fd);
 	if (nline == -1) {
 		/* fatal */
 		return -1;
@@ -707,7 +692,7 @@ spmif_handler(int fd)
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "reply from spmd while there is no job: %s\n",
 		     lr->lines[0]);
-		lr_consume(lr, nline);
+		lr_consume(lr, (size_t)nline);
 		return 0;		/* error but not fatal */
 	}
 
@@ -747,6 +732,7 @@ spmif_handler(int fd)
 }
 
 static void
+/*ARGSUSED*/
 parserep_policy_add(struct spmif_job *job, char **lines, int nline)
 {
 	int result;
@@ -767,6 +753,7 @@ parserep_policy_add(struct spmif_job *job, char **lines, int nline)
 }
 
 static void
+/*ARGSUSED*/
 parserep_policy_delete(struct spmif_job *job, char **lines, int nline)
 {
 	int result;
@@ -838,6 +825,7 @@ parserep_slid(struct spmif_job *job, char **lines, int nline)
 }
 
 static void
+/*ARGSUSED*/
 parserep_migrate(struct spmif_job *job, char **lines, int nline)
 {
 	int result;
@@ -862,10 +850,10 @@ parserep_migrate(struct spmif_job *job, char **lines, int nline)
  * return  0: reply not completed (read more).
  * return  n: reply consisted n lines.
  */
-static int
+static ssize_t
 read_spmif(struct linereader *lr, int fd)
 {
-	int i;
+	size_t i;
 
 	if (lr_read(lr, fd) != 0)
 		return -1;
@@ -1064,11 +1052,11 @@ search_crlf(char *ptr, char *limit)
 }
 
 static void
-lr_consume(struct linereader *lr, int nline)
+lr_consume(struct linereader *lr, size_t nline)
 {
 	size_t usedlen, unusedlen;
 	char *unused;
-	int i;
+	size_t i;
 
 	if (nline > lr->nline) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -1103,7 +1091,8 @@ spmd_if_login_response(struct spmd_cid *pci)
 	EVP_MD_CTX *ctx;
 	size_t hash_len;
 	unsigned int md_len;
-	int error, used, i;
+	int error;
+	size_t i, used;
 	char *p;
 
 	error = -1;
@@ -1129,7 +1118,7 @@ spmd_if_login_response(struct spmd_cid *pci)
 		    "failed to hash Password\n");
 		goto fail;
 	}
-	if (sizeof(md) < EVP_MD_CTX_size(ctx)) {
+	if (sizeof(md) < (size_t)EVP_MD_CTX_size(ctx)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "Message Digest buffer is not enough\n");
 		goto fail;
@@ -1141,7 +1130,7 @@ spmd_if_login_response(struct spmd_cid *pci)
 	}
 
 	hash_len = md_len * 2 + 1;
-	if ((pci->hash = (char *)malloc(hash_len)) == NULL) {
+	if ((pci->hash = malloc(hash_len)) == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL, "out of memory\n");
 		goto fail;
 	}

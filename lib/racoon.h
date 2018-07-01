@@ -83,6 +83,13 @@ extern int rcf_clean (void);
 extern rc_vchar_t *rcf_readfile(const char *path, const char *errloc,
 				int secret);
 
+extern struct rcf_remote *rcf_deepcopy_remote(struct rcf_remote *);
 /* version.c */
 extern const char *rc_version(void);
 extern const char *rc_startmsg(void);
+
+extern struct rcf_selector *rcf_selector_head;
+extern struct rcf_interface *rcf_interface_head;
+extern struct rcf_default *rcf_default_head;
+extern struct rcf_addresspool *rcf_addresspool_head;
+extern struct rcf_remote *rcf_remote_head;
