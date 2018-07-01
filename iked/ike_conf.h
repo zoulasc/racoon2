@@ -281,3 +281,7 @@ int ike_conf_check_consistency(void);
 struct sockaddr *ike_determine_sa_endpoint(struct sockaddr_storage *,
 					   struct rc_addrlist *,
 					   struct sockaddr *);
+int addrlist_equal(struct rc_addrlist *, struct rc_addrlist *);
+
+void ikev2_dump_ts(const char *, struct ikev2payl_traffic_selector *);
+void ikev2_dump_traffic_selector_h(const char *, void *);

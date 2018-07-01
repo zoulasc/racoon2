@@ -123,7 +123,8 @@ static struct child_dispatch ikev2_child_dispatch[2][IKEV2_CHILD_STATE_NUM] = {
 struct sadb_response_method ikev2_sadb_callback = {
 	ikev2_child_getspi_response,
 	ikev2_update_response,
-	ikev2_expired
+	ikev2_expired,
+	NULL,
 };
 
 void
@@ -378,7 +379,6 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 	rc_vchar_t *dhpriv = 0;
 	int lifetime;
 	int err = 0;
-	extern struct sadb_request_method sadb_responder_request_method;
 
 	TRACE((PLOGLOC,
 	       "ikev2_create_child_responder(%p, 0x%08x, %p, %p, %p, %p, %p)\n",
@@ -797,7 +797,7 @@ ikev2_find_request(struct ikev2_sa *ike_sa, uint32_t id)
 }
 
 
-struct ikev2_child_sa *
+static struct ikev2_child_sa *
 ikev2_find_child_by_id(struct ikev2_sa *ike_sa, unsigned int id)
 {
 	struct ikev2_child_sa *sa;
@@ -873,7 +873,8 @@ ikev2_wakeup_child_sa(struct ikev2_child_sa *child_sa)
 }
 
 
-struct sockaddr *
+#if 0
+static struct sockaddr *
 expand_addr(struct rc_addrlist *a, struct ikev2_sa *ike_sa)
 {
 	struct sockaddr *addr;
@@ -897,7 +898,7 @@ expand_addr(struct rc_addrlist *a, struct ikev2_sa *ike_sa)
 			isakmp_log(ike_sa, 0, 0, 0,
 				   PLOG_INTERR, PLOGLOC, 
 				   "macro %.*s expansion failure\n",
-				   (int)a->a.vstr->l, a->a.vstr->v);
+				   (int)a->a.vstr->l, a->a.vstr->s);
 			return NULL;
 		}
 		break;
@@ -912,6 +913,7 @@ expand_addr(struct rc_addrlist *a, struct ikev2_sa *ike_sa)
 
 	return addr;
 }
+#endif
 
 
 int
@@ -1488,7 +1490,7 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 	/* start expiration timer */
 	{
 		struct rcf_ipsec *conf;
-		int lifetime;
+		unsigned int lifetime;
 
 		conf = child_sa->selector->pl->ips;
 		IPSEC_CONF(lifetime, conf, ipsec_sa_lifetime_time, 0);

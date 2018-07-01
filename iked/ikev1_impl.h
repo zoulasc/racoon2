@@ -55,7 +55,7 @@ extern struct isakmpsa *ikev1_conf_to_isakmpsa(struct rcf_remote *rmconf);
 extern struct rcf_selector *ike_conf_find_ikev1sel_by_id(rc_vchar_t *id_local, rc_vchar_t *id_remote);
 
 extern void ikev1_set_rmconf(struct ph1handle *ph1, struct rcf_remote *conf);
-extern int ikev1_script_hook(struct ph1handle *, int);
+extern void ikev1_script_hook(struct ph1handle *, int);
 extern void ikev1_child_script_hook(struct ph2handle *, int);
 extern void ikev1_migrate_script_hook(struct ph1handle *,
 				      struct sockaddr *, struct sockaddr *,

@@ -68,7 +68,7 @@
 #  include "parse_coa.h"
 #endif
 
-char *racoon_config_path = RACOON_CONF;
+const char *racoon_config_path = RACOON_CONF;
 int opt_foreground = FALSE;
 int opt_debug = 0;
 int opt_ipv4_only = FALSE;
@@ -76,7 +76,7 @@ int opt_ipv6_only = FALSE;
 int isakmp_port = IKEV2_UDP_PORT;
 int isakmp_port_dest = IKEV2_UDP_PORT;
 #ifdef HAVE_LIBPCAP
-char *ike_pcap_file = NULL;
+const char *ike_pcap_file = NULL;
 #endif
 
 static volatile int reload = FALSE;
@@ -109,7 +109,7 @@ static void terminate_iked(void);
 static void iked_pidfile_create(void);
 static void iked_pidfile_remove(void);
 
-static void fatal(char *);
+static void fatal(const char *);
 
 #ifdef HAVE_LIBPCAP
 const char *options_short = "f:hVFvdD:p:t:46l:I:S:P:";
@@ -181,7 +181,6 @@ main(int argc, char **argv)
 	const char *default_log_file = 0;
 	char *dest_addr = 0;
 	char *dest_selector = 0;
-	extern char *optarg;
 
 	setprogname(argv[0]);
 
@@ -330,10 +329,6 @@ main(int argc, char **argv)
 	}
 #ifdef SELFTEST
 	{
-		extern int crypto_selftest(void);
-		extern int encryptor_selftest(void);
-		extern int keyedhash_selftest(void);
-
 		if (crypto_selftest()) {
 			plog(PLOG_CRITICAL, PLOGLOC, NULL,
 			     "failed crypto lib selftest\n");
@@ -408,8 +403,8 @@ main(int argc, char **argv)
 	}
 #ifdef HAVE_LIBPCAP
 	{
-		char *dump_file;
-		char *dump_mode;
+		const char *dump_file;
+		const char *dump_mode;
 		if (ike_pcap_file != NULL) {
 			if (ike_pcap_file[0] == '+') {
 				dump_mode = "a";
@@ -724,7 +719,7 @@ iked_pidfile_remove(void)
 }
 
 static void
-fatal(char *msg)
+fatal(const char *msg)
 {
 	fprintf(stderr, "%s: %s\n", getprogname(), msg);
 	exit(IKED_EXIT_FAILURE);

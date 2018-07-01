@@ -73,7 +73,7 @@ extern int ikev2_ipsec_window_size;
 #define	IKEV2_DEFAULT_NONCE_SIZE		(256 / 8)
 
 extern struct ikev2_payload_types {
-	char *name;
+	const char *name;
 	size_t minimum_length;
 } ikev2_payload_types[];
 
@@ -217,6 +217,12 @@ struct ikev2_sa {
 	IKEV2_SA_LIST_ENTRY link;
 };
 
+enum request_callback {
+	REQUEST_CALLBACK_CONTINUE,
+	REQUEST_CALLBACK_TRANSMIT_ERROR,
+	REQUEST_CALLBACK_RESPONSE
+};
+
 /* negotiated parameters */
 struct ikev2_child_param {
 	int use_transport_mode;	/* IN */
@@ -287,7 +293,7 @@ struct ikev2_child_sa {
 	int delete_sent;
 
 	/* for informational exchange */
-	void (*callback) (int, struct ikev2_child_sa *, void *);
+	void (*callback) (enum request_callback, struct ikev2_child_sa *, void *);
 	void *callback_param;
 	uint32_t deleting_child_id;
 
@@ -307,11 +313,6 @@ struct ikev2_child_sa {
 	rc_vchar_t	*peer_application_version;
 };
 
-enum request_callback {
-	REQUEST_CALLBACK_CONTINUE,
-	REQUEST_CALLBACK_TRANSMIT_ERROR,
-	REQUEST_CALLBACK_RESPONSE
-};
 
 /*
  * packet construction utilities
@@ -382,8 +383,8 @@ extern void ikev2_initiate(struct isakmp_acquire_request *,
 			   struct rcf_selector *,
 			   struct rcf_remote *);
 extern struct ikev2_child_sa *ikev2_request_initiator_start(struct ikev2_sa *,
-							    void (*callback) (),
-							    void *);
+    void (*callback)(enum request_callback, struct ikev2_child_sa *, void *),
+    void *);
 extern void ikev2_informational_initiator_transmit(struct ikev2_sa *,
 						   struct ikev2_child_sa *,
 						   struct ikev2_payloads *);
@@ -428,9 +429,9 @@ extern int ikev2_set_negotiated_sa(struct ikev2_sa *, struct ikev2_isakmpsa *);
 extern void ikev2_set_rmconf(struct ikev2_sa *, struct rcf_remote *);
 extern struct rc_idlist *ikev2_my_id_list(struct ikev2_sa *);
 
-extern struct encryptor *ikev2_encryptor_new(int, int);
-extern struct authenticator *ikev2_authenticator_new(int);
-extern struct keyed_hash *ikev2_prf_new(int);
+extern struct encryptor *ikev2_encryptor_new(unsigned int, size_t);
+extern struct authenticator *ikev2_authenticator_new(unsigned int);
+extern struct keyed_hash *ikev2_prf_new(unsigned int);
 
 extern void ikev2_child_state_set(struct ikev2_child_sa *,
 				  enum ikev2_child_state);
@@ -496,6 +497,7 @@ int ikev2_check_icv(struct ikev2_sa *, rc_vchar_t *);
 int ikev2_decrypt(struct ikev2_sa *, rc_vchar_t *);
 
 int ikev2_cookie_init(void);
+rc_vchar_t *ikev2_cookie(struct sockaddr *, isakmp_cookie_t *);
 void ikev2_cookie_refresh(void);
 void ikev2_respond_with_cookie(rc_vchar_t *, struct sockaddr *,
 			       struct sockaddr *);
@@ -572,3 +574,13 @@ int ikev2_process_config_informational(struct ikev2_sa *,
 /* script hook */
 void ikev2_script_hook(struct ikev2_sa *, int);
 void ikev2_child_script_hook(struct ikev2_child_sa *, int);
+
+void ikev2_timeout(struct transmit_info *);
+void ikev2_verified(struct verified_info *);
+void ikev2_sa_periodic_task(void);
+void ikev2_migrate_script_hook(struct ikev2_sa *,
+			       struct sockaddr *, struct sockaddr *,
+			       struct sockaddr *, struct sockaddr *);
+
+extern struct isakmp_domain ikev2_doi;
+extern struct isakmp_domain ikev2_createchild_doi;

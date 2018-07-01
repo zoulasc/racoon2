@@ -93,7 +93,6 @@ getlocaladdr(struct sockaddr *remote, struct sockaddr *hint, int lport)
 	struct sockaddr *local;
 	socklen_t local_len = sizeof(struct sockaddr_storage);
 	int s;			/* for dummy connection */
-	extern struct rcf_interface *rcf_interface_head;
 
 	if (hint && hint->sa_family == remote->sa_family) {
 		local = rcs_sadup(hint);
@@ -167,7 +166,7 @@ getlocaladdr(struct sockaddr *remote, struct sockaddr *hint, int lport)
  */
 int
 recvfromto(int s, void *buf, size_t buflen, int flags, 
-	   struct sockaddr *from, int *fromlen, struct sockaddr *to, int *tolen)
+	   struct sockaddr *from, socklen_t *fromlen, struct sockaddr *to, socklen_t *tolen)
 {
 	int otolen;
 	int len;
@@ -301,7 +300,6 @@ sendfromto(int s, const void *buf, size_t buflen,
 	struct sockaddr_storage ss;
 	socklen_t sslen;
 	int len = 0, i;
-	extern struct rcf_interface *rcf_interface_head;
 
 	if (cnt <= 0) {
 		TRACE((PLOGLOC, "cnt: %d\n", cnt));
@@ -362,7 +360,7 @@ sendfromto(int s, const void *buf, size_t buflen,
 			memset(&m, 0, sizeof(m));
 			m.msg_name = (caddr_t)&dst6;
 			m.msg_namelen = sizeof(dst6);
-			iov[0].iov_base = (char *)buf;
+			iov[0].iov_base = (char *)(intptr_t)buf;
 			iov[0].iov_len = buflen;
 			m.msg_iov = iov;
 			m.msg_iovlen = 1;
@@ -401,7 +399,7 @@ sendfromto(int s, const void *buf, size_t buflen,
 				     "%d times of %d bytes message will be sent "
 				     "to %s\n", i + 1, len, rcs_sa2str(dst));
 			}
-			plogdump(PLOG_DEBUG, PLOGLOC, 0, (char *)buf, buflen);
+			plogdump(PLOG_DEBUG, PLOGLOC, 0, buf, buflen);
 
 			return len;
 		}
@@ -487,7 +485,6 @@ sendfromto(int s, const void *buf, size_t buflen,
 
 			for (i = 0; i < cnt; i++) {
 #ifdef DEBUG
-				extern uint32_t debug_send;
 				static int send_count = 0;
 
 				if (debug_send & (1 << (send_count++ % 32))) {
@@ -509,7 +506,7 @@ sendfromto(int s, const void *buf, size_t buflen,
 				     "%d times of %d bytes message will be sent "
 				     "to %s\n", i + 1, len, rcs_sa2str(dst));
 			}
-			plogdump(PLOG_DEBUG, PLOGLOC, 0, (char *)buf, buflen);
+			plogdump(PLOG_DEBUG, PLOGLOC, 0, buf, buflen);
 
 			if (needclose)
 				close(sendsock);
@@ -573,11 +570,11 @@ extract_port(const struct sockaddr *addr)
 
 	switch (addr->sa_family) {
 	case AF_INET:
-		port = ((struct sockaddr_in *)addr)->sin_port;
+		port = ((const struct sockaddr_in *)addr)->sin_port;
 		break;
 
 	case AF_INET6:
-		port = ((struct sockaddr_in6 *)addr)->sin6_port;
+		port = ((const struct sockaddr_in6 *)addr)->sin6_port;
 		break;
 
 	default:

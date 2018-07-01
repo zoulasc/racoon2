@@ -65,7 +65,7 @@ struct dhgroup dh_modp6144;
 struct dhgroup dh_modp8192;
 
 int
-oakley_dhinit()
+oakley_dhinit(void)
 {
 	/* set DH MODP */
 	INITDHVAL(dh_modp768, OAKLEY_PRIME_MODP768, DHGROUP_TYPE_MODP);
@@ -96,8 +96,7 @@ dh_value_len(struct dhgroup *dhgrp)
  * performed, prepending zero bits to the value if necessary.
  */
 static int
-oakley_check_dh_pub(prime, pub0)
-	rc_vchar_t *prime, **pub0;
+oakley_check_dh_pub(rc_vchar_t *prime, rc_vchar_t **pub0)
 {
 	rc_vchar_t *tmp;
 	rc_vchar_t *pub = *pub0;
@@ -118,7 +117,7 @@ oakley_check_dh_pub(prime, pub0)
 		plog(PLOG_INTERR, PLOGLOC, NULL, "failed to get DH buffer.\n");
 		return -1;
 	}
-	memcpy(tmp->v + prime->l - pub->l, pub->v, pub->l);
+	memcpy(tmp->u + prime->l - pub->l, pub->v, pub->l);
 
 	rc_vfreez(*pub0);
 	*pub0 = tmp;
@@ -132,9 +131,8 @@ oakley_check_dh_pub(prime, pub0)
  * OUT: **gxy
  */
 int
-oakley_dh_compute(dh, pub, priv, pub_p, gxy)
-	const struct dhgroup *dh;
-	rc_vchar_t *pub, *priv, *pub_p, **gxy;
+oakley_dh_compute(const struct dhgroup *dh, rc_vchar_t *pub, rc_vchar_t *priv,
+	rc_vchar_t *pub_p, rc_vchar_t **gxy)
 {
 #ifdef ENABLE_STATS
 	struct timeval start, end;
@@ -181,9 +179,8 @@ oakley_dh_compute(dh, pub, priv, pub_p, gxy)
 }
 
 int
-oakley_dh_generate(dh, pub, priv)
-	const struct dhgroup *dh;
-	rc_vchar_t **pub, **priv;
+oakley_dh_generate(const struct dhgroup *dh, rc_vchar_t **pub,
+    rc_vchar_t **priv)
 {
 #ifdef ENABLE_STATS
 	struct timeval start, end;

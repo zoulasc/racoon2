@@ -64,8 +64,7 @@
 # include "ikev1/handler.h"
 #endif
 
-extern int debug_pfkey;
-static void dump_param(char *, struct rcpfk_msg *);
+static void dump_param(const char *, struct rcpfk_msg *);
 
 static int sadb_getspi(struct rcpfk_msg *);
 static int sadb_acquire_error(struct rcpfk_msg *);
@@ -76,9 +75,9 @@ static int sadb_responder_error(struct rcpfk_msg *);
 static int sadb_delete(struct rcpfk_msg *);
 
 static int
-null_proc()
+null_proc(struct rcpfk_msg *u)
 {
-	return 0;
+	return u ? 0 : 0;
 }
 
 /* sadb_initiator_request_method used in response to SADB_ACQUIRE */
@@ -299,7 +298,7 @@ sadb_acquire_error(struct rcpfk_msg *param)
 }
 
 static void
-sadb_log_add(char *op, struct rcpfk_msg *param)
+sadb_log_add(const char *op, struct rcpfk_msg *param)
 {
 	if (param->satype == RCT_SATYPE_ESP) {
 		INFO((PLOGLOC,
@@ -707,9 +706,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 #ifdef IKEV1
 	struct ph1handle *iph1;
 	struct ph2handle *iph2;
-	extern struct ph1handle *getph1bydstaddrwop(struct sockaddr *);
 #endif
-	extern struct rcf_selector *rcf_selector_head;
 
 	TRACE((PLOGLOC,
 	       "sadb_x_migrate_callback: dir=%s, sa_src=%s, sa_dst=%s, sa2_src=%s, sa2_dst=%s\n",
@@ -1007,6 +1004,7 @@ struct sadb_request_method sadb_debug_method = {
 	sadb_debug_update,
 	sadb_debug_add,
 	sadb_debug_delete,
+	NULL,
 };
 
 uint32_t debug_spi = 0x10000;
@@ -1021,6 +1019,7 @@ sadb_debug_getspi(struct rcpfk_msg *param)
 
 	param->spi = htonl(debug_spi++);
 	err = sadb_getspi_callback(param);
+	(void)err;
 	TRACE((PLOGLOC, "sadb_getspi_callback retval %d\n", err));
 	return 0;
 }
@@ -1059,7 +1058,7 @@ sadb_debug_delete(struct rcpfk_msg *param)
  * dump add/update parameters
  */
 static void
-dump_param(char *msg, struct rcpfk_msg *param)
+dump_param(const char *msg, struct rcpfk_msg *param)
 {
 	int i;
 	char buf[BUFSIZ];

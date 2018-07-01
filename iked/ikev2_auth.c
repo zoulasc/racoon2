@@ -314,7 +314,7 @@ ikev2_auth_calculate(struct ikev2_sa *sa, int i_to_r)
 		 * secret MUST be of that fixed size.
 		 */
 		{
-			static const rc_vchar_t keypad =
+			static rc_vchar_t keypad =
 				VCHAR_INIT(IKEV2_SHAREDSECRET_KEYPAD,
 					   IKEV2_SHAREDSECRET_KEYPADLEN);
 
@@ -484,7 +484,7 @@ ikev2_auth_verify(struct ikev2_sa *sa, int i_to_r,
 		 * secret MUST be of that fixed size.
 		 */
 		{
-			static const rc_vchar_t keypad =
+			static rc_vchar_t keypad =
 				VCHAR_INIT(IKEV2_SHAREDSECRET_KEYPAD,
 					   IKEV2_SHAREDSECRET_KEYPADLEN);
 
@@ -499,8 +499,7 @@ ikev2_auth_verify(struct ikev2_sa *sa, int i_to_r,
 				plogdump(PLOG_DEBUG, PLOGLOC, 0, sharedkey->v,
 					 sharedkey->l);
 			});
-			k = keyed_hash(sa->prf, sharedkey,
-				       (rc_vchar_t *)&keypad);
+			k = keyed_hash(sa->prf, sharedkey, &keypad);
 			rc_vfreez(sharedkey);
 			if (!k)
 				goto fail_nomem;

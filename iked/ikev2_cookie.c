@@ -65,7 +65,7 @@ static rc_vchar_t *cookie_secret;
 static const int cookie_secret_size = SHA_DIGEST_LENGTH;
 
 int
-ikev2_cookie_init()
+ikev2_cookie_init(void)
 {
 	cookie_secret = random_bytes(cookie_secret_size);
 	if (!cookie_secret)

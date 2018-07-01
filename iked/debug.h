@@ -34,6 +34,8 @@
 
 /* define by main.c */
 extern int debug_pfkey;
+extern int debug_send;
+
 
 #ifdef HAVE_PRINT_ISAKMP_C
 #define	ISAKMP_PRINTPACKET(msg_, remote_, local_, decoded_) isakmp_printpacket(msg_, remote_, local_, decoded_)

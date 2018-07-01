@@ -56,27 +56,27 @@
 #include "crypto_impl.h"
 
 static struct vendor_id all_vendor_ids[] = {
-{ VENDORID_KAME       , "KAME/racoon" },
-{ VENDORID_IPSEC_TOOLS, "IPSec-Tools" },
-{ VENDORID_GSSAPI_LONG, "A GSS-API Authentication Method for IKE" },
-{ VENDORID_GSSAPI     , "GSSAPI" },
-{ VENDORID_MS_NT5     , "MS NT5 ISAKMPOAKLEY" },
-{ VENDORID_NATT_00    , "draft-ietf-ipsec-nat-t-ike-00" },
-{ VENDORID_NATT_01    , "draft-ietf-ipsec-nat-t-ike-01" },
-{ VENDORID_NATT_02    , "draft-ietf-ipsec-nat-t-ike-02" },
-{ VENDORID_NATT_02_N  , "draft-ietf-ipsec-nat-t-ike-02\n" },
-{ VENDORID_NATT_03    , "draft-ietf-ipsec-nat-t-ike-03" },
-{ VENDORID_NATT_04    , "draft-ietf-ipsec-nat-t-ike-04" },
-{ VENDORID_NATT_05    , "draft-ietf-ipsec-nat-t-ike-05" },
-{ VENDORID_NATT_06    , "draft-ietf-ipsec-nat-t-ike-06" },
-{ VENDORID_NATT_07    , "draft-ietf-ipsec-nat-t-ike-07" },
-{ VENDORID_NATT_08    , "draft-ietf-ipsec-nat-t-ike-08" },
-{ VENDORID_NATT_RFC   , "RFC 3947" },
-{ VENDORID_XAUTH      , "draft-ietf-ipsra-isakmp-xauth-06.txt" },
-{ VENDORID_UNITY      , "CISCO-UNITY" },
-{ VENDORID_FRAG       , "FRAGMENTATION" },
+{ VENDORID_KAME       , "KAME/racoon", 0 },
+{ VENDORID_IPSEC_TOOLS, "IPSec-Tools", 0 },
+{ VENDORID_GSSAPI_LONG, "A GSS-API Authentication Method for IKE", 0 },
+{ VENDORID_GSSAPI     , "GSSAPI", 0 },
+{ VENDORID_MS_NT5     , "MS NT5 ISAKMPOAKLEY", 0 },
+{ VENDORID_NATT_00    , "draft-ietf-ipsec-nat-t-ike-00", 0 },
+{ VENDORID_NATT_01    , "draft-ietf-ipsec-nat-t-ike-01", 0 },
+{ VENDORID_NATT_02    , "draft-ietf-ipsec-nat-t-ike-02", 0 },
+{ VENDORID_NATT_02_N  , "draft-ietf-ipsec-nat-t-ike-02\n", 0 },
+{ VENDORID_NATT_03    , "draft-ietf-ipsec-nat-t-ike-03", 0 },
+{ VENDORID_NATT_04    , "draft-ietf-ipsec-nat-t-ike-04", 0 },
+{ VENDORID_NATT_05    , "draft-ietf-ipsec-nat-t-ike-05", 0 },
+{ VENDORID_NATT_06    , "draft-ietf-ipsec-nat-t-ike-06", 0 },
+{ VENDORID_NATT_07    , "draft-ietf-ipsec-nat-t-ike-07", 0 },
+{ VENDORID_NATT_08    , "draft-ietf-ipsec-nat-t-ike-08", 0 },
+{ VENDORID_NATT_RFC   , "RFC 3947", 0 },
+{ VENDORID_XAUTH      , "draft-ietf-ipsra-isakmp-xauth-06.txt", 0 },
+{ VENDORID_UNITY      , "CISCO-UNITY", 0 },
+{ VENDORID_FRAG       , "FRAGMENTATION", 0 },
 /* Just a readable string for DPD ... */
-{ VENDORID_DPD        , "DPD" },
+{ VENDORID_DPD        , "DPD", 0 },
 };
 
 #define NUMVENDORIDS	(sizeof(all_vendor_ids)/sizeof(all_vendor_ids[0]))
@@ -97,7 +97,7 @@ static rc_vchar_t *vendorid_fixup(int, rc_vchar_t *t);
 static struct vendor_id *
 lookup_vendor_id_by_id (int id)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < NUMVENDORIDS; i++)
 		if (all_vendor_ids[i].id == id)
@@ -122,7 +122,7 @@ vid_string_by_id (int id)
 static struct vendor_id *
 lookup_vendor_id_by_hash (const char *hash)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < NUMVENDORIDS; i++)
 		if (strncmp(all_vendor_ids[i].hash->v, hash,
@@ -135,7 +135,7 @@ lookup_vendor_id_by_hash (const char *hash)
 void
 compute_vendorids (void)
 {
-	int i;
+	size_t i;
 	rc_vchar_t vid;
 
 	for (i = 0; i < NUMVENDORIDS; i++) {
@@ -152,7 +152,7 @@ compute_vendorids (void)
 			continue;
 		}
 
-		vid.v = (char *) all_vendor_ids[i].string;
+		vid.v = (char *)(uintptr_t)all_vendor_ids[i].string;
 		vid.l = strlen(vid.v);
 
 		all_vendor_ids[i].hash = eay_md5_one(&vid);
@@ -206,7 +206,7 @@ set_vendorid(int vendorid)
 int
 check_vendorid(struct isakmp_gen *gen)
 {
-	int vidlen;
+	uint16_t vidlen;
 	struct vendor_id *current;
 
 	if (gen == NULL)
@@ -255,8 +255,8 @@ vendorid_fixup(int vendorid, rc_vchar_t *vidhash)
 		break;
 	} 
 	case VENDORID_UNITY:	/* Two bytes tweak */
-		vidhash->v[14] = 0x01;		  
-		vidhash->v[15] = 0x00;
+		vidhash->u[14] = 0x01;		  
+		vidhash->u[15] = 0x00;
 		break;		   
 
 	default:     

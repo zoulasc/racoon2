@@ -76,19 +76,25 @@
  */
 
 struct sadb_request_method {
-	int (*getspi) ();
-	int (*acquire_error) ();
-	int (*update_inbound) ();
-	int (*add_outbound) ();
-	int (*delete_sa) ();
-	int (*get) ();
+	int (*getspi)(struct rcpfk_msg *);
+	int (*acquire_error)(struct rcpfk_msg *);
+	int (*update_inbound)(struct rcpfk_msg *);
+	int (*add_outbound)(struct rcpfk_msg *);
+	int (*delete_sa)(struct rcpfk_msg *);
+	int (*get)(struct rcpfk_msg *);
 };
 
+struct sadb_request;
 struct sadb_response_method {
-	int (*getspi_response)();
-	int (*update_response)();
-	int (*expired)();
-	int (*get_response)();
+	int (*getspi_response)(struct sadb_request *, struct sockaddr *,
+			       struct sockaddr *, unsigned int, uint32_t);
+	int (*update_response)(struct sadb_request *, struct sockaddr *,
+			       struct sockaddr *, unsigned int, unsigned int,
+			       uint32_t);
+	int (*expired)(struct sadb_request *, struct rcpfk_msg *);
+	int (*get_response)(struct sadb_request *, struct sockaddr *,
+			    struct sockaddr *, unsigned int, uint32_t,
+			    uint64_t *);
 };
 
 #define	SADB_LIST_HEAD(nam_, typ_)	TAILQ_HEAD(nam_, typ_)

@@ -416,7 +416,7 @@ oakley_compute_keymat_x(struct ph2handle *iph2, int side, int sa_dir)
 		if (0 < --dupkeymat) {
 			rc_vchar_t *prev = res;	/* K(n-1) */
 			rc_vchar_t *seed = NULL;	/* seed for Kn */
-			size_t l;
+			size_t xl;
 
 			/*
 			 * generating long key (isakmp-oakley-08 5.5)
@@ -445,8 +445,8 @@ oakley_compute_keymat_x(struct ph2handle *iph2, int side, int sa_dir)
 				rc_vchar_t *this = NULL;	/* Kn */
 				int update_prev;
 
-				memcpy(seed->v, prev->v, prev->l);
-				memcpy(seed->v + prev->l, buf->v, buf->l);
+				memcpy(seed->u, prev->v, prev->l);
+				memcpy(seed->u + prev->l, buf->v, buf->l);
 				this = oakley_prf(iph2->ph1->skeyid_d, seed,
 							iph2->ph1);
 				if (!this) {
@@ -461,8 +461,8 @@ oakley_compute_keymat_x(struct ph2handle *iph2, int side, int sa_dir)
 
 				update_prev = (prev && prev == res) ? 1 : 0;
 
-				l = res->l;
-				res = rc_vrealloc(res, l + this->l);
+				xl = res->l;
+				res = rc_vrealloc(res, xl + this->l);
 
 				if (update_prev)
 					prev = res;
@@ -476,7 +476,7 @@ oakley_compute_keymat_x(struct ph2handle *iph2, int side, int sa_dir)
 					rc_vfree(seed);
 					goto end;
 				}
-				memcpy(res->v + l, this->v, this->l);
+				memcpy(res->u + xl, this->v, this->l);
 
 				if (prev && prev != res)
 					rc_vfree(prev);
@@ -595,11 +595,11 @@ oakley_compute_hash3(struct ph1handle *iph1, uint32_t msgid, rc_vchar_t *body)
 		goto end;
 	}
 
-	buf->v[0] = 0;
+	buf->u[0] = 0;
 
-	memcpy(buf->v + 1, (char *)&msgid, sizeof(msgid));
+	memcpy(buf->u + 1, (char *)&msgid, sizeof(msgid));
 
-	memcpy(buf->v + 1 + sizeof(uint32_t), body->v, body->l);
+	memcpy(buf->u + 1 + sizeof(uint32_t), body->v, body->l);
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH with: \n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, buf->v, buf->l);
@@ -1549,10 +1549,10 @@ get_cert_fromlocal(struct ph1handle *iph1, int my)
 		*certpl = NULL;
 		goto end;
 	}
-	memcpy((*certpl)->pl->v + 1, cert->v, cert->l);
-	(*certpl)->pl->v[0] = ikev1_certtype(iph1->rmconf);
+	memcpy((*certpl)->pl->u + 1, cert->v, cert->l);
+	(*certpl)->pl->u[0] = ikev1_certtype(iph1->rmconf);
 	(*certpl)->type = ikev1_certtype(iph1->rmconf);
-	(*certpl)->cert.v = (*certpl)->pl->v + 1;
+	(*certpl)->cert.u = (*certpl)->pl->u + 1;
 	(*certpl)->cert.l = (*certpl)->pl->l - 1;
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "created CERT payload:\n");
@@ -2140,8 +2140,8 @@ save_certbuf(struct isakmp_gen *gen)
 		return NULL;
 	}
 	memcpy(new->pl->v, gen + 1, new->pl->l);
-	new->type = new->pl->v[0] & 0xff;
-	new->cert.v = new->pl->v + 1;
+	new->type = new->pl->u[0] & 0xff;
+	new->cert.u = new->pl->u + 1;
 	new->cert.l = new->pl->l - 1;
 
 	return new;
@@ -2198,11 +2198,11 @@ oakley_getcr(struct ph1handle *iph1)
 		return NULL;
 	}
 	if(ikev1_certtype(iph1->rmconf) == ISAKMP_CERT_NONE) {
-		buf->v[0] = ikev1_cacerttype(iph1->rmconf);
+		buf->u[0] = ikev1_cacerttype(iph1->rmconf);
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "create my CR: NONE, using %s instead\n",
 		     s_isakmp_certtype(ikev1_cacerttype(iph1->rmconf)));
 	} else {
-		buf->v[0] = ikev1_certtype(iph1->rmconf);
+		buf->u[0] = ikev1_certtype(iph1->rmconf);
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "create my CR: %s\n",
 		     s_isakmp_certtype(ikev1_certtype(iph1->rmconf)));
 	}
@@ -2598,9 +2598,10 @@ oakley_compute_enckey(struct ph1handle *iph1)
 
 		subkey = 1;
 		while (p < ep) {
+			size_t diff;
 			if (p == (unsigned char *)iph1->key->v) {
 				/* just for computing K1 */
-				buf->v[0] = 0;
+				buf->u[0] = 0;
 				buf->l = 1;
 			}
 			res = oakley_prf(iph1->skeyid_e, buf, iph1);
@@ -2614,7 +2615,8 @@ oakley_compute_enckey(struct ph1handle *iph1)
 			plogdump(PLOG_DEBUG, PLOGLOC, 0, buf->v, buf->l);
 			plogdump(PLOG_DEBUG, PLOGLOC, 0, res->v, res->l);
 
-			cplen = (res->l < ep - p) ? res->l : ep - p;
+			diff = (size_t)(ep - p);
+			cplen = res->l < diff ? res->l : diff;
 			memcpy(p, res->v, cplen);
 			p += cplen;
 
@@ -2901,13 +2903,13 @@ oakley_do_decrypt(struct ph1handle *iph1, rc_vchar_t *msg,
 
 	/* save IV for next, but not sync. */
 	memset(ivep->v, 0, ivep->l);
-	memcpy(ivep->v, (caddr_t)&msg->v[msg->l - blen], blen);
+	memcpy(ivep->v, (caddr_t)&msg->u[msg->l - blen], blen);
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL,
 		"IV was saved for next processing:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, ivep->v, ivep->l);
 
-	pl = msg->v + sizeof(struct isakmp);
+	pl = msg->s + sizeof(struct isakmp);
 
 	len = msg->l - sizeof(struct isakmp);
 
@@ -2944,10 +2946,10 @@ oakley_do_decrypt(struct ph1handle *iph1, rc_vchar_t *msg,
 	/* get padding length */
 #if 0
 	if (lcconf->pad_excltail)
-		padlen = new->v[new->l - 1] + 1;
+		padlen = new->u[new->l - 1] + 1;
 	else
 #endif
-		padlen = new->v[new->l - 1];
+		padlen = new->u[new->l - 1];
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "padding len=%u\n", padlen);
 
 	/* trim padding */
@@ -2975,8 +2977,8 @@ oakley_do_decrypt(struct ph1handle *iph1, rc_vchar_t *msg,
 			"failed to get buffer to decrypt.\n");
 		goto end;
 	}
-	memcpy(buf->v, msg->v, sizeof(struct isakmp));
-	memcpy(buf->v + sizeof(struct isakmp), new->v, new->l);
+	memcpy(buf->u, msg->v, sizeof(struct isakmp));
+	memcpy(buf->u + sizeof(struct isakmp), new->v, new->l);
 	put_uint32(&((struct isakmp *)buf->v)->len, buf->l);
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "decrypted.\n");
@@ -3024,7 +3026,7 @@ oakley_do_encrypt(struct ph1handle *iph1,
 		goto end;
 	}
 
-	pl = msg->v + sizeof(struct isakmp);
+	pl = msg->s + sizeof(struct isakmp);
 	len = msg->l - sizeof(struct isakmp);
 
 	/* add padding */
@@ -3039,8 +3041,8 @@ oakley_do_encrypt(struct ph1handle *iph1,
 		goto end;
 	}
         if (padlen) {
-		int i;
-		char *p = &buf->v[len];
+		unsigned int i;
+		char *p = &buf->s[len];
 		if (ikev1_random_pad_content(iph1->rmconf) == RCT_BOOL_ON) {
 			for (i = 0; i < padlen; i++)
 				*p++ = eay_random_uint32() & 0xff;
@@ -3054,10 +3056,10 @@ oakley_do_encrypt(struct ph1handle *iph1,
 	/* make pad into tail */
 #ifdef notyet
 	if (lcconf->pad_excltail)
-		buf->v[len + padlen - 1] = padlen - 1;
+		buf->u[len + padlen - 1] = padlen - 1;
 	else
 #endif
-		buf->v[len + padlen - 1] = padlen;
+		buf->u[len + padlen - 1] = padlen;
 
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, buf->v, buf->l);
 
@@ -3080,7 +3082,7 @@ oakley_do_encrypt(struct ph1handle *iph1,
 
 	/* save IV for next */
 	memset(ivp->v, 0, ivp->l);
-	memcpy(ivp->v, (caddr_t)&new->v[new->l - blen], blen);
+	memcpy(ivp->v, &new->u[new->l - blen], blen);
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "save IV for next:\n");
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, ivp->v, ivp->l);
@@ -3094,7 +3096,7 @@ oakley_do_encrypt(struct ph1handle *iph1,
 		goto end;
 	}
 	memcpy(buf->v, msg->v, sizeof(struct isakmp));
-	memcpy(buf->v + sizeof(struct isakmp), new->v, new->l);
+	memcpy(buf->u + sizeof(struct isakmp), new->v, new->l);
 	put_uint32(&((struct isakmp *)buf->v)->len, buf->l);
 
 	error = 0;

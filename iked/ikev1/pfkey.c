@@ -99,7 +99,7 @@
 #include "handler.h"
 #include "isakmp_inf.h"
 #include "ipsec_doi.h"
-/* #include "pfkey.h" */
+#include "pfkey.h"
 /* #include "policy.h" */
 #include "algorithm.h"
 /* #include "sainfo.h" */
@@ -383,7 +383,7 @@ rc2ipsecdoi_proto(unsigned int satype)
 }
 
 /* IPSECDOI_ATTR_ENC_MODE -> IPSEC_MODE */
-int
+static int
 ipsecdoi2rc_mode(unsigned int mode)
 {
 	switch (mode) {
@@ -408,7 +408,7 @@ ipsecdoi2rc_mode(unsigned int mode)
 }
 
 /* IPSECDOI_ATTR_ENC_MODE -> IPSEC_MODE */
-uint
+static uint
 rc2ipsecdoi_mode(int mode)
 {
 	switch (mode) {
@@ -993,7 +993,7 @@ pk_sendupdate(struct ph2handle *iph2)
 		param.ul_proto = RC_PROTO_ANY;	/* ??? */
 		param.enckey = pr->keymat->v;
 		param.enckeylen = e_keylen;
-		param.authkey = pr->keymat->v + e_keylen;
+		param.authkey = pr->keymat->s + e_keylen;
 		param.authkeylen = a_keylen;
 		if (iph2->sadb_request.method->update_inbound(&param)) {
 			/* (*update_inbound)() logs error message */
@@ -1263,7 +1263,7 @@ pk_sendadd(struct ph2handle *iph2)
 		param.ul_proto = RC_PROTO_ANY;	/* ??? */
 		param.enckey = pr->keymat_p->v;
 		param.enckeylen = e_keylen;
-		param.authkey = pr->keymat_p->v + e_keylen;
+		param.authkey = pr->keymat_p->s + e_keylen;
 		param.authkeylen = a_keylen;
 		if (iph2->sadb_request.method->add_outbound(&param)) {
 			/* (*update_outbound)() logs error message */

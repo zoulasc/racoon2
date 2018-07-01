@@ -110,11 +110,8 @@ static uint32_t setscopeid (struct sockaddr *, struct sockaddr *)
 
 /* called from scheduler */
 void
-pfkey_timeover_stub(p)
-	void *p;
+pfkey_timeover_stub(void *p)
 {
-	void pfkey_timeover();
-
 	pfkey_timeover((struct ph2handle *)p);
 }
 
@@ -432,7 +429,7 @@ quick_i2recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 			"failed to get hash buffer.\n");
 		goto end;
 	}
-	p = hbuf->v + iph2->nonce->l;	/* retain the space for Ni_b */
+	p = hbuf->s + iph2->nonce->l;	/* retain the space for Ni_b */
 
 	/*
 	 * parse the payloads.
@@ -626,8 +623,8 @@ quick_i2send(struct ph2handle *iph2, rc_vchar_t *msg0)
 			"failed to get hash buffer.\n");
 		goto end;
 	}
-	memcpy(tmp->v, iph2->nonce->v, iph2->nonce->l);
-	memcpy(tmp->v + iph2->nonce->l, iph2->nonce_p->v, iph2->nonce_p->l);
+	memcpy(tmp->u, iph2->nonce->v, iph2->nonce->l);
+	memcpy(tmp->u + iph2->nonce->l, iph2->nonce_p->v, iph2->nonce_p->l);
 
 	hash = oakley_compute_hash3(iph2->ph1, iph2->msgid, tmp);
 	rc_vfree(tmp);
@@ -1388,8 +1385,8 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 			"failed to get hash buffer.\n");
 		goto end;
 	}
-	memcpy(tmp->v, iph2->nonce_p->v, iph2->nonce_p->l);
-	memcpy(tmp->v + iph2->nonce_p->l, body->v, body->l);
+	memcpy(tmp->u, iph2->nonce_p->v, iph2->nonce_p->l);
+	memcpy(tmp->u + iph2->nonce_p->l, body->v, body->l);
 
 	hash = oakley_compute_hash1(iph2->ph1, iph2->msgid, tmp);
 	rc_vfree(tmp);
@@ -1514,8 +1511,8 @@ quick_r3recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 			"failed to get hash buffer.\n");
 		goto end;
 	}
-	memcpy(tmp->v, iph2->nonce_p->v, iph2->nonce_p->l);
-	memcpy(tmp->v + iph2->nonce_p->l, iph2->nonce->v, iph2->nonce->l);
+	memcpy(tmp->u, iph2->nonce_p->v, iph2->nonce_p->l);
+	memcpy(tmp->u + iph2->nonce_p->l, iph2->nonce->v, iph2->nonce->l);
 
 	my_hash = oakley_compute_hash3(iph2->ph1, iph2->msgid, tmp);
 	rc_vfree(tmp);

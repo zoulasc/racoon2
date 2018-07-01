@@ -799,7 +799,7 @@ isakmp_add_pl_n(rc_vchar_t *buf0, uint8_t **np_p, int type,
 		return NULL;
 	}
 
-	n = (struct isakmp_pl_n *)(buf->v + oldlen);
+	n = (void *)(buf->u + oldlen);
 	n->h.np = ISAKMP_NPTYPE_NONE;
 	put_uint16(&n->h.len, tlen);
 	put_uint32(&n->doi, IPSEC_DOI);		/* IPSEC DOI (1) */
@@ -1274,7 +1274,7 @@ isakmp_info_recv_r_u_ack (struct ph1handle *iph1,
 	/* XXX Maintain window of acceptable sequence numbers ?
 	 * => ru->data <= iph2->dpd_seq &&
 	 *    ru->data >= iph2->dpd_seq - iph2->dpd_fails ? */
-	if (get_uint32(&ru->data) != iph1->dpd_seq-1) {
+	if (get_uint32(&ru->data) != (uint32_t)(iph1->dpd_seq - 1)) {
 		plog(PLOG_PROTOERR, PLOGLOC, 0,
 			 "Wrong DPD sequence number (%d, %d expected).\n", 
 			 get_uint32(&ru->data), iph1->dpd_seq-1);

@@ -398,6 +398,8 @@ struct isakmp_pl_ru {
 
 #endif				/* __ISAKMP_H__ */
 
+extern int opt_ipv4_only, opt_ipv6_only;
+
 /*
  * Local Variables:
  * c-basic-offset: 8

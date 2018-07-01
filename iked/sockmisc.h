@@ -36,7 +36,7 @@ extern struct sockaddr *getlocaladdr (struct sockaddr *,
 					  struct sockaddr *, int);
 
 extern int recvfromto (int, void *, size_t, int,
-			   struct sockaddr *, int *, struct sockaddr *, int *);
+			   struct sockaddr *, socklen_t *, struct sockaddr *, socklen_t *);
 extern int sendfromto (int, const void *, size_t,
 			   struct sockaddr *, struct sockaddr *, int);
 

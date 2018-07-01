@@ -314,7 +314,6 @@ ikev2_rekey_ikesa_init_send(struct ikev2_child_sa *child_sa)
 	rc_vchar_t *pkt = 0;
 	struct ikev2payl_ke_h dhgrp_hdr;
 	int nonce_size;
-	extern struct rcf_remote *rcf_deepcopy_remote(struct rcf_remote *);
 
 	child_sa->message_id = ikev2_request_id(child_sa->parent);
 	TRACE((PLOGLOC, "child_sa %p message_id %d\n", child_sa, child_sa->message_id));
@@ -443,7 +442,6 @@ ikev2_rekey_ikesa_responder(rc_vchar_t *request,
 	rc_vchar_t *ke_r = 0;
 	rc_vchar_t *g_ir = 0;
 	rc_vchar_t *pkt = 0;
-	extern struct rcf_remote *rcf_deepcopy_remote(struct rcf_remote *);
 
 	ikev2_payloads_init(&payl);
 
@@ -862,13 +860,13 @@ ikev2_rekey_ikesa_init_recv(struct ikev2_child_sa *child_sa, rc_vchar_t *msg)
 	ikev2_sa_delete(old_sa);
 
 	{
-	   struct ikev2_child_sa *child_sa;
+	   struct ikev2_child_sa *xchild_sa;
 
 	   TRACE((PLOGLOC, "choose pending child_sa adopted by new ike_sa %p\n",
 		       new_sa));
-	   child_sa = ikev2_choose_pending_child(new_sa, TRUE);
-	   if (child_sa)
-		ikev2_wakeup_child_sa(child_sa);
+	   xchild_sa = ikev2_choose_pending_child(new_sa, TRUE);
+	   if (xchild_sa)
+		ikev2_wakeup_child_sa(xchild_sa);
 	}
 
       done:

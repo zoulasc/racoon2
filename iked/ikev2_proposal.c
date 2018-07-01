@@ -149,6 +149,7 @@
 #include "isakmp.h"
 #include "ikev2.h"
 #include "isakmp_impl.h"
+#include "ikev2_impl.h"
 
 #include "gcmalloc.h"
 #include "debug.h"

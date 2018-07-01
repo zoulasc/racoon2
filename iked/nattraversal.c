@@ -302,7 +302,7 @@ natt_set_non_esp_marker(rc_vchar_t *pkt)
 
 	*(uint32_t *)pkt->v = 0;
 
-	memcpy(pkt->v + extralen, orig_pkt->v, orig_pkt->l);
+	memcpy(pkt->u + extralen, orig_pkt->v, orig_pkt->l);
 
 	rc_vfree(orig_pkt);
 

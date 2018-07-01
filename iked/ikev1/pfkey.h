@@ -67,6 +67,8 @@ extern unsigned int ipsecdoi2pfkey_proto (unsigned int);
 extern unsigned int pfkey2ipsecdoi_mode (unsigned int);
 extern unsigned int ipsecdoi2pfkey_mode (unsigned int);
 
+extern struct sadb_response_method ikev1_sadb_callback;
+
 extern int pfkey_convertfromipsecdoi ( unsigned int, unsigned int, unsigned int,
 	unsigned int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *);
 extern uint32_t pk_getseq (void);

@@ -75,6 +75,7 @@
 #include "isakmp_inf.h"
 #include "vendorid.h"
 #include "pfkey.h"
+#include "proposal.h"
 #ifdef ENABLE_NATT
 #  include "ikev1_natt.h"
 #endif
@@ -90,6 +91,7 @@
 #include "handler.h"
 #include "remoteconf.h"
 #include "strnames.h"
+#include "str2val.h"
 #include "sockmisc.h"
 
 #include "debug.h"
@@ -106,8 +108,6 @@
 
 static int nostate1 (struct ph1handle *, rc_vchar_t *);
 static int nostate2 (struct ph2handle *, rc_vchar_t *);
-
-extern caddr_t val2str(const char *, size_t);
 
 static int ph1_main (struct ph1handle *, rc_vchar_t *);
 static int quick_main (struct ph2handle *, rc_vchar_t *);
@@ -556,9 +556,6 @@ ikev1_initiate(struct isakmp_acquire_request *req,
 {
 	struct ph2handle *iph2;
 	struct sockaddr *peer = 0;
-	extern struct sadb_response_method ikev1_sadb_callback;
-	extern struct ph2handle *getph2byselector();
-	extern int set_proposal_from_policy();
 
 	TRACE((PLOGLOC, "processing acquire for IKEv1\n"));
 	if (ikev1_passive(rm_info) == RCT_BOOL_ON) {
@@ -575,7 +572,7 @@ ikev1_initiate(struct isakmp_acquire_request *req,
 				   PLOG_INTERR, PLOGLOC,
 				   "unsupported peers_ipaddr format in policy %.*s\n",
 				   (int)policy->pl_index->l,
-				   policy->pl_index->v);
+				   policy->pl_index->s);
 			goto fail;
 		}
 		peer = rcs_sadup(rm_info->ikev1->peers_ipaddr->a.ipaddr);
@@ -673,9 +670,7 @@ ikev1_initiate(struct isakmp_acquire_request *req,
  * main function of phase 1.
  */
 static int
-ph1_main(iph1, msg)
-	struct ph1handle *iph1;
-	rc_vchar_t *msg;
+ph1_main(struct ph1handle *iph1, rc_vchar_t *msg)
 {
 	int error;
 #ifdef ENABLE_STATS
@@ -1156,7 +1151,6 @@ isakmp_ph2begin_r(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_STATS
 	struct timeval start, end;
 #endif
-	extern struct sadb_response_method ikev1_sadb_callback;
 
 	iph2 = newph2();
 	if (iph2 == NULL) {
@@ -1619,7 +1613,7 @@ isakmp_add_attr_v(rc_vchar_t *buf0, int type, caddr_t val, int len)
 		return NULL;
 	}
 
-	data = (struct isakmp_data *)(buf->v + oldlen);
+	data = (void *)(buf->u + oldlen);
 	put_uint16(&data->type, type | ISAKMP_GEN_TLV);
 	put_uint16(&data->lorv, len);
 	memcpy(data + 1, val, len);
@@ -1649,7 +1643,7 @@ isakmp_add_attr_l(rc_vchar_t *buf0, int type, uint32_t val)
 		return NULL;
 	}
 
-	data = (struct isakmp_data *)(buf->v + oldlen);
+	data = (void *)(buf->u + oldlen);
 	put_uint16(&data->type, type | ISAKMP_GEN_TV);
 	put_uint16(&data->lorv, val);
 
@@ -1679,13 +1673,13 @@ set_isakmp_header(rc_vchar_t *vbuf, struct ph1handle *iph1,
 	isakmp->msgid = msgid;
 	put_uint32(&isakmp->len, vbuf->l);
 
-	return vbuf->v + sizeof(*isakmp);
+	return vbuf->s + sizeof(*isakmp);
 }
 
 /*
  * set values into allocated buffer of isakmp header for phase 1
  */
-caddr_t
+static caddr_t
 set_isakmp_header1(rc_vchar_t *vbuf, struct ph1handle *iph1, int nptype)
 {
 	return set_isakmp_header (vbuf, iph1, nptype, iph1->etype, iph1->flags, iph1->msgid);
@@ -2109,7 +2103,7 @@ rc_vchar_t *
 isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 {
 	unsigned char np = np0 & 0xff;
-	int tlen, plen;
+	size_t tlen, plen;
 	rc_vchar_t *result;
 	struct isakmp_parse_t *p, *ep;
 
@@ -2125,8 +2119,8 @@ isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 			"failed to get buffer.\n");
 		return NULL;
 	}
-	p = (struct isakmp_parse_t *)result->v;
-	ep = (struct isakmp_parse_t *)(result->v + result->l - sizeof(*ep));
+	p = (void *)result->v;
+	ep = (void *)(result->u + result->l - sizeof(*ep));
 
 	tlen = len;
 
@@ -2164,9 +2158,8 @@ isakmp_parsewoh(int np0, struct isakmp_gen *gen, int len)
 				rc_vfree(result);
 				return NULL;
 			}
-			ep = (struct isakmp_parse_t *)
-				(result->v + result->l - sizeof(*ep));
-			p = (struct isakmp_parse_t *)result->v;
+			ep = (void *) (result->u + result->l - sizeof(*ep));
+			p = (void *)result->v;
 			p += off;
 		}
 
@@ -2198,7 +2191,7 @@ isakmp_parse(rc_vchar_t *buf)
 	unsigned char np;
 
 	np = isakmp->np;
-	gen = (struct isakmp_gen *)(buf->v + sizeof(*isakmp));
+	gen = (void *)(buf->u + sizeof(*isakmp));
 	tlen = buf->l - sizeof(struct isakmp);
 	result = isakmp_parsewoh(np, gen, tlen);
 
@@ -2238,7 +2231,7 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 			return -1;
 		}
 		*(uint32_t *)vbuf->v = 0;
-		memcpy (vbuf->v + extralen, sbuf->v, sbuf->l);
+		memcpy (vbuf->u + extralen, sbuf->v, sbuf->l);
 		sbuf = vbuf;
 	}
 #endif
@@ -2321,8 +2314,6 @@ getrmconf(struct sockaddr *remote)
 	conf = ikev1_conf_find(remote);
 	if (!conf) {
 		/* if no config with src addr, use default */
-		extern struct rcf_default *rcf_default_head;
-		extern struct rcf_remote *rcf_deepcopy_remote(struct rcf_remote *);
 		if (rcf_default_head && rcf_default_head->remote) {
 			plog(PLOG_DEBUG, PLOGLOC, 0,
 			     "anonymous configuration selected for %s.\n",
@@ -2576,7 +2567,6 @@ delsp_bothdir(struct policyindex *p)
 int
 getsockmyaddr(struct sockaddr *addr)
 {
-	extern int isakmp_find_socket();
 
 	return isakmp_find_socket(addr);
 }

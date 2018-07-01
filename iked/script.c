@@ -51,6 +51,7 @@
 #include "isakmp_impl.h"
 #include "ikev2_impl.h"
 #ifdef IKEV1
+# include "ikev1_impl.h"
 # include "oakley.h"		/* for cert_t */
 # include "ikev1/handler.h"
 #endif
@@ -69,11 +70,12 @@
 #define	PORT_MAX	INT_STR_MAX
 #define	PROTO_MAX	INT_STR_MAX
 
-static int env_add_addr(struct sockaddr *, char *, char *, char ***, int *);
+static int env_add_addr(struct sockaddr *, const char *, const char *,
+			char ***, int *);
 static int env_add_addresses(struct rcf_address_list_head *, const char *,
 			     char ***, int *);
-static int env_add_addrlist(struct rc_addrlist *, char *, char *, char *,
-			    char ***, int *);
+static int env_add_addrlist(struct rc_addrlist *, const char *, const char *,
+			    const char *, char ***, int *);
 
 
 /*
@@ -101,9 +103,7 @@ sa2str(const struct sockaddr *sa, char *addr, size_t addrsiz, char *port,
 
 #ifdef IKEV1
 void
-ikev1_script_hook(iph1, script)
-	struct ph1handle *iph1;
-	int script;
+ikev1_script_hook(struct ph1handle *iph1, int script)
 {
 	char addrstr[IP_MAX];
 	char portstr[PORT_MAX];
@@ -573,7 +573,8 @@ ikev2_migrate_script_hook(struct ikev2_sa *ike_sa,
 }
 
 static int
-env_add_addr(struct sockaddr *sa, char *addrname, char *portname, char ***envp, int *envc)
+env_add_addr(struct sockaddr *sa, const char *addrname, const char *portname,
+    char ***envp, int *envc)
 {
 	char addrstr[IP_MAX];
 	char portstr[PORT_MAX];
@@ -657,8 +658,9 @@ env_add_addresses(struct rcf_address_list_head *list, const char *envname,
 
 
 static int
-env_add_addrlist(struct rc_addrlist *addrlist, char *netname,
-		 char *prefixname, char *portname, char ***envp, int *envc)
+env_add_addrlist(struct rc_addrlist *addrlist, const char *netname,
+		 const char *prefixname, const char *portname,
+		 char ***envp, int *envc)
 {
 	struct rc_addrlist	*addr;
 	int	prefixlen;
@@ -770,7 +772,7 @@ script_exec(const char *script, int name, char *const* envp)
 		/* double fork to prevent zombie */
 		switch (fork()) {
 		case 0:
-			execve(argv[0], (char *const*)argv, envp);
+			execve(argv[0], (char *const*)(intptr_t)argv, envp);
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			     "execve(\"%s\") failed: %s\n",
 			     argv[0], strerror(errno));

@@ -404,8 +404,6 @@ ikev2_allocate_sa(isakmp_cookie_t *initiator_spi, struct sockaddr *local,
 		  struct sockaddr *remote, struct rcf_remote *conf)
 {
 	struct ikev2_sa *sa;
-	extern void ikev2_verified(struct verified_info *);
-	extern void ikev2_timeout(struct transmit_info *);
 	static int serial_number = 0;
 
 	TRACE((PLOGLOC, "ikev2_create_sa(%p, %s, %s, %p)\n",

@@ -498,10 +498,11 @@ getph2bysaddr(struct sockaddr *src, struct sockaddr *dst)
  * call by pk_recvexpire().
  */
 struct ph2handle *
-getph2bysaidx(struct sockaddr *src, struct sockaddr *dst, unsigned int proto_id, uint32_t spi)
+getph2bysaidx(struct sockaddr *src, struct sockaddr *dst, unsigned int proto_uid, uint32_t spi)
 {
 	struct ph2handle *iph2;
 	struct saproto *pr;
+	int proto_id = proto_uid;
 
 	LIST_FOREACH(iph2, &ph2tree, chain) {
 		if (iph2->proposal == NULL && iph2->approval == NULL)
@@ -695,10 +696,11 @@ flushph2(void)
  * send a message to the peer).
  */
 void
-deleteallph2(struct sockaddr *src, struct sockaddr *dst, unsigned int proto_id)
+deleteallph2(struct sockaddr *src, struct sockaddr *dst, unsigned int proto_uid)
 {
 	struct ph2handle *iph2, *next;
 	struct saproto *pr;
+	int proto_id = proto_uid;
 
 	for (iph2 = LIST_FIRST(&ph2tree); iph2 != NULL; iph2 = next) {
 		next = LIST_NEXT(iph2, chain);

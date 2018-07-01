@@ -129,10 +129,7 @@ scheduler(void)
  * add new schedule to schedule table.
  */
 struct sched *
-sched_new(tick, func, param)
-	time_t tick;
-	void (*func) (void *);
-	void *param;
+sched_new(time_t tick, void (*func) (void *), void *param)
 {
 	static long id = 1;
 	struct sched *new;
@@ -160,8 +157,7 @@ sched_new(tick, func, param)
 
 /* add new schedule to schedule table */
 static void
-sched_add(sc)
-	struct sched *sc;
+sched_add(struct sched *sc)
 {
 	struct sched *p;
 
@@ -182,7 +178,7 @@ sched_add(sc)
  * Otherwise, conform to time(3).
  */
 static time_t
-current_time()
+current_time(void)
 {
 	time_t n;
 #ifdef FIXY2038PROBLEM
@@ -200,8 +196,7 @@ current_time()
 }
 
 void
-sched_kill(sc)
-	struct sched *sc;
+sched_kill(struct sched *sc)
 {
 	sc->dead = 1;
 
@@ -210,8 +205,7 @@ sched_kill(sc)
 
 /* XXX this function is probably unnecessary. */
 void
-sched_scrub_param(param)
-	void *param;
+sched_scrub_param(void *param)
 {
 	struct sched *sc;
 
@@ -230,9 +224,7 @@ sched_scrub_param(param)
  * for debug
  */
 int
-sched_dump(buf, len)
-	caddr_t *buf;
-	int *len;
+sched_dump(caddr_t *buf, int *len)
 {
 	caddr_t new;
 	struct sched *p;
@@ -277,7 +269,7 @@ sched_dump(buf, len)
 
 /* initialize schedule table */
 void
-sched_init()
+sched_init(void)
 {
 #ifdef FIXY2038PROBLEM
 	time(&launched);

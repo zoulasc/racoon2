@@ -760,7 +760,9 @@ static void
 ikev2_process_mip6_home_prefix(struct ikev2_child_sa *child_sa, uint8_t *addr,
 			       uint32_t lifetime, unsigned int prefixlen)
 {
+#ifdef DEBUG_TRACE
 	char	addrstr[INET6_ADDRSTRLEN];
+#endif
 
 	/* stub */
 	TRACE((PLOGLOC, "UNIMPLEMENTED\n"));

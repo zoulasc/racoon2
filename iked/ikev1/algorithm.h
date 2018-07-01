@@ -126,7 +126,7 @@ enum algtype {
 #endif
 
 struct hmac_algorithm {
-	char *name;
+	const char *name;
 	rc_type type;
 	int doi;
 	caddr_t (*init) (rc_vchar_t *);
@@ -137,7 +137,7 @@ struct hmac_algorithm {
 };
 
 struct hash_algorithm {
-	char *name;
+	const char *name;
 	rc_type type;
 	int doi;
 	caddr_t (*init) (void);
@@ -148,7 +148,7 @@ struct hash_algorithm {
 };
 
 struct enc_algorithm {
-	char *name;
+	const char *name;
 	rc_type type;
 	int doi;
 	int blocklen;
@@ -160,7 +160,7 @@ struct enc_algorithm {
 
 /* dh group */
 struct dh_algorithm {
-	char *name;
+	const char *name;
 	rc_type type;
 	int doi;
 	struct dhgroup *dhgroup;
@@ -168,22 +168,22 @@ struct dh_algorithm {
 
 /* ipcomp, auth meth, dh group */
 struct misc_algorithm {
-	char *name;
-	int type;
+	const char *name;
+	rc_type type;
 	int doi;
 };
 
 extern int alg_oakley_hashdef_ok (int);
-extern int alg_oakley_hashdef_doi (int);
+extern int alg_oakley_hashdef_doi (rc_type);
 extern int alg_oakley_hashdef_hashlen (int);
 extern rc_vchar_t *alg_oakley_hashdef_one (int, rc_vchar_t *);
 
-extern int alg_oakley_hmacdef_doi (int);
+extern int alg_oakley_hmacdef_doi(rc_type);
 extern rc_vchar_t *alg_oakley_hmacdef_one (int, rc_vchar_t *,
 					       rc_vchar_t *);
 
 extern int alg_oakley_encdef_ok (int);
-extern int alg_oakley_encdef_doi (int);
+extern int alg_oakley_encdef_doi(rc_type);
 extern int alg_oakley_encdef_keylen (int, int);
 extern int alg_oakley_encdef_blocklen (int);
 extern rc_vchar_t *alg_oakley_encdef_decrypt (int, rc_vchar_t *,
@@ -191,19 +191,19 @@ extern rc_vchar_t *alg_oakley_encdef_decrypt (int, rc_vchar_t *,
 extern rc_vchar_t *alg_oakley_encdef_encrypt (int, rc_vchar_t *,
 						  rc_vchar_t *, rc_vchar_t *);
 
-extern int alg_ipsec_encdef_doi (int);
+extern int alg_ipsec_encdef_doi(rc_type);
 extern int alg_ipsec_encdef_keylen (int, int);
 
-extern int alg_ipsec_hmacdef_doi (int);
+extern int alg_ipsec_hmacdef_doi(rc_type);
 extern int alg_ipsec_hmacdef_hashlen (int);
 
-extern int alg_ipsec_compdef_doi (int);
+extern int alg_ipsec_compdef_doi(rc_type);
 
-extern int alg_oakley_dhdef_doi (int);
+extern int alg_oakley_dhdef_doi(rc_type);
 extern int alg_oakley_dhdef_ok (int);
 extern struct dhgroup *alg_oakley_dhdef_group (int);
 
-extern int alg_oakley_authdef_doi (int);
+extern int alg_oakley_authdef_doi(rc_type);
 
 #if 0
 extern int default_keylen (int, int);

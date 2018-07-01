@@ -190,8 +190,6 @@ ikev2_init(void)
 static void
 ikev2_periodic_task(void *param)
 {
-	extern void ikev2_sa_periodic_task(void);
-
 	/* TRACE((PLOGLOC, "ikev2_periodic_task()\n")); */
 
 	ikev2_cookie_refresh();
@@ -252,8 +250,6 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 		conf = ikev2_conf_find(remote);
 		if (!conf) {
 			/* if no config with src addr, use default */
-			extern struct rcf_default *rcf_default_head;
-			extern struct rcf_remote *rcf_deepcopy_remote(struct rcf_remote *);
 			TRACE((PLOGLOC, "no conf found\n"));
 			if (rcf_default_head && rcf_default_head->remote) {
 				TRACE((PLOGLOC, "using default\n"));
@@ -735,7 +731,7 @@ ikev2_initiate(struct isakmp_acquire_request *req,
 				   PLOG_INTERR, PLOGLOC,
 				   "unsupported peers_ipaddr format in policy %.*s\n",
 				   (int)policy->pl_index->l,
-				   policy->pl_index->v);
+				   policy->pl_index->s);
 			goto fail;
 		}
 		peer = rcs_sadup(rm_info->ikev2->peers_ipaddr->a.ipaddr);
@@ -752,12 +748,20 @@ ikev2_initiate(struct isakmp_acquire_request *req,
 	if (!ike_sa
 	    /* || ike_sa->do_not_reuse */ ) {
 		struct sockaddr *myself;
+		in_port_t *prt;
 
 		TRACE((PLOGLOC, "creating new ike_sa\n"));
 		new_ike_sa = TRUE;
 
-		if (rcs_getsaport(peer) == 0)
-			rcs_setsaport(peer, isakmp_port_dest);
+		prt = rcs_getsaport(peer);
+		if (!prt) {
+			isakmp_log(0, req->src, req->dst, 0,
+				   PLOG_INTERR, PLOGLOC,
+				   "unsupported address family %d\n",
+				   peer->sa_family);
+			goto fail;
+		}
+		*prt = isakmp_port_dest;
 
 		if (req->src2 && ike_ipsec_mode(policy) == RCT_IPSM_TRANSPORT)
 			myself = getlocaladdr(peer, req->src2, isakmp_port);
@@ -4124,7 +4128,8 @@ ikev2_info_init_delete_recv(struct ikev2_child_sa *child_sa, rc_vchar_t *msg)
  */
 struct ikev2_child_sa *
 ikev2_request_initiator_start(struct ikev2_sa *ike_sa,
-			      void (*callback) (), void *callback_param)
+    void (*callback)(enum request_callback, struct ikev2_child_sa *, void *),
+    void *callback_param)
 {
 	struct ikev2_child_sa *child_sa;
 	struct ikev2_child_sa *next_child_sa;
@@ -5183,9 +5188,6 @@ compute_skeyseed(struct ikev2_sa *ike_sa)
 	size_t r_len;
 	uint8_t *p;
 	struct dhgroup *dhgrpinfo;
-	/* XXX */
-	extern struct keyed_hash_method aes_xcbc_hash_method;
-	extern struct keyed_hash_method aes_cmac_hash_method;
 
 	/*
 	 * g^ir = (g^i)^r;

@@ -343,7 +343,7 @@ struct recvdpkt {
 /* for parsing ISAKMP header. */
 struct isakmp_parse_t {
 	unsigned char type;		/* payload type of mine */
-	int len;		/* ntohs(ptr->len) */
+	uint16_t len;		/* ntohs(ptr->len) */
 	struct isakmp_gen *ptr;
 };
 
@@ -458,3 +458,12 @@ extern int check_recvdpkt (struct sockaddr *,
 extern int add_recvdpkt (struct sockaddr *, struct sockaddr *,
 			     rc_vchar_t *, rc_vchar_t *, struct rcf_remote *);
 extern void init_recvdpkt (void);
+extern struct ph1handle *getph1bydstaddrwop(struct sockaddr *);
+extern struct ph2handle *getph2byselector(struct sockaddr *src,
+    struct sockaddr *dst, struct rcf_selector *selector);
+extern struct ph2handle *getph2bysaddr(struct sockaddr *src,
+    struct sockaddr *dst);
+extern void destroy_ph2(struct ph2handle *iph2);
+void delsp_bothdir(struct policyindex *p);
+void delete_spd(struct ph2handle *ph2);
+

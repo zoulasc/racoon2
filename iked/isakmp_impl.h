@@ -350,7 +350,7 @@ void isakmp_log(struct ikev2_sa *, struct sockaddr *, struct sockaddr *,
 	GCC_ATTRIBUTE((format(printf, 7, 8)));
 
 #ifdef HAVE_LIBPCAP
-extern char *ike_pcap_file;
+extern const char *ike_pcap_file;
 #endif
 
 #endif

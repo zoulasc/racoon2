@@ -589,7 +589,7 @@ ipsec_encdef_doi_keylen(rc_type type, int keylen)
 	return klen;
 }
 
-int 
+static int 
 set_satrnsbyconf(struct saproto *pr, struct rcf_sa *sa)
 {
 	int	t;

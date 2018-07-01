@@ -247,7 +247,7 @@ ikev2_check_payloads(rc_vchar_t *packet, int before_decrypt)
 void
 ikev2_print_ts(struct ikev2_traffic_selector *ts)
 {
-	char *type = 0;
+	const char *type = NULL;
 	int addrsize = ikev2_ts_addr_size(ts->ts_type);
 	struct sockaddr_storage ss;
 	struct sockaddr_storage se;
@@ -662,15 +662,15 @@ ikev2_encrypt(struct ikev2_sa *ike_sa, rc_vchar_t *payloads)
 		rc_vchar_t *rpad = random_bytes(pad_len);
 		if (!rpad)
 			goto fail;
-		memcpy(&plaintext->v[plaintext->l - pad_len - 1], rpad->v,
+		memcpy(&plaintext->u[plaintext->l - pad_len - 1], rpad->v,
 		       pad_len);
 		rc_vfree(rpad);
 	} else {
 		for (i = 1; i <= pad_len; ++i) {
-			plaintext->v[plaintext->l - i - 1] = i;
+			plaintext->u[plaintext->l - i - 1] = i;
 		}
 	}
-	plaintext->v[plaintext->l - 1] = pad_len;
+	plaintext->u[plaintext->l - 1] = pad_len;
 
 	/* then call encryption engine */
 	ivbuf_save = rc_vdup(ivbuf);
@@ -898,7 +898,7 @@ addrmask(int addrlen, int prefixlen, uint8_t *start, uint8_t *end)
 		if (prefixlen < 8)
 			break;
 	if (i < addrlen && prefixlen > 0) {
-		bits = (-1) << (8 - prefixlen);
+		bits = ~0U << (8 - prefixlen);
 		start[i] &= bits;
 		end[i] |= ~bits;
 		++i;

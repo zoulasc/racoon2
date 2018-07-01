@@ -87,6 +87,9 @@
 # include "ikev1_impl.h"
 # include "ikev1/handler.h"
 # include "ikev1/vendorid.h"	/* for compute_vendorid() */
+# ifdef ENABLE_NATT
+#  include "ikev1/ikev1_natt.h"
+# endif
 #endif
 #include "crypto_impl.h"
 
@@ -187,7 +190,6 @@ isakmp_init(void)
 
 #ifdef ENABLE_NATT	/* XXX for IKEv1 */
 	{
-		extern void natt_keepalive_init(void);
 		natt_keepalive_init();
 	}
 #endif
@@ -259,8 +261,6 @@ isakmp_open(void)
 {
 	struct rc_addrlist *addr;
 	struct rc_addrlist *ike_iflist;
-	extern struct rcf_interface *rcf_interface_head;
-	extern int opt_ipv4_only, opt_ipv6_only;
 	int error;
 
 	SOCKET_LIST_INIT(&socket_list_head);
@@ -338,8 +338,6 @@ isakmp_reopen(void)
 	struct rc_addrlist *addr;
 	struct socket_list *item;
 	struct rc_addrlist *ike_iflist;
-	extern struct rcf_interface *rcf_interface_head;
-	extern int opt_ipv4_only, opt_ipv6_only;
 	int error;
 
 	/*
@@ -378,8 +376,16 @@ isakmp_reopen(void)
 		}
 
 		/* if the address is bound already, reuse it */
-		if (addr->port == 0)
-			rcs_setsaport(addr->a.ipaddr, isakmp_port);
+		if (addr->port == 0) {
+			in_port_t *prt = rcs_getsaport(addr->a.ipaddr);
+			if (!prt)  {
+				plog(PLOG_DEBUG, PLOGLOC, NULL,
+				     "bad address family %d\n",
+				     addr->a.ipaddr->sa_family);
+				continue;
+			}
+			*prt = isakmp_port;
+		}
 		item = socket_list_find(&old_list, addr->a.ipaddr);
 		if (item) {
 			SOCKET_LIST_REMOVE(item);
@@ -414,7 +420,6 @@ isakmp_open_address(struct sockaddr *addr, int port)
 	int sock = -1;
 	struct socket_list *p = 0;
 	struct sockaddr *sa = 0;
-	extern struct rcf_interface *rcf_interface_head;
 
 	assert(AF_INET == PF_INET && AF_INET6 == PF_INET6);
 
@@ -492,7 +497,7 @@ isakmp_open_address(struct sockaddr *addr, int port)
 #ifdef IPV6_USE_MIN_MTU
 			if (sa->sa_family == AF_INET6 &&
 			    setsockopt(p->sock, IPPROTO_IPV6,
-				       IPV6_USE_MIN_MTU, (void *)&yes,
+				       IPV6_USE_MIN_MTU, (void *)(intptr_t)&yes,
 				       sizeof(yes)) < 0) {
 				plog(PLOG_INTERR, PLOGLOC, NULL,
 				     "setsockopt (%s)\n",
@@ -625,8 +630,7 @@ isakmp_find_socket(struct sockaddr *sa)
  * isakmp packet handler
  */
 int
-isakmp_handler(so_isakmp)
-	int so_isakmp;
+isakmp_handler(int so_isakmp)
 {
 	struct isakmp isakmp;
 	union {
@@ -635,8 +639,8 @@ isakmp_handler(so_isakmp)
 	} x;
 	struct sockaddr_storage remote;
 	struct sockaddr_storage local;
-	int remote_len = sizeof(remote);
-	int local_len = sizeof(local);
+	socklen_t remote_len = sizeof(remote);
+	socklen_t local_len = sizeof(local);
 	socklen_t remote_socklen;
         int len = 0, extralen = 0;
 	uint16_t port;
@@ -758,7 +762,7 @@ isakmp_handler(so_isakmp)
 			goto end;
 		}
 
-		memcpy(tmpbuf->v, buf->v + extralen, tmpbuf->l);
+		memcpy(tmpbuf->u, buf->u + extralen, tmpbuf->l);
 		rc_vfree(buf);
 		buf = tmpbuf;
 		len -= extralen;
@@ -1007,7 +1011,7 @@ isakmp_initiate_cont(void *tag, const char *selector_index)
 		isakmp_log(0, req->src, req->dst, 0,
 			   PLOG_INTERR, PLOGLOC,
 			   "can't find remote info (%.*s)\n",
-			   (int)policy->rm_index->l, policy->rm_index->v);
+			   (int)policy->rm_index->l, policy->rm_index->s);
 		goto fail;
 	}
 
@@ -1305,7 +1309,7 @@ isakmp_parse_proposal(struct isakmp_domain *doi, uint8_t *payload_ptr,
 }
 
 struct prop_pair *
-proppair_new()
+proppair_new(void)
 {
 	return racoon_calloc(1, sizeof(struct prop_pair));
 }
@@ -1362,7 +1366,7 @@ proppair_discard(struct prop_pair *p)
 }
 
 struct prop_pair **
-proplist_new()
+proplist_new(void)
 {
 	return racoon_calloc(256, sizeof(struct prop_pair *));
 }
@@ -1827,7 +1831,6 @@ isakmp_sendto(rc_vchar_t *pkt, struct sockaddr *remote, struct sockaddr *local)
 #ifdef HAVE_PRINT_ISAKMP_C
 /* for print-isakmp.c */
 char *snapend;
-extern void isakmp_print (const unsigned char *, unsigned int, const unsigned char *);
 
 char *getname (const unsigned char *);
 #ifdef INET6

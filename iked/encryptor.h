@@ -35,7 +35,7 @@
 struct encryptor;
 
 struct encryptor_method {
-	char *name;
+	const char *name;
 	int block_len;
 	int iv_len;
 	int key_len;

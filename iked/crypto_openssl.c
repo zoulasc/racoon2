@@ -104,8 +104,7 @@ eay_cleanup(void)
 #define	IMPLEMENT_I2V(type_)	IMPLEMENT_I2V_name(type_, type_)
 
 #define	IMPLEMENT_I2V_name(type_, name_)				\
-	rc_vchar_t * i2v_##name_(v)					\
-	     type_ * v;							\
+	static rc_vchar_t * i2v_##name_(type_ *v)			\
 	{								\
 		rc_vchar_t	* buf;					\
 		int	len;						\
@@ -1762,18 +1761,18 @@ eay_3des_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		return NULL;
 
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->v, &ks1) != 0)
+	if (DES_key_sched((void *)key->u, &ks1) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 8), &ks2) != 0)
+	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 16), &ks3) != 0)
+	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
 		return NULL;
 #else
-	if (des_key_sched((void *)key->v, ks1) != 0)
+	if (des_key_sched((void *)key->u, ks1) != 0)
 		return NULL;
-	if (des_key_sched((void *)(key->v + 8), ks2) != 0)
+	if (des_key_sched((void *)(key->u + 8), ks2) != 0)
 		return NULL;
-	if (des_key_sched((void *)(key->v + 16), ks3) != 0)
+	if (des_key_sched((void *)(key->u + 16), ks3) != 0)
 		return NULL;
 #endif
 
@@ -1807,18 +1806,18 @@ eay_3des_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 		return NULL;
 
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->v, &ks1) != 0)
+	if (DES_key_sched((void *)key->u, &ks1) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 8), &ks2) != 0)
+	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
 		return NULL;
-	if (DES_key_sched((void *)(key->v + 16), &ks3) != 0)
+	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
 		return NULL;
 #else
-	if (des_key_sched((void *)key->v, ks1) != 0)
+	if (des_key_sched((void *)key->u, ks1) != 0)
 		return NULL;
-	if (des_key_sched((void *)(key->v + 8), ks2) != 0)
+	if (des_key_sched((void *)(key->u + 8), ks2) != 0)
 		return NULL;
-	if (des_key_sched((void *)(key->v + 16), ks3) != 0)
+	if (des_key_sched((void *)(key->u + 16), ks3) != 0)
 		return NULL;
 #endif
 
@@ -1845,13 +1844,13 @@ eay_3des_weakkey(rc_vchar_t *key)
 		return 0;
 
 #ifdef USE_NEW_DES_API
-	return (DES_is_weak_key((void *)key->v) ||
-		DES_is_weak_key((void *)(key->v + 8)) ||
-		DES_is_weak_key((void *)(key->v + 16)));
+	return (DES_is_weak_key((void *)key->u) ||
+		DES_is_weak_key((void *)(key->u + 8)) ||
+		DES_is_weak_key((void *)(key->u + 16)));
 #else
-	return (des_is_weak_key((void *)key->v) ||
-		des_is_weak_key((void *)(key->v + 8)) ||
-		des_is_weak_key((void *)(key->v + 16)));
+	return (des_is_weak_key((void *)key->u) ||
+		des_is_weak_key((void *)(key->u + 8)) ||
+		des_is_weak_key((void *)(key->u + 16)));
 #endif
 }
 
@@ -2424,7 +2423,8 @@ typedef struct cbcmac_ctx {
 /*
  * AES-XCBC-MAC (RFC3664) / AES-XCBC-PRF-128 (RFC4434)
  */
-int
+#if 0
+static int
 eay_aes_xcbc_mac_keylen(int len)
 {
 	if (len == 0)
@@ -2433,6 +2433,7 @@ eay_aes_xcbc_mac_keylen(int len)
 		return -1;
 	return len;
 }
+#endif
 
 int
 eay_aes_xcbc_hashlen(void)
@@ -2458,8 +2459,8 @@ eay_aes_xcbc_mac_init(rc_vchar_t *key)
 		k = rc_vmalloc(aesxcbc_keylen);
 		if (!k) 
 			return 0;
-		memcpy(k->v, key->v, key->l);
-		memset(k->v + key->l, 0, k->l - key->l);
+		memcpy(k->u, key->u, key->l);
+		memset(k->u + key->l, 0, k->l - key->l);
 	} else {
 		static uint8_t zerokey_bits[] = { REPEAT16(0) };
 		static rc_vchar_t zerokey = VCHAR_INIT((caddr_t)zerokey_bits,
@@ -2524,7 +2525,7 @@ eay_aes_xcbc_mac_update(caddr_t ctx, rc_vchar_t *data)
 	}
 }
 
-void
+static void
 eay_aes_xcbc_mac_dispose(caddr_t ctx)
 {
 	CBCMAC_CTX *c = (CBCMAC_CTX *)ctx;
@@ -2618,8 +2619,8 @@ eay_aes_cmac_init(rc_vchar_t *key)
 		k = rc_vmalloc(aescmac_keylen);
 		if (!k) 
 			return 0;
-		memcpy(k->v, key->v, key->l);
-		memset(k->v + key->l, 0, k->l - key->l);
+		memcpy(k->u, key->u, key->l);
+		memset(k->u + key->l, 0, k->l - key->l);
 	} else {
 		static uint8_t zerokey_bits[] = { REPEAT16(0) };
 		static rc_vchar_t zerokey = VCHAR_INIT((caddr_t)zerokey_bits,
@@ -3130,7 +3131,7 @@ eay_dh_compute (rc_vchar_t *prime, uint32_t gg, rc_vchar_t *pub,
 
 	if ((l = DH_compute_key(v, dh_pub, dh)) == -1)
 		goto end;
-	memcpy((*key)->v + (prime->l - l), v, l);
+	memcpy((*key)->u + (prime->l - l), v, l);
 
 	error = 0;
 

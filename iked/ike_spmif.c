@@ -54,13 +54,14 @@
 
 #include "racoon.h"
 #include "isakmp_impl.h"
+#include "ike_conf.h"
 #include "debug.h"
 
 int debug_spmif;
 
 static int spmif_socket = -1;
 
-static int ike_spmif_post_slid_callback();
+static int ike_spmif_post_slid_callback(void *, const char *);
 
 int
 ike_spmif_init(void)
@@ -99,7 +100,7 @@ ike_spmif_post_slid(void *tag, uint32_t spid)
 }
 
 static int
-ike_spmif_post_slid_callback(void *tag, char *slid)
+ike_spmif_post_slid_callback(void *tag, const char *slid)
 {
 	isakmp_initiate_cont(tag, slid);
 
@@ -114,8 +115,6 @@ ike_spmif_post_policy_add(struct rcf_selector *sel, rc_type samode,
 	struct rcf_selector *s;
 	int spmif_fd;
 	rc_vchar_t *sl_index_in = NULL;
-	extern struct rcf_selector *rcf_selector_head;
-	extern int addrlist_equal(struct rc_addrlist *, struct rc_addrlist *);
 
 	/* default config clause */
 	if (0 && rmconf->rm_index == 0)

@@ -75,11 +75,11 @@
 
 struct ksmap {
 	int key;
-	char *str;
-	char *(*f) (int);
+	const char *str;
+	const char *(*f) (int);
 };
 
-char *
+const char *
 num2str(int n)
 {
 	static char buf[20];
@@ -90,7 +90,7 @@ num2str(int n)
 }
 
 /* isakmp.h */
-char *
+const char *
 s_isakmp_state(int t, int d, int s)
 {
 	switch (t) {
@@ -211,10 +211,10 @@ static struct ksmap name_isakmp_certtype[] = {
 { ISAKMP_CERT_X509ATTR,	"X.509 Certificate Attribute",		NULL },
 };
 
-char *
+const char *
 s_isakmp_certtype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_certtype); i++)
 		if (name_isakmp_certtype[i].key == k)
 			return name_isakmp_certtype[i].str;
@@ -234,10 +234,10 @@ static struct ksmap name_isakmp_etype[] = {
 { ISAKMP_ETYPE_ACKINFO,	"Acknowledged Informational",	NULL },
 };
 
-char *
+const char *
 s_isakmp_etype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_etype); i++)
 		if (name_isakmp_etype[i].key == k)
 			return name_isakmp_etype[i].str;
@@ -285,10 +285,10 @@ static struct ksmap name_isakmp_notify_msg[] = {
 { ISAKMP_LOG_RETRY_LIMIT_REACHED,	"RETRY-LIMIT-REACHED",		NULL },
 };
 
-char *
+const char *
 s_isakmp_notify_msg(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_notify_msg); i++)
 		if (name_isakmp_notify_msg[i].key == k)
 			return name_isakmp_notify_msg[i].str;
@@ -320,10 +320,10 @@ static struct ksmap name_isakmp_nptype[] = {
 { ISAKMP_NPTYPE_FRAG,		"ike frag",	NULL },
 };
 
-char *
+const char *
 s_isakmp_nptype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_nptype); i++)
 		if (name_isakmp_nptype[i].key == k)
 			return name_isakmp_nptype[i].str;
@@ -371,10 +371,10 @@ static struct ksmap name_isakmp_cfg_type[] = {
 { UNITY_DDNS_HOSTNAME,		"UNITY_DDNS_HOSTNAME",		NULL },
 };
 
-char *
+const char *
 s_isakmp_cfg_type(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_cfg_type); i++)
 		if (name_isakmp_cfg_type[i].key == k)
 			return name_isakmp_cfg_type[i].str;
@@ -389,10 +389,10 @@ static struct ksmap name_isakmp_cfg_ptype[] = {
 { ISAKMP_CFG_REPLY,		"mode config REPLY",		NULL },
 };
 
-char *
+const char *
 s_isakmp_cfg_ptype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_isakmp_cfg_ptype); i++)
 		if (name_isakmp_cfg_ptype[i].key == k)
 			return name_isakmp_cfg_ptype[i].str;
@@ -409,10 +409,10 @@ static struct ksmap name_ipsecdoi_proto[] = {
 { IPSECDOI_PROTO_IPCOMP,	"IPCOMP",	s_ipsecdoi_trns_ipcomp },
 };
 
-char *
+const char *
 s_ipsecdoi_proto(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_proto); i++)
 		if (name_ipsecdoi_proto[i].key == k)
 			return name_ipsecdoi_proto[i].str;
@@ -423,10 +423,10 @@ static struct ksmap name_ipsecdoi_trns_isakmp[] = {
 { IPSECDOI_KEY_IKE,	"IKE", NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_trns_isakmp(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_trns_isakmp); i++)
 		if (name_ipsecdoi_trns_isakmp[i].key == k)
 			return name_ipsecdoi_trns_isakmp[i].str;
@@ -442,10 +442,10 @@ static struct ksmap name_ipsecdoi_trns_ah[] = {
 { IPSECDOI_AH_SHA512,	"SHA512", NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_trns_ah(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_trns_ah); i++)
 		if (name_ipsecdoi_trns_ah[i].key == k)
 			return name_ipsecdoi_trns_ah[i].str;
@@ -468,10 +468,10 @@ static struct ksmap name_ipsecdoi_trns_esp[] = {
 { IPSECDOI_ESP_TWOFISH,		"TWOFISH",	NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_trns_esp(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_trns_esp); i++)
 		if (name_ipsecdoi_trns_esp[i].key == k)
 			return name_ipsecdoi_trns_esp[i].str;
@@ -484,20 +484,20 @@ static struct ksmap name_ipsecdoi_trns_ipcomp[] = {
 { IPSECDOI_IPCOMP_LZS,		"LZS",		NULL},
 };
 
-char *
+const char *
 s_ipsecdoi_trns_ipcomp(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_trns_ipcomp); i++)
 		if (name_ipsecdoi_trns_ipcomp[i].key == k)
 			return name_ipsecdoi_trns_ipcomp[i].str;
 	return num2str(k);
 }
 
-char *
+const char *
 s_ipsecdoi_trns(int proto, int trns)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_proto); i++)
 		if (name_ipsecdoi_proto[i].key == proto
 		 && name_ipsecdoi_proto[i].f)
@@ -517,10 +517,10 @@ static struct ksmap name_attr_ipsec[] = {
 { IPSECDOI_ATTR_COMP_PRIVALG,	"Compression Private Algorithm", NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_attr(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_ipsec); i++)
 		if (name_attr_ipsec[i].key == k)
 			return name_attr_ipsec[i].str;
@@ -532,10 +532,10 @@ static struct ksmap name_attr_ipsec_ltype[] = {
 { IPSECDOI_ATTR_SA_LD_TYPE_KB,	"kilobytes",	NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_ltype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_ipsec_ltype); i++)
 		if (name_attr_ipsec_ltype[i].key == k)
 			return name_attr_ipsec_ltype[i].str;
@@ -552,10 +552,10 @@ static struct ksmap name_attr_ipsec_encmode[] = {
 { IPSECDOI_ATTR_ENC_MODE_UDPTRNS_DRAFT,	"UDP-Transport",	NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_encmode(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_ipsec_encmode); i++)
 		if (name_attr_ipsec_encmode[i].key == k)
 			return name_attr_ipsec_encmode[i].str;
@@ -572,20 +572,20 @@ static struct ksmap name_attr_ipsec_auth[] = {
 { IPSECDOI_ATTR_AUTH_KPDK,		"kpdk",		NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_auth(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_ipsec_auth); i++)
 		if (name_attr_ipsec_auth[i].key == k)
 			return name_attr_ipsec_auth[i].str;
 	return num2str(k);
 }
 
-char *
+const char *
 s_ipsecdoi_attr_v(int type, int val)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_ipsec); i++)
 		if (name_attr_ipsec[i].key == type
 		 && name_attr_ipsec[i].f)
@@ -607,10 +607,10 @@ static struct ksmap name_ipsecdoi_ident[] = {
 { IPSECDOI_ID_KEY_ID,		"KEY_ID",	NULL },
 };
 
-char *
+const char *
 s_ipsecdoi_ident(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsecdoi_ident); i++)
 		if (name_ipsecdoi_ident[i].key == k)
 			return name_ipsecdoi_ident[i].str;
@@ -639,10 +639,10 @@ static struct ksmap name_oakley_attr[] = {
 { OAKLEY_ATTR_GSS_ID,		"GSS-API endpoint name",NULL },
 };
 
-char *
+const char *
 s_oakley_attr(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_oakley_attr); i++)
 		if (name_oakley_attr[i].key == k)
 			return name_oakley_attr[i].str;
@@ -659,10 +659,10 @@ static struct ksmap name_attr_isakmp_enc[] = {
 { OAKLEY_ATTR_ENC_ALG_AES,	"AES-CBC",		NULL },
 };
 
-char *
+const char *
 s_attr_isakmp_enc(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_enc); i++)
 		if (name_attr_isakmp_enc[i].key == k)
 			return name_attr_isakmp_enc[i].str;
@@ -680,10 +680,10 @@ static struct ksmap name_attr_isakmp_hash[] = {
 #endif
 };
 
-char *
+const char *
 s_attr_isakmp_hash(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_hash); i++)
 		if (name_attr_isakmp_hash[i].key == k)
 			return name_attr_isakmp_hash[i].str;
@@ -713,10 +713,10 @@ static struct ksmap name_attr_isakmp_method[] = {
 #endif
 };
 
-char *
+const char *
 s_oakley_attr_method(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_method); i++)
 		if (name_attr_isakmp_method[i].key == k)
 			return name_attr_isakmp_method[i].str;
@@ -736,10 +736,10 @@ static struct ksmap name_attr_isakmp_desc[] = {
 { OAKLEY_ATTR_GRP_DESC_MODP8192,	"8192-bit MODP group",	NULL },
 };
 
-char *
+const char *
 s_attr_isakmp_desc(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_desc); i++)
 		if (name_attr_isakmp_desc[i].key == k)
 			return name_attr_isakmp_desc[i].str;
@@ -752,10 +752,10 @@ static struct ksmap name_attr_isakmp_group[] = {
 { OAKLEY_ATTR_GRP_TYPE_EC2N,	"EC2N",	NULL },
 };
 
-char *
+const char *
 s_attr_isakmp_group(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_group); i++)
 		if (name_attr_isakmp_group[i].key == k)
 			return name_attr_isakmp_group[i].str;
@@ -767,20 +767,20 @@ static struct ksmap name_attr_isakmp_ltype[] = {
 { OAKLEY_ATTR_SA_LD_TYPE_KB,	"kilobytes",	NULL },
 };
 
-char *
+const char *
 s_attr_isakmp_ltype(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_attr_isakmp_ltype); i++)
 		if (name_attr_isakmp_ltype[i].key == k)
 			return name_attr_isakmp_ltype[i].str;
 	return num2str(k);
 }
 
-char *
+const char *
 s_oakley_attr_v(int type, int val)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_oakley_attr); i++)
 		if (name_oakley_attr[i].key == type
 		 && name_oakley_attr[i].f)
@@ -796,11 +796,11 @@ static struct ksmap name_ipsec_level[] = {
 { IPSEC_LEVEL_UNIQUE,	"unique",	NULL },
 };
 
-char *
+const char *
 s_ipsec_level(k)
 	int k;
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_ipsec_level); i++)
 		if (name_ipsec_level[i].key == k)
 			return name_ipsec_level[i].str;
@@ -818,20 +818,20 @@ static struct ksmap name_algclass[] = {
 { algclass_isakmp_ameth, "isakmp auth method",	s_oakley_attr_method },
 };
 
-char *
+const char *
 s_algclass(int k)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_algclass); i++)
 		if (name_algclass[i].key == k)
 			return name_algclass[i].str;
 	return num2str(k);
 }
 
-char *
+const char *
 s_algtype(int class, int n)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_algclass); i++)
 		if (name_algclass[i].key == class
 		 && name_algclass[i].f)
@@ -869,11 +869,11 @@ static struct ksmap name_pfkey_type[] = {
 #endif
 };
 
-char *
+const char *
 s_pfkey_type(k)
 	int k;
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_pfkey_type); i++)
 		if (name_pfkey_type[i].key == k)
 			return name_pfkey_type[i].str;
@@ -891,11 +891,11 @@ static struct ksmap name_pfkey_satype[] = {
 { SADB_X_SATYPE_IPCOMP,	"IPCOMP",	NULL },
 };
 
-char *
+const char *
 s_pfkey_satype(k)
 	int k;
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_pfkey_satype); i++)
 		if (name_pfkey_satype[i].key == k)
 			return name_pfkey_satype[i].str;
@@ -911,11 +911,11 @@ static struct ksmap name_direction[] = {
 #endif
 };
 
-char *
+const char *
 s_direction(k)
 	int k;
 {
-	int i;
+	size_t i;
 	for (i = 0; i < ARRAYLEN(name_direction); i++)
 		if (name_direction[i].key == k)
 			return name_direction[i].str;
@@ -923,7 +923,7 @@ s_direction(k)
 }
 #endif
 
-char *
+const char *
 s_proto(k)
 	int k;
 {
@@ -943,7 +943,7 @@ s_proto(k)
 	return num2str(k);
 }
 
-char *
+const char *
 s_doi(int k)
 {
   switch (k) {
@@ -955,7 +955,7 @@ s_doi(int k)
 }
 #endif
 
-char *
+const char *
 s_etype (int k)
 {
   switch (k) {
@@ -982,7 +982,7 @@ s_etype (int k)
   }
 }
 
-char *
+const char *
 s_idtype (int k)
 {
   switch (k) {
@@ -1001,7 +1001,7 @@ s_idtype (int k)
   }
 }
 
-char *
+const char *
 s_switch (int k)
 {
   switch (k) {

@@ -190,7 +190,7 @@ ikev2_packet_construct(int exch_type, int flags, uint32_t message_id,
 	ptr = (uint8_t *)payloads->v;
 	prev_np = &payload_type;
 	for (i = 0; i < num; ++i) {
-		struct ikev2_payload_header *p =
+		struct ikev2_payload_header *xp =
 			(struct ikev2_payload_header *)ptr;
 		int payload_length;
 
@@ -199,11 +199,11 @@ ikev2_packet_construct(int exch_type, int flags, uint32_t message_id,
 			payload_length += payl[i].data->l;
 		}
 		*prev_np = payl[i].type;
-		prev_np = &p->next_payload;
-		p->header_byte_2 = 0;
-		put_uint16(&p->payload_length, payload_length);
+		prev_np = &xp->next_payload;
+		xp->header_byte_2 = 0;
+		put_uint16(&xp->payload_length, payload_length);
 		if (payl[i].data)
-			memcpy(p + 1, payl[i].data->v, payl[i].data->l);
+			memcpy(xp + 1, payl[i].data->v, payl[i].data->l);
 
 		ptr += payload_length;
 	}

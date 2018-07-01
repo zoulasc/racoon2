@@ -76,7 +76,7 @@ static rc_type ikev1_id_to_rc(unsigned int);
 #endif
 static rc_type ikev2_id_to_rc(unsigned int);
 
-char *script_names[SCRIPT_NUM] = {
+const char *script_names[SCRIPT_NUM] = {
 	"phase1_up", "phase1_down", "phase2_up", "phase2_down",
 	"phase1_rekey", "phase2_rekey", "migration"
 };
@@ -141,7 +141,8 @@ struct rcf_kmp ikev1_default_values = {
 	RCT_BOOL_ON,		/* dpd */
 	0,			/* dpd_interval */
 	5,			/* dpd_retry */
-	5			/* dpd_maxfails */
+	5,			/* dpd_maxfails */
+	{ NULL },		/* script */
 };
 #endif
 
@@ -201,15 +202,14 @@ struct rcf_kmp ikev2_default_values = {
 	RCT_BOOL_ON,		/* dpd */
 	IKEV2_DEFAULT_POLLING_INTERVAL,	/* dpd_interval */
 	0,			/* dpd_retry */
-	0			/* dpd_maxfails */
+	0,			/* dpd_maxfails */
+	{ NULL },		/* script */
 };
 
 #ifdef IKEV1
-struct rcf_kmp *
+static struct rcf_kmp *
 ikev1_default(void)
 {
-	extern struct rcf_default *rcf_default_head;
-
 	if (rcf_default_head &&
 	    rcf_default_head->remote &&
 	    rcf_default_head->remote->ikev1)
@@ -374,11 +374,9 @@ ikev1_script(struct rcf_remote *rmconf, int script)
 }
 #endif /* IKEV1 */
 
-struct rcf_kmp *
+static struct rcf_kmp *
 ikev2_default(void)
 {
-	extern struct rcf_default *rcf_default_head;
-
 	if (rcf_default_head &&
 	    rcf_default_head->remote &&
 	    rcf_default_head->remote->ikev2)
@@ -435,12 +433,11 @@ rc_type ikev2_config_required(struct rcf_remote *conf)
 	return RCT_BOOL_OFF;
 }
 
-int
+static int
 rcf_get_addresspool(rc_vchar_t *name, struct rcf_addresspool **pool)
 {
 	int	retval = -1;
 	struct rcf_addresspool	*p;
-	extern struct rcf_addresspool *rcf_addresspool_head;
 
 	for (p = rcf_addresspool_head; p; p = p->next) {
 		if (rc_vmemcmp(p->index, name) == 0) {
@@ -555,10 +552,9 @@ ikev2_script(struct rcf_remote *rmconf, int script)
 /*
  * default values for struct rcf_sa
  */
-struct rcf_sa *
+static struct rcf_sa *
 sa_default(void)
 {
-	extern struct rcf_default *rcf_default_head;
 	if (rcf_default_head &&
 	    rcf_default_head->sa)
 		return rcf_default_head->sa;
@@ -572,7 +568,6 @@ sa_default(void)
 struct rcf_ipsec *
 ipsec_default(void)
 {
-	extern struct rcf_default *rcf_default_head;
 	if (rcf_default_head &&
 	    rcf_default_head->ipsec)
 		return rcf_default_head->ipsec;
@@ -583,10 +578,9 @@ ipsec_default(void)
 /*
  * default values for struct rcf_policy
  */
-struct rcf_policy *
+static struct rcf_policy *
 policy_default(void)
 {
-	extern struct rcf_default *rcf_default_head;
 	if (rcf_default_head &&
 	    rcf_default_head->policy)
 		return rcf_default_head->policy;
@@ -609,8 +603,6 @@ ike_ipsec_mode(struct rcf_policy *pl)
 uint
 ike_acceptable_kmp(struct rcf_remote *conf)
 {
-	extern struct rcf_default *rcf_default_head;
-
 	if (conf && conf->acceptable_kmp)
 		return conf->acceptable_kmp;
 
@@ -625,8 +617,6 @@ ike_acceptable_kmp(struct rcf_remote *conf)
 rc_type
 ike_initiate_kmp(struct rcf_remote *remote)
 {
-	extern struct rcf_default *rcf_default_head;
-
 	if (remote && remote->initiate_kmp)	/* XXX */
 		return remote->initiate_kmp;
 
@@ -949,7 +939,7 @@ ikev2_id_to_rc(unsigned int id_type)
  * returns rc_vchar_t* if successful, 0 if fails
  * assigns address family into *af if af is not NULL
  */
-rc_vchar_t *
+static rc_vchar_t *
 ike_aton(rc_vchar_t *s, int *af)
 {
 	const char *nodename;
@@ -1286,7 +1276,7 @@ ikev2_id2rct_id(struct ikev2_payload_header *payl, rc_type *type)
 	return idbuf;
 }
 
-void
+static void
 ike_hexdump(char *buf, size_t bufsiz, uint8_t *data, size_t datalen)
 {
 	char *bufptr;
@@ -1371,7 +1361,7 @@ ikev2_id_dump(char *msg, struct ikev2_payload_header *id_p)
 		lbuf = rbuf_getlb();
 		ike_hexdump(lbuf->v, lbuf->l,
 			    (uint8_t *)(id_p + 1), get_payload_data_length(id_p));
-		TRACE((PLOGLOC, "%s\n", lbuf->v));
+		TRACE((PLOGLOC, "%s\n", lbuf->s));
 	} else {
 		TRACE((PLOGLOC, "%s: %s\n",
 		       msg, ike_id_str(rc_id_type, idbuf)));
@@ -1503,7 +1493,7 @@ compare_bits(uint8_t *a, uint8_t *b, int bitlen)
 
 	for (; bitlen > 0; a++, b++, bitlen -= CHARBITS) {
 		if (bitlen < CHARBITS) {
-			return ((*a ^ *b) & (-1 << (CHARBITS - bitlen))) == 0
+			return ((*a ^ *b) & (~0U << (CHARBITS - bitlen))) == 0
 				? TRUE : FALSE;
 		}
 		if ((*a ^ *b) != 0)
@@ -1512,7 +1502,7 @@ compare_bits(uint8_t *a, uint8_t *b, int bitlen)
 	return TRUE;
 }
 
-int
+static int
 sockaddr_in_compare_with_prefix(struct sockaddr_in *addr,
 				struct sockaddr_in *netaddr,
 				int prefixlen)
@@ -1520,13 +1510,13 @@ sockaddr_in_compare_with_prefix(struct sockaddr_in *addr,
 	if (prefixlen == 0)
 		return TRUE;
 	if ((ntohl(addr->sin_addr.s_addr ^ netaddr->sin_addr.s_addr)
-	     & (-1 << (32 - prefixlen))) == 0)
+	     & (~0U << (32 - prefixlen))) == 0)
 		return TRUE;
 	return FALSE;
 }
 
 #ifdef INET6
-int
+static int
 sockaddr_in6_compare_with_prefix(struct sockaddr_in6 *addr,
 				 struct sockaddr_in6 *netaddr,
 				 int prefixlen)
@@ -1536,7 +1526,7 @@ sockaddr_in6_compare_with_prefix(struct sockaddr_in6 *addr,
 }
 #endif
 
-int
+static int
 sockaddr_compare_with_prefix(struct sockaddr *addr,
 			     struct sockaddr *netaddr,
 			     int prefixlen)
@@ -1609,7 +1599,7 @@ match_addr_ipv6(struct sockaddr *addr, int prefixlen,
 		if (prefixlen >= BITS * (i + 1)) {
 			bits = 0xFF;
 		} else if (prefixlen > BITS * i) {
-			bits = 0xFF & (-1 << (BITS * (i + 1) - prefixlen));
+			bits = 0xFF & (~0U << (BITS * (i + 1) - prefixlen));
 		} else {
 			bits = 0;
 		}
@@ -1797,7 +1787,7 @@ ts_is_within_addr(struct ikev2_traffic_selector *ts, int proto,
 		if (prefixlen >= CHAR_BIT * (i + 1)) {
 			bits = 0xFF;
 		} else if (prefixlen > CHAR_BIT * i) {
-			bits = 0xFF & (-1 << (CHAR_BIT * (i + 1) - prefixlen));
+			bits = 0xFF & (~0U << (CHAR_BIT * (i + 1) - prefixlen));
 		} else {
 			bits = 0;
 		}
@@ -1873,7 +1863,7 @@ ts_contains_addr(struct ikev2_traffic_selector *ts, int proto,
 		if (prefixlen >= CHAR_BIT * (i + 1)) {
 			bits = 0xFF;
 		} else if (prefixlen > CHAR_BIT * i) {
-			bits = 0xFF & (-1 << (CHAR_BIT * (i + 1) - prefixlen));
+			bits = 0xFF & (~0U << (CHAR_BIT * (i + 1) - prefixlen));
 		} else {
 			bits = 0;
 		}
@@ -1988,9 +1978,8 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
 	if (!resultbuf)
 		return 0;
 
-	r_tsh = (struct ikev2payl_ts_h *)resultbuf->v;
-	r_ts = (struct ikev2_traffic_selector *)(resultbuf->v +
-						 sizeof(struct ikev2payl_ts_h));
+	r_tsh = (void *)resultbuf->u;
+	r_ts = (void *)(resultbuf->u + sizeof(struct ikev2payl_ts_h));
 	r_saddr = (uint8_t *)(r_ts + 1);
 	r_eaddr = r_saddr + addrsize;
 
@@ -2023,7 +2012,7 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
 		if (prefixlen >= BITS * (i + 1)) {
 			bits = 0xFF;
 		} else if (prefixlen > BITS * i) {
-			bits = 0xFF & (-1 << (BITS * (i + 1) - prefixlen));
+			bits = 0xFF & (~0U << (BITS * (i + 1) - prefixlen));
 		} else {
 			bits = 0;
 		}
@@ -2071,8 +2060,8 @@ ikev2_cfg_addr2sockaddr(struct sockaddr *sa, struct rcf_address *a, int *prefixl
 /*
  * debug dump Traffic Selectors
  */
-void
-ikev2_dump_traffic_selectors(char *msg,
+static void
+ikev2_dump_traffic_selectors(const char *msg,
 			     int num_ts,
 			     struct ikev2_traffic_selector *ts)
 {
@@ -2090,7 +2079,7 @@ ikev2_dump_traffic_selectors(char *msg,
  * debug dump Traffic Selector payload (excluding generic header)
  */
 void
-ikev2_dump_traffic_selector_h(char *header, void *payload_data)
+ikev2_dump_traffic_selector_h(const char *header, void *payload_data)
 {
 	struct ikev2payl_ts_h *tsh;
 	
@@ -2104,7 +2093,7 @@ ikev2_dump_traffic_selector_h(char *header, void *payload_data)
  * debug dump Traffic Selector payload
  */
 void
-ikev2_dump_ts(char *header, struct ikev2payl_traffic_selector *ts_payload)
+ikev2_dump_ts(const char *header, struct ikev2payl_traffic_selector *ts_payload)
 {
 	ikev2_dump_traffic_selectors(header,
 				     ts_payload->tsh.num_ts, 
@@ -2512,7 +2501,6 @@ ike_conf_find_selector_by_addr(struct sockaddr *local, struct sockaddr *remote)
 	struct rcf_selector *s;
 	struct rc_addrlist *s_local;
 	struct rc_addrlist *s_remote;
-	extern struct rcf_selector *rcf_selector_head;
 
 	for (s = rcf_selector_head; s; s = s->next) {
 		if (s->direction != RCT_DIR_OUTBOUND)
@@ -2575,7 +2563,7 @@ static struct algdef ikev2_transf_encr[] = {
 	{ 0 }
 };
 
-#define	ALG_HASH(rc, id, klen, gen)	{ (rc), (id), (klen), 0, 0, (void *(*)())(gen), 0 }
+#define	ALG_HASH(rc, id, klen, gen)	{ (rc), (id), (klen), 0, 0, (void *(*)(void))(gen), 0 }
 
 static struct algdef ikev2_transf_prf[] = {
 	ALG_HASH(RCT_ALG_HMAC_MD5, IKEV2TRANSF_PRF_HMAC_MD5, 16, hmacmd5_new),
@@ -2677,7 +2665,7 @@ ikeconf_rcf_alg(unsigned int alg, struct algdef *def)
  * returns key length value if the algorithm requires the key length attribute
  * if not required, returns 0
  */
-int
+static int
 ikev2_rcf_alg_keylen(int type, struct rc_alglist *alg, struct algdef *def)
 {
 	const int BITS = 8;
@@ -2702,7 +2690,7 @@ ikev2_rcf_alg_keylen(int type, struct rc_alglist *alg, struct algdef *def)
  * code is ikev2 transform id, klen is key length in bits
  */
 struct encryptor *
-ikev2_encryptor_new(int code, int klen)
+ikev2_encryptor_new(unsigned int code, size_t klen)
 {
 	struct encryptor_method *m;
 	struct algdef *def;
@@ -2711,7 +2699,7 @@ ikev2_encryptor_new(int code, int klen)
 	for (def = &ikev2_transf_encr[0]; def->racoon_code != 0; ++def) {
 		if (def->transform_id == code &&
 		    def->definition != 0 &&
-		    (klen == 0 || KEYLEN(*def) * BITS == (size_t)klen)) {
+		    (klen == 0 || KEYLEN(*def) * BITS == klen)) {
 			m = (struct encryptor_method *)def->definition;
 			return encryptor_new(m);
 		}
@@ -2732,7 +2720,7 @@ ikev2_encryptor_new(int code, int klen)
  * creates an authenticator based on negotiated proposal
  */
 struct authenticator *
-ikev2_authenticator_new(int code)
+ikev2_authenticator_new(unsigned int code)
 {
 	struct algdef *def;
 
@@ -2757,7 +2745,7 @@ ikev2_authenticator_new(int code)
  * creates a prf based on negotiated proposal
  */
 struct keyed_hash *
-ikev2_prf_new(int code)
+ikev2_prf_new(unsigned int code)
 {
 	struct algdef *def;
 
@@ -2798,7 +2786,7 @@ ikev2_dhinfo(unsigned int id)
 }
 
 /* find DH info by Racoon conf code */
-struct algdef *
+static struct algdef *
 isakmp_conf_to_dhdef(rc_type code, struct algdef *dhdef)
 {
 	int i;
@@ -2823,7 +2811,6 @@ ike_conf_dhgrp(struct rcf_remote *conf, int version)
 {
 	struct rc_alglist *grp = 0;
 	struct rcf_remote *def = 0;
-	extern struct rcf_default *rcf_default_head;
 
 	assert(conf != 0);
 	if (rcf_default_head)
@@ -2944,7 +2931,6 @@ ikev2_conf_to_proplist(struct rcf_remote *rminfo, isakmp_cookie_t spi)
 	struct prop_pair **tail;
 	size_t spi_size;
 	struct isakmp_pl_p *prop;
-	extern struct rcf_default *rcf_default_head;
 
 	if (!rminfo)
 		return 0;
@@ -4166,9 +4152,6 @@ ike_conf_check_consistency(void)
 	struct rcf_selector **prevselp, *selector;
 	struct rcf_policy *policy;
 	struct rcf_ipsec *ipsec;
-	extern struct rcf_default *rcf_default_head;
-	extern struct rcf_remote *rcf_remote_head;
-	extern struct rcf_selector *rcf_selector_head;
 
 	TRACE((PLOGLOC, "checking configuration\n"));
 
