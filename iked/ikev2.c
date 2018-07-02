@@ -5225,8 +5225,8 @@ compute_skeyseed(struct ikev2_sa *ike_sa)
 	*/
 
 	if ((!prf->method->is_variable_keylen ||
-	     (prf->method == &aes_xcbc_hash_method ||
-	      prf->method == &aes_cmac_hash_method))
+	     (prf->method == (struct keyed_hash_method *)&aes_xcbc_hash_method ||
+	      prf->method == (struct keyed_hash_method *)&aes_cmac_hash_method))
 	    && ike_sa->n_i->l + ike_sa->n_r->l != prf_keylen) {
 		assert(prf_keylen % 2 == 0);	/* assuming prf keylen is even */
 		i_len = prf_keylen / 2;
