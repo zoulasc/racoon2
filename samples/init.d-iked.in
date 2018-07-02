@@ -3,9 +3,6 @@
 # iked startup script
 #
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-
 NAME=iked
 DAEMON=@sbindir@/$NAME
 PIDFILE=/var/run/$NAME.pid

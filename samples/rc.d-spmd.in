@@ -9,9 +9,6 @@
 
 . /etc/rc.subr
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-
 name="spmd"
 rcvar=$name
 command="@sbindir@/${name}"

@@ -18,9 +18,7 @@
 
 . /etc/rc.subr
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-rcd_dir=`dirname $0`
+rcd_dir=$(dirname "$0")
 
 MODULES_FWD="spmd iked kinkd"
 MODULES_REV="kinkd iked spmd"

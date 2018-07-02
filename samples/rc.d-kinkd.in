@@ -10,9 +10,6 @@
 
 . /etc/rc.subr
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-
 name="kinkd"
 rcvar=$name
 command="@sbindir@/${name}"

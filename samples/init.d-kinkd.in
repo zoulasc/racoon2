@@ -3,9 +3,6 @@
 # kinkd start up script
 #
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-
 NAME=kinkd
 DAEMON=@sbindir@/$NAME
 PIDFILE=/var/run/$NAME.pid
