@@ -33,6 +33,10 @@
  * occur.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/socket.h>

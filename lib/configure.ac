@@ -40,7 +40,7 @@ AC_ARG_ENABLE(ipv6,
 	       ipv6=no
 	       ;;
 	  *)   AC_MSG_RESULT(yes)
-	       AC_DEFINE(INET6)
+	       AC_DEFINE(INET6, 1, [Enable IPv6 support])
 	       ipv6=yes
 	       ;;
 	  esac ],
@@ -161,7 +161,7 @@ dnl fix-glibc-getifaddrs GIVEN
   AC_MSG_CHECKING([if --enable-fix-glibc-getifaddrs is specified])
   case "$enableval" in
   yes)
-	AC_DEFINE(HAVE_GETIFADDRS_LL_SIN6_SCOPE_ID_BUG)
+	AC_DEFINE(HAVE_GETIFADDRS_LL_SIN6_SCOPE_ID_BUG, 1, [Work around glibc getifaddress scope bug])
 	;;
   esac
   AC_MSG_RESULT($enableval)
@@ -180,7 +180,7 @@ gcc_may_have_ll_sin6_scope_id_bug
 #endif
 	],
 	AC_MSG_RESULT([yes])
-	AC_DEFINE(HAVE_GETIFADDRS_LL_SIN6_SCOPE_ID_BUG),
+	AC_DEFINE(HAVE_GETIFADDRS_LL_SIN6_SCOPE_ID_BUG, 1, [Work around glibc getifaddress scope bug])
 	AC_MSG_RESULT([no])
 	) dnl End of EGREP_CPP
   esac
@@ -192,11 +192,12 @@ dnl Check for sa_len
 AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
 AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/socket.h>
-], [	struct sockaddr sa;
-	sa.sa_len = 0;
-],	AC_DEFINE(HAVE_SA_LEN)
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no))
+], [    struct sockaddr sa;
+        sa.sa_len = 0;
+
+],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
+        AC_MSG_RESULT(yes),
+        AC_MSG_RESULT(no))
 
 dnl --with-openssl-libdir
 RC_WITH_OPENSSL_LIB
@@ -211,4 +212,5 @@ else
 	IF_GMAKE='#'
 fi
 
+AC_CONFIG_HEADER(config.h)
 AC_OUTPUT(Makefile)

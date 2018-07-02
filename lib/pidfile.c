@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>

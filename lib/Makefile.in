@@ -60,7 +60,7 @@ install: all
 
 clean:
 	-rm -f $(PROG) *.o *.core
-	-rm -f cfparse.c cftoken.c
+	-rm -f cfparse.c cfparse.h cftoken.c
 	-rm -f y.tab.h y.output lex.yy.c
 	-rm -f sample
 
@@ -73,6 +73,6 @@ depend:
 # *.h is a bit wasteful, but safe.
 cfparse.o cftoken.o: *.h
 # y.tab.h may not have been generated when the above wildcard is evaluated.
-cftoken.o: y.tab.h
+cftoken.o: cfparse.h
 # y.tab.h has no target rule, so cftoken.c is used as a surrogate.
-y.tab.h: cfparse.c
+cfparse.h: cfparse.c
