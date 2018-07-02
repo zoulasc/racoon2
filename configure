@@ -2104,7 +2104,7 @@ test -n "$perl_bindir" || perl_bindir="missing_perl"
 
 
 
-ac_config_files="$ac_config_files Makefile samples/Makefile samples/racoon2.conf samples/vals.conf samples/init.d-iked samples/init.d-kinkd samples/init.d-spmd samples/rc.d-racoon2 samples/rc.d-iked samples/rc.d-kinkd samples/rc.d-spmd samples/ikesa-up samples/ikesa-down samples/ikesa-rekey samples/child-up samples/child-down samples/child-rekey samples/migration samples/ph1-up samples/ph1-down pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd"
+ac_config_files="$ac_config_files Makefile samples/Makefile samples/racoon2.conf samples/vals.conf samples/init.d-iked samples/init.d-kinkd samples/init.d-spmd samples/rc.d-racoon2 samples/rc.d-iked samples/rc.d-kinkd samples/rc.d-spmd samples/ikesa-up samples/ikesa-down samples/ikesa-rekey samples/child-up samples/child-down samples/child-rekey samples/migration samples/ph1-up samples/ph1-down pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd kinkd/kinkd.8 iked/iked.8"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2835,6 +2835,8 @@ do
     "pskgen/Makefile") CONFIG_FILES="$CONFIG_FILES pskgen/Makefile" ;;
     "pskgen/pskgen") CONFIG_FILES="$CONFIG_FILES pskgen/pskgen" ;;
     "pskgen/autogen.spmd.pwd") CONFIG_FILES="$CONFIG_FILES pskgen/autogen.spmd.pwd" ;;
+    "kinkd/kinkd.8") CONFIG_FILES="$CONFIG_FILES kinkd/kinkd.8" ;;
+    "iked/iked.8") CONFIG_FILES="$CONFIG_FILES iked/iked.8" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

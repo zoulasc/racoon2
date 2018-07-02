@@ -109,4 +109,5 @@ clean:
 	rm -f $(OBJS) $(PROG) $(TESTPROG) $(TESTOBJ)
 
 distclean: clean
-	-rm -f Makefile config.cache config.status config.log config.h .depend
+	-rm -f Makefile config.cache config.status config.log config.h \
+	    .depend iked.8

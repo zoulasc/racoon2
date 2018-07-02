@@ -77,7 +77,7 @@ clean:
 	-rm -f $(PROG) *.o *.core *~
 
 distclean: clean
-	-rm -f Makefile config.cache config.status config.log .depend
+	-rm -f Makefile config.cache config.status config.log .depend kinkd.8
 
 .PHONY: .depend
 @IF_GMAKE@-include .depend

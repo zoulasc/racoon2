@@ -99,4 +99,5 @@ AC_OUTPUT([Makefile samples/Makefile samples/racoon2.conf samples/vals.conf \
 	samples/ikesa-up samples/ikesa-down samples/ikesa-rekey \
 	samples/child-up samples/child-down samples/child-rekey \
 	samples/migration samples/ph1-up samples/ph1-down \
-	pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd])
+	pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd \
+	kinkd/kinkd.8 iked/iked.8])
