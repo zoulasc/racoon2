@@ -2,8 +2,12 @@
 
 srcdir=@srcdir@
 prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
 sysconfdir=@sysconfdir@
-datarootdir=@datarootdir@  
+datarootdir=@datarootdir@
+mandir=@mandir@
+
 INSTALL =@INSTALL@ @INSTALL_OPTS@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@

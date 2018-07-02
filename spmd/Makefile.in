@@ -1,3 +1,12 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+sysconfdir = @sysconfdir@
+datarootdir = @datarootdir@
+mandir = @mandir@
+man8dir = $(mandir)/man8
+
 CC = @CC@
 MKDEP = @MKDEP@
 CFLAGS = @CFLAGS@ @CPPFLAGS@ @DEFS@ -DSYSCONFDIR=\"${sysconfdir}\" 
@@ -8,15 +17,6 @@ INSTALL=@INSTALL@ @INSTALL_OPTS@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
 INSTALL_DIR=@INSTALL_DIR@
-
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = @bindir@
-sbindir = @sbindir@
-sysconfdir = @sysconfdir@
-datarootdir = @datarootdir@  
-mandir = @mandir@
-man8dir = $(mandir)/man8
 
 SRCS := main.c dns.c udp.c query.c task.c signal.c shell.c utils.c cache.c spmd_pfkey.c fqdn_query.c
 OBJS := ${SRCS:c=o}

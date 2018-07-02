@@ -30,7 +30,7 @@
 
 #define PIDFILE_DIR "/var/run"
 #define CACHE_DIR "/var/run"		/* or "/var/db" */
-#define RACOON2_CONFIG_FILE	RACOON2_CONFIG_DIR "/racoon2.conf"
+#define RACOON2_CONFIG_FILE	SYSCONFDIR "/racoon2.conf"
 
 #ifdef MAKE_KINK_LIST_FILE
 #define KINK_LIST_FILE		"/var/run/kink-handle.list"

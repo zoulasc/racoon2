@@ -1,7 +1,12 @@
 # $Id: Makefile.in,v 1.35 2007/05/16 11:05:10 fukumoto Exp $
 
-sysconfdir = @sysconfdir@
-datarootdir=@datarootdir@  
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@
+mandir=@mandir@
 
 CC = @CC@
 LEX = @LEX@

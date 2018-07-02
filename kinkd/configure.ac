@@ -86,7 +86,7 @@ AC_MSG_CHECKING(if --with-plog is specified)
 AC_ARG_WITH(plog, [  --with-plog             use plog [yes]],
 	, [with_plog=yes])
 if test x"$with_plog" = xyes; then
-	AC_DEFINE(WITH_PLOG)
+	AC_DEFINE(WITH_PLOG, 1, [Enable program log])
 fi
 AC_MSG_RESULT($with_plog)
 
@@ -181,7 +181,7 @@ heimdal)
 	dnl link with libdes.
 	dnl XXX Messages of AC_CHECK_LIB is not appropriate.
 	AC_CHECK_LIB(krb5, krb5_encrypt,
-		[], LIBS="$LIBS -ldes"; AC_DEFINE(HAVE_LIBDES), -lcrypto)
+		[], LIBS="$LIBS -ldes"; AC_DEFINE(HAVE_LIBDES, 1, [Have the DES library]), -lcrypto)
 	AC_CHECK_LIB(krb5, main, , AC_MSG_ERROR(libkrb5 is not found/linkable.))
 
 	dnl Hack: check if krb5_free_ticket() frees ticket itself
@@ -197,9 +197,9 @@ heimdal)
 #endif],
 	[int i = HEIM_PKINIT_NO_CERTIFICATE;],
 	AC_MSG_RESULT(may be yes)
-	AC_DEFINE(HAVE_MIT_COMPAT_KRB5_FREE_TICKET),
+	AC_DEFINE(HAVE_MIT_COMPAT_KRB5_FREE_TICKET, 1, [Have krb5_free_ticket]),
 	AC_MSG_RESULT(may be no)
-	AC_DEFINE(HEIMDAL_BEFORE_0_7))
+	AC_DEFINE(HEIMDAL_BEFORE_0_7, 1, [Have < Heimdal-0.7]))
 	AC_CHECK_FUNCS(krb5_get_max_time_skew krb5_get_kdc_sec_offset)
 	;;
 mit)
@@ -227,22 +227,20 @@ AC_TRY_COMPILE(
 	HAVE_RFC3962_AES=yes, HAVE_RFC3962_AES=no)
 AC_MSG_RESULT(${HAVE_RFC3962_AES})
 if test "${HAVE_RFC3962_AES}" = yes; then
-	AC_DEFINE(HAVE_RFC3962_AES)
+	AC_DEFINE(HAVE_RFC3962_AES, 1, [Have RFC3962 compliant AES support])
 fi
 
-dnl Checks for sa_len member of struct sockaddr.
-AC_MSG_CHECKING(if struct sockaddr has sa_len)
-AC_EGREP_CPP(have_sa_len,
-[#include <sys/types.h>
-#include <netinet/in.h>
-#ifdef SIN6_LEN
-have_sa_len
-#endif
-], HAVE_SA_LEN=yes, HAVE_SA_LEN=no)
-AC_MSG_RESULT(${HAVE_SA_LEN})
-if test "${HAVE_SA_LEN}" = "yes"; then
-	AC_DEFINE(HAVE_SA_LEN)
-fi
+dnl Check for sa_len
+AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
+AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/socket.h>
+], [    struct sockaddr sa;
+        sa.sa_len = 0;
+
+],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
+        AC_MSG_RESULT(yes),
+        AC_MSG_RESULT(no))
+
 
 dnl --------
 dnl missing
@@ -278,6 +276,10 @@ dnl test compiles.  (libracoon.a has not been generated at the configure
 dnl time.)
 LIBS="-lracoon $LIBS"
 
+AC_DEFINE(KINK_DEFAULT_PORT, "910", [Kink default port])
+AC_DEFINE(DEFAULT_NONCE_SIZE, 16, [Default nonce size])
+
 AC_SUBST(ADDOBJS)
 AC_SUBST(KRB5_TYPE)
+AC_CONFIG_HEADER(config.h)
 AC_OUTPUT(Makefile)

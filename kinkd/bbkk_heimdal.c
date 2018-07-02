@@ -32,7 +32,9 @@
  * bridge between KINK and Kerberos
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #include <errno.h>
 #include <inttypes.h>

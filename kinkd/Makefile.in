@@ -7,9 +7,10 @@ sbindir=@sbindir@
 sysconfdir=@sysconfdir@
 datarootdir=@datarootdir@  
 mandir=@mandir@
+
 CC	=@CC@
 OPTFLAG	=@OPTFLAG@
-CPPFLAGS=@CPPFLAGS@ @DEFS@ -DRACOON2_CONFIG_DIR=\"$(sysconfdir)\"
+CPPFLAGS=@CPPFLAGS@ @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)\"
 LDFLAGS	=@LDFLAGS@
 LIBS	=@LIBS@
 CFLAGS	=@CFLAGS@ $(OPTFLAG)
@@ -31,6 +32,14 @@ SRCS=main.c \
 	sched_select.c utils.c
 OBJS=$(SRCS:.c=.o) @ADDOBJS@
 MAN=kinkd.8
+
+
+#CPPFLAGS += -DUSE_PEERS_SRC_PORT
+#CPPFLAGS += -DSEND_ID_PAYLOADS
+#CPPFLAGS += -DNO_DELETE_ON_REKEY
+#CPPFLAGS += -DDEBUG_THOROUGH_FREE
+#CPPFLAGS += -DMAKE_KINK_LIST_FILE
+#CPPFLAGS += -DNOT_PREPEND_KINK
 
 all: $(PROG)
 
