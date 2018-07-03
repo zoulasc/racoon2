@@ -1113,11 +1113,11 @@ dump_param(const char *msg, struct rcpfk_msg *param)
 	TRACE((PLOGLOC, "%s", buf));
 }
 
-#ifdef DEBUG
+#if 0
 #include <sys/socket.h>
 #include <netdb.h>
 
-void
+static void
 debug_initiate(char *addr, const char *selector_index)
 {
 	struct isakmp_acquire_request *req;
