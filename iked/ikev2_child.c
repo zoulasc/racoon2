@@ -265,8 +265,8 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 		for (a = LIST_FIRST(&sa->lease_list);
 		     a != 0;
 		     a = LIST_NEXT(a, link_sa)) {
-			/* XXX need individual slid */
-			if (spmif_post_policy_delete(ike_spmif_socket(),
+			/* XXX need individual slid, XXX: selector NULL */
+			if (selector && spmif_post_policy_delete(ike_spmif_socket(),
 						     NULL, NULL,
 						     selector->sl_index)) {
 				isakmp_log(0, 0, 0, 0,
