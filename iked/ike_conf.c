@@ -2181,10 +2181,8 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 #endif
 
 		if (ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
-#ifdef notyet
 			if (!param->use_transport_mode)
 				continue;
-#endif
 		}
 
 		srclist = dstlist = 0;
