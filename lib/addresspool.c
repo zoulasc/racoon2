@@ -245,8 +245,7 @@ rc_addrpool_assign_ip6intf(struct rcf_addresspool *conf, uint8_t *addr)
 	size_t p;
 
 	if (!conf) {
-		plog(PLOG_INTERR, PLOGLOC, NULL,
-		     PLOGLOC, "no address pool specified\n");
+		plog(PLOG_INTERR, PLOGLOC, NULL, "no address pool specified\n");
 		return 0;
 	}
 

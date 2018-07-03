@@ -377,7 +377,7 @@ login_spmif(int fd)
 	}
 	if (vpasswd == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL, "could not get password(%.*s)\n",
-				vpasswd->l, vpasswd->v);
+		    (int)vpasswd->l, vpasswd->s);
 		goto fail;
 	}
 	plen = vpasswd->l * 2 + 1; 
