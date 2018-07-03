@@ -59,3 +59,5 @@ extern in_port_t *rcs_getsaport(const struct sockaddr *);
 extern void *rcs_getsaaddr(const struct sockaddr *);
 extern int rcs_getsaaddrlen(const struct sockaddr *);
 extern uint32_t *rcs_getsascopeid(const struct sockaddr *);
+extern int rcs_matchaddr(const struct rc_addrlist *, const struct sockaddr *);
+

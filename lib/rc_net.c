@@ -1163,3 +1163,82 @@ rcs_getsaaddr(const struct sockaddr *sa)
 		return NULL;
 	}
 }
+
+#ifdef INET6
+/* Useful IPv6 macros and definitions (derived from NetBSD kernel) */
+#define _IN6MASK0        {{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
+#define _s6_addr32 __u6_addr.__u6_addr32
+#define _IN6_ARE_MASKED_ADDR_EQUAL(d, a, m)	(	\
+	(((d)->_s6_addr32[0] ^ (a)->_s6_addr32[0]) & (m)->_s6_addr32[0]) == 0 && \
+	(((d)->_s6_addr32[1] ^ (a)->_s6_addr32[1]) & (m)->_s6_addr32[1]) == 0 && \
+	(((d)->_s6_addr32[2] ^ (a)->_s6_addr32[2]) & (m)->_s6_addr32[2]) == 0 && \
+	(((d)->_s6_addr32[3] ^ (a)->_s6_addr32[3]) & (m)->_s6_addr32[3]) == 0 )
+#endif
+int
+rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
+{
+	const struct sockaddr_in *sin = (const void *)si;
+	const struct sockaddr_in6 *sin6 = (const void *)si;
+	const struct rc_addrlist *address;
+
+	for (address = addr; address; address = address->next) {
+		const struct sockaddr *sa = (const void *)address->a.ipaddr;
+		const struct sockaddr_in *san = (const void *)address->a.ipaddr;
+		const struct sockaddr_in6 *san6 = (const void *)address->a.ipaddr;
+		switch (sa->sa_family) {
+		case AF_INET:
+			if (si->sa_family != AF_INET)
+				break;
+
+			/* If selector's address is any
+			 * address, match the peer's address */
+			if (san->sin_addr.s_addr == 0)
+				return 1;
+
+			/* If selector's masked address matches the
+		 	 * peer's masked address, match the peer's address */
+			if (address->prefixlen > 0 && address->prefixlen < 32) {
+				uint32_t mask = 0;
+				rcs_in_prefixlen2mask(&mask, address->prefixlen);
+				if(((sin->sin_addr.s_addr ^
+				    san->sin_addr.s_addr) & ntohl(mask)) == 0) {
+					return 1;
+				}
+			}
+			break;
+#ifdef INET6
+		case AF_INET6:
+			if (si->sa_family != AF_INET6)
+				break;
+
+			/* If selector's address is any
+			 * address, match the peer's address */
+			if (san6->sin6_addr._s6_addr32[0] == 0 &&
+			    san6->sin6_addr._s6_addr32[1] == 0 &&
+			    san6->sin6_addr._s6_addr32[2] == 0 &&
+			    san6->sin6_addr._s6_addr32[3] == 0) {
+				return 1;
+			}
+
+			/* If selector's masked address matches the peer's
+		 	 * masked address, match the address of the peer */
+
+			if (address->prefixlen > 0 && address->prefixlen < 128) {
+				struct in6_addr mask6 = _IN6MASK0;
+				rcs_in6_prefixlen2mask(&mask6, address->prefixlen);
+				if(_IN6_ARE_MASKED_ADDR_EQUAL(&san6->sin6_addr,
+					&sin6->sin6_addr, &mask6)) {
+					return 1;
+				}
+			}
+			break;
+#endif
+		default:
+			plog(PLOG_PROTOERR, PLOGLOC, NULL,
+			   "unsupported address family (%d) for selector address\n",
+			   sa->sa_family);
+			return 0;
+		}
+	}
+	return 0;
+}
