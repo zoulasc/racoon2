@@ -2721,6 +2721,8 @@ rcf_fix_addresspool(struct rcf_addresspool **dst0)
 		if (rcf_fix_string(n, &pool->index))
 			goto err;
 
+		LIST_INIT(&pool->pool_list);
+
 		for (range = n->nextp; range; range = range->nextp) {
 			if (rcf_fix_string(range, &start_str))
 				goto err;
@@ -2741,6 +2743,7 @@ rcf_fix_addresspool(struct rcf_addresspool **dst0)
 				goto err;
 			}
 			r->af = start_af;
+			LIST_INSERT_HEAD(&pool->pool_list, r, link);
 
 			rc_vfree(start_str);
 			rc_vfree(end_str);
