@@ -1098,15 +1098,19 @@ dump_param(const char *msg, struct rcpfk_msg *param)
 		      param->lft_hard_time, param->lft_hard_bytes,
 		      param->lft_soft_time, param->lft_soft_bytes,
 		      (unsigned long)param->enckeylen));
-	for (i = 0; i < (int)param->enckeylen; ++i) {
-		DUMP(snprintf(bufp, buflen,
+	if (param->enckey) {
+		for (i = 0; i < (int)param->enckeylen; ++i) {
+			DUMP(snprintf(bufp, buflen,
 			      "%02x", ((uint8_t *)param->enckey)[i]));
+		}
 	}
 	DUMP(snprintf(bufp, buflen, "], authkey len=%lu [", 
 		      (unsigned long)param->authkeylen));
-	for (i = 0; i < (int)param->authkeylen; ++i) {
-		DUMP(snprintf(bufp, buflen,
-			      "%02x", ((uint8_t *)param->authkey)[i]));
+	if (param->authkey) {
+		for (i = 0; i < (int)param->authkeylen; ++i) {
+			DUMP(snprintf(bufp, buflen,
+				      "%02x", ((uint8_t *)param->authkey)[i]));
+		}
 	}
 	DUMP(snprintf(bufp, buflen, "]\n"));
 
