@@ -520,14 +520,14 @@ int
 ike_max_ip4_alloc(struct rcf_remote *conf)
 {
 	/* stub */
-	return 0;
+	return 100;
 }
 
 int
 ike_max_ip6_alloc(struct rcf_remote *conf)
 {
 	/* stub */
-	return 0;
+	return 100;
 }
 
 const char *
@@ -2181,8 +2181,10 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 #endif
 
 		if (ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+#ifdef notyet
 			if (!param->use_transport_mode)
 				continue;
+#endif
 		}
 
 		srclist = dstlist = 0;
