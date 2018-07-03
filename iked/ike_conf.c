@@ -3252,6 +3252,8 @@ ikev2_proposal_to_ipsec(struct ikev2_child_sa *child_sa,
 	};
 	const int BITS = 8;
 
+	memset(&param, 0, sizeof(param));
+
 	/*
 	 * param fields assigned here:
 	 * seq, samode, (reqid,) ul_proto,
@@ -4288,13 +4290,12 @@ ike_determine_sa_endpoint(struct sockaddr_storage *ss,
 			     config_ipaddr->a.vstr->s);
 			return NULL;
 		}
-		if (addrlist->next)
-			plog(PLOG_INTWARN, PLOGLOC, 0,
-			     "macro expands to multiple addresses, "
-			     "only the first one is used.\n");
+		if (!rcs_matchaddr(addrlist, actual_addr)) {
+			return NULL;
+		}
+		rcs_free_addrlist(addrlist);
 
-		memcpy(ss, addrlist->a.ipaddr,
-		       SOCKADDR_LEN(addrlist->a.ipaddr));
+		memcpy(ss, actual_addr, SA_LEN(actual_addr));
 		rcs_free_addrlist(addrlist);
 		addr = (struct sockaddr *)ss;
 		if (!set_port(addr, extract_port(actual_addr))) {
