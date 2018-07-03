@@ -1187,13 +1187,13 @@ get_proppair(rc_vchar_t *sa, int mode)
 	int i;
 	struct ipsecdoi_sa_b *sab = (struct ipsecdoi_sa_b *)sa->v;
 
-	plog(PLOG_DEBUG, PLOGLOC, NULL, "total SA len=%d\n", sa->l);
+	plog(PLOG_DEBUG, PLOGLOC, NULL, "total SA len=%zu\n", sa->l);
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, sa->v, sa->l);
 
 	/* check SA payload size */
 	if (sa->l < sizeof(*sab)) {
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
-			"Invalid SA length = %d.\n", sa->l);
+			"Invalid SA length = %zu.\n", sa->l);
 		return NULL;
 	}
 
@@ -1700,7 +1700,7 @@ ipsecdoi_set_ld(rc_vchar_t *buf)
 		break;
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
-			"length %d of life duration "
+			"length %zu of life duration "
 			"isn't supported.\n", buf->l);
 		return 0;
 	}

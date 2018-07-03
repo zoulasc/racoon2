@@ -93,7 +93,7 @@ ikev2_dump(void)
 		     "send_message_id:%d request_pending:%d recv_message_id:%d "
 		     "state:%d negotiated_sa:%p prf:%p (%s) dh_choice:%p "
 		     "encryptor:%p authenticator:%p "
-		     "due_time:%ld lifetime_byte:%d "
+		     "due_time:%jd lifetime_byte:%zu "
 		     "child_created:%d rekey_inprogress:%d new_sa:%p\n",
 		     sa->index.i_ck[0], sa->index.i_ck[1], sa->index.i_ck[2],
 		     sa->index.i_ck[3], sa->index.i_ck[4], sa->index.i_ck[5],
@@ -109,7 +109,7 @@ ikev2_dump(void)
 		      prf ? "(undef)" : (sa->prf && sa->prf->method
 					 && sa->prf->method->name) ? sa->prf->
 		      method->name : "(unknown)"), sa->dh_choice, sa->encryptor,
-		     sa->authenticator, (long)sa->due_time.tv_sec,
+		     sa->authenticator, (intmax_t)sa->due_time.tv_sec,
 		     sa->lifetime_byte, sa->child_created, sa->rekey_inprogress,
 		     sa->new_sa);
 

@@ -239,7 +239,7 @@ extern rc_vchar_t *ikev2_id2rct_id(struct ikev2_payload_header *, rc_type *);
 
 const char *ike_id_str(rc_type, rc_vchar_t *);
 #ifdef DEBUG
-void ikev2_id_dump(char *, struct ikev2_payload_header *);
+void ikev2_id_dump(const char *, struct ikev2_payload_header *);
 #endif
 
 struct iekv2_child_param;	/* forward declarations */

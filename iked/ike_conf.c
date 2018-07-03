@@ -1348,7 +1348,7 @@ ike_id_str(rc_type rc_id_type, rc_vchar_t *id_data)
 
 #ifdef DEBUG
 void
-ikev2_id_dump(char *msg, struct ikev2_payload_header *id_p)
+ikev2_id_dump(const char *msg, struct ikev2_payload_header *id_p)
 {
 	rc_type		rc_id_type;
 	rc_vchar_t	*idbuf;
@@ -2711,7 +2711,7 @@ ikev2_encryptor_new(unsigned int code, size_t klen)
 		     "unsupported encryption (transform code %d)\n", code);
 	else
 		plog(PLOG_PROTOERR, PLOGLOC, 0,
-		     "unsupported encryption (transform code %d keylen %d)\n",
+		     "unsupported encryption (transform code %d keylen %zu)\n",
 		     code, klen);
 	return 0;
 }
@@ -4285,7 +4285,7 @@ ike_determine_sa_endpoint(struct sockaddr_storage *ss,
 			plog(PLOG_INTERR, PLOGLOC, 0,
 			     "macro %.*s expansion failure\n",
 			     (int)config_ipaddr->a.vstr->l,
-			     config_ipaddr->a.vstr->v);
+			     config_ipaddr->a.vstr->s);
 			return NULL;
 		}
 		if (addrlist->next)

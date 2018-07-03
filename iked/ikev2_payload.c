@@ -458,7 +458,7 @@ ikev2_check_icv(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 		size_t i;
 		rc_vchar_t *buf = rbuf_getlb();
 		for (i = 0; i < auth_output->l; ++i) {
-			snprintf(buf->v + 2 * i, buf->l - 2 * i, "%02x",
+			snprintf(buf->s + 2 * i, buf->l - 2 * i, "%02x",
 				 ((uint8_t *)auth_output->v)[i]);
 		}
 		TRACE((PLOGLOC, "auth calculate output %s\n", buf->s));

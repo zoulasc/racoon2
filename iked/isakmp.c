@@ -2010,7 +2010,7 @@ isakmp_log(struct ikev2_sa *ike_sa, struct sockaddr *local,
 		      (ike_sa && ike_sa->remote) ? rcs_sa2str(ike_sa->remote) :
 		      "?"),
 		     packet,
-		     buf->v);
+		     buf->s);
 	}
 #else
 	plogv(pri, fnname, log, fmt, ap);

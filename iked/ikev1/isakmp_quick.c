@@ -528,7 +528,7 @@ quick_i2recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 	/* Fixed buffer for calculating HASH */
 	memcpy(hbuf->v, iph2->nonce->v, iph2->nonce->l);
 	plog(PLOG_DEBUG, PLOGLOC, NULL,
-		"HASH allocated:hbuf->l=%d actual:tlen=%d\n",
+		"HASH allocated:hbuf->l=%zu actual:tlen=%zu\n",
 		hbuf->l, tlen + iph2->nonce->l);
 	/* adjust buffer length for HASH */
 	hbuf->l = iph2->nonce->l + tlen;
