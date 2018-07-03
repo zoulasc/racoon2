@@ -1951,7 +1951,7 @@ rcf_fix_upper_layer_protocol(struct cf_list *head, void *dst0)
 	if (rcf_setproto(proto, &dst->upper_layer_protocol)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "unknown protocol %.*s at %d in %s\n",
-		    (int)proto->l, proto->v, head->lineno, head->file);
+		    (int)proto->l, proto->s, head->lineno, head->file);
 		rc_vfree(proto);
 		return -1;
 	}
@@ -2016,7 +2016,7 @@ rcf_fix_next_header_including(struct cf_list *head, void *dst0)
 	if (rcf_setproto(proto, &dst->next_header_including)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "unknown protocol %.*s at %d in %s\n",
-		    (int)proto->l, proto->v, head->lineno, head->file);
+		    (int)proto->l, proto->s, head->lineno, head->file);
 		rc_vfree(proto);
 		return -1;
 	}
@@ -3676,12 +3676,31 @@ rcf_get_remotebyaddr(struct sockaddr *s, rc_type proto, struct rcf_remote **dst)
 		}
 		if (kmp && kmp->peers_ipaddr) {
 			for (al = kmp->peers_ipaddr; al != 0; al = al->next) {
-				if (al->type != RCT_ADDR_INET)
+				struct rc_addrlist *addrlist;
+				switch (al->type) {
+				case RCT_ADDR_INET:
+					if (rcs_cmpsa_wop(al->a.ipaddr, s) != 0)
+						continue;
+					src = n;
+					goto found;
+				case RCT_ADDR_MACRO:
+					if (rcs_getaddrlistbymacro(al->a.vstr,
+						&addrlist) != 0) {
+						plog(PLOG_INTERR, PLOGLOC, 0,
+						     "macro %.*s expansion failure\n",
+						     (int)al->a.vstr->l,
+						     al->a.vstr->s);
+						continue;
+					}
+					if (!rcs_matchaddr(addrlist, s)) {
+						continue;
+					}
+					rcs_free_addrlist(addrlist);
+					src = n;
+					goto found;
+				default:
 					continue;
-				if (rcs_cmpsa_wop(al->a.ipaddr, s) != 0)
-					continue;
-				src = n;
-				goto found;
+				}
 			}
 		}
 	}
