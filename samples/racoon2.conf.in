@@ -45,12 +45,32 @@ resolver
 # This line includes default configuration file;
 # Please don't touch this line (especially novice user);
 #
-# The default configuration for IKEv1 enables a pre-shared
-# key for the wildcard address. If you want to disable this
-# for security reasons, you can by commenting out the
-# appropriate line in default.conf.
 
 include "@prefix@/etc/racoon2/default.conf";
+
+# Define host specific pre-shared keys here
+#
+# You can add as many entries as you need
+#
+# This example sets a host specific pre-shared key for IKEv1 
+# connections to 192.168.2.67
+#
+# Other hosts can use a wildcard psk if a wildcard psk
+# is configured in default.conf, vals.conf, and ${PSKDIR}
+#
+# Other hosts can also use rsasig authentication with certificates
+# with the appropriate remote configurations included, or with
+# the default kmp_auth_method set to rsasig instead of psk in default.conf
+#
+
+remote 192.168.2.67 {
+	acceptable_kmp { ikev1; };
+	ikev1 {
+		peers_ipaddr "192.168.2.67";
+		kmp_auth_method { psk; };
+		pre_shared_key "${PSKDIR}/${PRESHRD_KEY}";
+	};
+};
 
 #
 # These are examples of configuration for each peer.

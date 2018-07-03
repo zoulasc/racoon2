@@ -19,6 +19,10 @@ setval {
 	# You can generate it by pskgen.
 	PRESHRD_KEY	"test.psk";
 
+	# For use when PEERS_IPADDRESS is IP_ANY and you need
+	# a psk for the wildcard address
+	WILDCARD_PRESHRD_KEY    "wildcard.psk";
+
 ### Certicate Setting ###
 	# Set following parameters if you use certificates in IKE negotiation
 	# and _SET_ 'kmp_auth_method { rsasig; };' in each remote{} section of
