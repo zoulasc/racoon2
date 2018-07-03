@@ -1,5 +1,16 @@
 $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
+2018-07-02 Christos Zoulas, Chuckz Zmudzinski
+
+	* successful port of racoon2 to to NetBSD 8.99.x using github project 
+	https://github.com/zoulasc/racoon2-glue
+	iked/ikev1: support for modern L2TP/IPsec clients added
+
+2018-06-23 Christos Zoulas
+
+	* begin effort to port racoon2 to NetBSD and modernize using
+	  github project https://github.com/zoulasc/racoon2
+
 2009-09-05  KAMADA Ken'ichi
 
 	* kinkd: a bug was fixed that addresses in ID payloads were used as
