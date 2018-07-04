@@ -161,7 +161,7 @@ ikev2_create_config_request(struct ikev2_child_sa *child_sa)
 		goto err;
 
 	if (ikev2_cfg_ip4_address(ike_sa->rmconf) == RCT_BOOL_ON) {
-		TRACE((PLOGLOC, "INTERNAL_IP4_ADDERSS\n"));
+		TRACE((PLOGLOC, "INTERNAL_IP4_ADDRESS\n"));
 		need_cfg = TRUE;
 		cfg_attrib_set(&hdr, IKEV2_CFG_INTERNAL_IP4_ADDRESS, 0);
 		if (! rc_vconcat(cfg_payload, &hdr, sizeof(hdr)))
@@ -298,7 +298,7 @@ ikev2_process_cfg_request_attribs(struct ikev2_sa *ike_sa,
 {
 	struct ikev2cfg_attrib *attr;
 	size_t bytes;
-	int attr_type;
+	unsigned int attr_type;
 	unsigned int attr_len;
 	int ip4_address = 0;
 	int ip6_address = 0;
@@ -310,6 +310,35 @@ ikev2_process_cfg_request_attribs(struct ikev2_sa *ike_sa,
 	int address_success = 0;
 #ifdef DEBUG_TRACE
 	char addrstr[INET6_ADDRSTRLEN];
+	static const char *attr_str[] = {
+	    "*0*", 
+	    "INTERNAL_IP4_ADDRESS",
+	    "INTERNAL_IP4_NETMASK",
+	    "INTERNAL_IP4_DNS",
+	    "INTERNAL_IP4_NBNS",
+	    "INTERNAL_ADDRESS_EXPIRY",
+	    "INTERNAL_IP4_DHCP",
+	    "APPLICATION_VERSION",
+	    "INTERNAL_IP6_ADDRESS",
+	    "*9*",
+	    "INTERNAL_IP6_DNS",			/* 10 */
+	    "INTERNAL_IP6_NBNS",
+	    "INTERNAL_IP6_DHCP",
+	    "INTERNAL_IP4_SUBNET",
+	    "SUPPORTED_ATTRIBUTES",
+	    "INTERNAL_IP6_SUBNET",
+	    "MIP6_HOME_PREFIX",
+	    "INTERNAL_IP6_LINK",
+	    "INTERNAL_IP6_PREFIX",
+	    "HOME_AGENT_ADDRESS",
+	    "P_CSCF_IP4_ADDRESS",		/* 20 */
+	    "P_CSCF_IP6_ADDRESS",
+	    "FTT_KAT",
+	    "EXTERNAL_SOURCE_IP4_NAT_INFO",
+	    "TIMEOUT_PERIOD_FOR_LIVENESS_CHECK",
+	    "INTERNAL_DNS_DOMAIN",
+	    "INTERNAL_DNSSEC_TA",
+	};
 #endif
 
 	for (bytes = get_payload_length(cfg) - sizeof(*cfg),
@@ -319,13 +348,13 @@ ikev2_process_cfg_request_attribs(struct ikev2_sa *ike_sa,
 		 attr = IKEV2CFG_ATTR_NEXT(attr)) {
 		attr_type = IKEV2CFG_ATTR_TYPE(attr);
 		attr_len = IKEV2CFG_ATTR_LENGTH(attr);
-		TRACE((PLOGLOC, "attribute type %d length %d\n",
-		       attr_type, attr_len));
+		TRACE((PLOGLOC, "attribute type %d (%s) length %d\n",
+		       attr_type, attr_type < ARRAYLEN(attr_str) ?
+		       attr_str[attr_type] : "??",  attr_len));
 		assert(bytes >= sizeof(struct ikev2cfg_attrib));
 
 		switch (attr_type) {
 		case IKEV2_CFG_INTERNAL_IP4_ADDRESS:
-			TRACE((PLOGLOC, "INTERNAL_IP4_ADDRESS\n"));
 			if (++ip4_address > ike_max_ip4_alloc(ike_sa->rmconf)) {
 				TRACE((PLOGLOC,
 				       "INTERNAL_IP4_ADDRESS request exceeds allocation limit (%d)\n",
