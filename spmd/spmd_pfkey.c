@@ -654,6 +654,7 @@ retry:
 		t = task_alloc(0);
 		t->fd = pfkey_sock;
 		t->msg = rc;
+		rc->ptr = t;
 		t->func = spmd_pfkey_send_spdupdate;
 		task_list_add(t, &spmd_task_root->write);
 	}
@@ -701,9 +702,12 @@ spmd_pfkey_send_spdupdate(struct task *t)
         struct rcpfk_msg *rc = NULL;
 
         rc = (struct rcpfk_msg *)t->msg;
+	if (rc == NULL)
+		return 0;
 
         ret = rcpfk_send_spdupdate(rc);
         spmd_free_rcpfk_msg(rc);
+	t->msg = NULL;
 
         return ret;
 }
@@ -782,6 +786,7 @@ spmd_spd_delete(uint32_t spid, int urgent)
 		t = task_alloc(0);
 		t->fd = pfkey_sock;
 		t->msg = rc;
+		rc->ptr = t;
 		t->func = spmd_pfkey_send_spddelete;
 		task_list_add(t, &spmd_task_root->write);
 		goto fin;
@@ -894,6 +899,7 @@ spmd_migrate(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent)
 		t = task_alloc(0);
 		t->fd = pfkey_sock;
 		t->msg = rc;
+		rc->ptr = t;
 		t->func = spmd_pfkey_send_migrate;
 		task_list_add(t, &spmd_task_root->write);
 	}
@@ -1102,8 +1108,14 @@ spmd_rcpfk_cont_sock_free(struct rcpfk_msg *rc)
 void
 spmd_free_rcpfk_msg(struct rcpfk_msg *rc)
 {
+	struct task *t;
 	if (!rc)
 		return;
+
+	/* Avoid scheduled tasks getting access to free memory */
+	t = rc->ptr;
+	if (t)
+		t->msg = NULL;
 
 	spmd_rcpfk_cont_sock_free(rc);
 

@@ -45,6 +45,7 @@ struct rcpfk_msg {
 	int so;				/* pfkey socket */
 	char estr[RCPFK_ERRSTRBUFSIZE];
 	int eno;
+	void *ptr;
 
 	uint32_t seq;
 	struct sockaddr *sa_src;
