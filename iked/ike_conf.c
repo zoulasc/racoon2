@@ -4272,6 +4272,8 @@ ike_determine_sa_endpoint(struct sockaddr_storage *ss,
 		memcpy(ss, config_ipaddr->a.ipaddr,
 		       SOCKADDR_LEN(config_ipaddr->a.ipaddr));
 		addr = (struct sockaddr *)ss;
+		plog(PLOG_DEBUG, PLOGLOC, 0, "INET %s\n",
+		    rcs_sa2str(actual_addr));
 		if (!set_port(addr, extract_port(actual_addr))) {
 			plog(PLOG_INTERR, PLOGLOC, 0, "set_port failed\n");
 			return NULL;
@@ -4290,10 +4292,12 @@ ike_determine_sa_endpoint(struct sockaddr_storage *ss,
 			     config_ipaddr->a.vstr->s);
 			return NULL;
 		}
+		plog(PLOG_DEBUG, PLOGLOC, 0, "MACRO %.*s %s\n",
+		    (int)config_ipaddr->a.vstr->l,
+		    config_ipaddr->a.vstr->s, rcs_sa2str(actual_addr));
 		if (!rcs_matchaddr(addrlist, actual_addr)) {
 			return NULL;
 		}
-		rcs_free_addrlist(addrlist);
 
 		memcpy(ss, actual_addr, SA_LEN(actual_addr));
 		rcs_free_addrlist(addrlist);
