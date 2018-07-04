@@ -402,6 +402,13 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 	child_sa->remote = rcs_sadup(remote);
 
 #ifdef ENABLE_NATT
+	plog(PLOG_INTERR, PLOGLOC, 0,
+	     "parent-local %s parent-remote %s local %s remote %s\n",
+		rcs_sa2str(child_sa->parent->local),
+		rcs_sa2str(child_sa->parent->remote),
+		rcs_sa2str(local),
+		rcs_sa2str(remote));
+
 	if (child_sa->parent->local)
 		rc_free(child_sa->parent->local);
 	if (child_sa->parent->remote)
@@ -938,6 +945,7 @@ ikev2_child_getspi(struct ikev2_child_sa *child_sa)
 	p = child_sa->selector->pl;
 
 	/* SRC of inbound SA */
+#if 0
 	if (!LIST_EMPTY(&child_sa->lease_list)) {
 		struct rcf_address *a;
 		int prefixlen;
@@ -950,11 +958,11 @@ ikev2_child_getspi(struct ikev2_child_sa *child_sa)
 		ikev2_cfg_addr2sockaddr((struct sockaddr *)&peer_ss,
 					a, &prefixlen);
 		peer_addr = (struct sockaddr *)&peer_ss;
-	} else {
+	} else
+#endif
 		peer_addr = ike_determine_sa_endpoint(&peer_ss,
 						      p->peers_sa_ipaddr,
 						      child_sa->parent->remote);
-	}
 
 	/* DST of inbound SA */
 	my_addr = ike_determine_sa_endpoint(&my_ss,
