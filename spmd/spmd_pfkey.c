@@ -1550,6 +1550,36 @@ sp_queue_search(const char *sl_index)
 	return NULL;
 }
 
+#define DIR_SRC 1
+#define DIR_DST 2
+#define DIR_BOTH 3
+
+static void
+spmd_msg_update(struct rcf_selector *sl, struct sockaddr *src,
+    struct sockaddr *dst, int dir)
+{
+	struct rcpfk_msg *rc;
+
+	if (rcs_getsaport(src) == NULL) {
+		SPMD_PLOG(SPMD_L_INTERR, "Unknown address family, "
+		    "check your configuration file (selector=%.*s)", 
+		    sl->sl_index->l, sl->sl_index->v);
+		return;
+	}
+
+	rc = spmd_alloc_rcpfk_msg();
+	sl_to_rc_wo_addr(sl, rc); /* build rc */
+	rc->sp_src = rcs_sadup(src);
+	rc->sp_dst = rcs_sadup(dst);
+	if (dir & DIR_DST)
+		*rcs_getsaport(rc->sp_src) = htons(sl->src->port);
+	if (dir & DIR_SRC)
+		*rcs_getsaport(rc->sp_dst) = htons(sl->dst->port);
+
+	rc->pref_src = rc->pref_dst = rcs_getsaaddrlen(src);
+	spmd_spd_update(sl, rc, 0);
+}
+
 /*
  * Update FQDN policies 
  */
@@ -1557,13 +1587,11 @@ int
 fqdn_sp_update(void)
 {
 	struct sp_queue *sp = NULL;
-	struct rcpfk_msg *rc = NULL;
 	struct rcf_selector *sl = NULL;
 	struct fqdn_list *fl = NULL;
 	struct fqdn_addr_list *fal_src0 = NULL, *fal_src = NULL;
 	struct fqdn_addr_list *fal_dst0 = NULL, *fal_dst = NULL;
 	sa_family_t af;
-	int not_urgent = 0;
 
 	if (!sp_queue_top)
 		return 0;
@@ -1596,26 +1624,8 @@ fqdn_sp_update(void)
 			for (fal_dst=fal_dst0; fal_dst; fal_dst=fal_dst->next) {
 				if (af != fal_dst->sa->sa_family)
 					continue;
-				rc = spmd_alloc_rcpfk_msg();
-				sl_to_rc_wo_addr(sl, rc); /* build rc */
-				rc->sp_src = rcs_sadup(sp->src.src_sa);
-				rc->sp_dst = rcs_sadup(fal_dst->sa);
-				if (af == AF_INET) {
-					rc->pref_src = 32;
-					rc->pref_dst = 32;
-					((struct sockaddr_in *)rc->sp_dst)->sin_port = htons(sl->dst->port);
-				} else if (af == AF_INET6) {
-					rc->pref_src = 128;
-					rc->pref_dst = 128;
-					((struct sockaddr_in6 *)rc->sp_dst)->sin6_port = htons(sl->dst->port);
-				} else { /* error */
-					SPMD_PLOG(SPMD_L_INTERR, 
-						  "Unknown address family, check your configuration file (selector=%.*s)", 
-						  					sl->sl_index->l, sl->sl_index->v);
-					spmd_free_rcpfk_msg(rc);
-					continue;
-				}
-				spmd_spd_update(sl, rc, not_urgent);
+				spmd_msg_update(sl, sp->src.src_sa,
+				    fal_dst->sa, DIR_DST);
 			}
 		}
 		else { 
@@ -1624,53 +1634,15 @@ fqdn_sp_update(void)
 				if ( (!fal_dst) && (sp->dst_type==RCT_ADDR_INET) ) {
 					if (af != sp->dst.dst_sa->sa_family) 
 						continue;
-					rc = spmd_alloc_rcpfk_msg();
-					sl_to_rc_wo_addr(sl, rc); /* build rc */
-					rc->sp_src = rcs_sadup(fal_src->sa);
-					rc->sp_dst = rcs_sadup(sp->dst.dst_sa);
-					if (af == AF_INET) {
-						rc->pref_src = 32;
-						((struct sockaddr_in *)rc->sp_src)->sin_port = htons(sl->src->port);
-						rc->pref_dst = 32;
-					} else if (af == AF_INET6) {
-						rc->pref_src = 128;
-						((struct sockaddr_in6 *)rc->sp_src)->sin6_port = htons(sl->src->port);
-						rc->pref_dst = 128;
-					} else { /* error */
-						SPMD_PLOG(SPMD_L_INTERR, 
-							  "Unknown address family, check your configuration file (selector=%.*s)", 
-							  					sl->sl_index->l, sl->sl_index->v);
-						spmd_free_rcpfk_msg(rc);
-						continue;
-					}
-					spmd_spd_update(sl, rc, not_urgent);
+					spmd_msg_update(sl, fal_src->sa,
+					    sp->dst.dst_sa, DIR_SRC);
 				}
 				else { 
 					for (fal_dst=fal_dst0; fal_dst; fal_dst=fal_dst->next) {
 						if (af != fal_dst->sa->sa_family)
 							continue;
-						rc = spmd_alloc_rcpfk_msg();
-						sl_to_rc_wo_addr(sl, rc); /* build rc */
-						rc->sp_src = rcs_sadup(fal_src->sa);
-						rc->sp_dst = rcs_sadup(fal_dst->sa);
-						if (af == AF_INET) {
-							rc->pref_src = 32;
-							((struct sockaddr_in *)rc->sp_src)->sin_port = htons(sl->src->port);
-							rc->pref_dst = 32;
-							((struct sockaddr_in *)rc->sp_dst)->sin_port = htons(sl->dst->port);
-						} else if (af == AF_INET6) {
-							rc->pref_src = 128;
-							((struct sockaddr_in6 *)rc->sp_src)->sin6_port = htons(sl->src->port);
-							rc->pref_dst = 128;
-							((struct sockaddr_in6 *)rc->sp_dst)->sin6_port = htons(sl->dst->port);
-						} else { /* error */
-							SPMD_PLOG(SPMD_L_INTERR, 
-								  "Unknown address family, check your configuration file (selector=%.*s)", 
-								  					sl->sl_index->l, sl->sl_index->v);
-							spmd_free_rcpfk_msg(rc);
-							continue;
-						}
-						spmd_spd_update(sl, rc, not_urgent);
+						spmd_msg_update(sl, fal_src->sa,
+						    fal_dst->sa, DIR_BOTH);
 					}
 				}
 			} 

@@ -96,5 +96,6 @@
 #include "utils.h"
 #include "cache.h"
 #include "spmd_pfkey.h"
+#include "rc_net.h"
 
 #endif /* __SPMD_INCLUDES_H */
