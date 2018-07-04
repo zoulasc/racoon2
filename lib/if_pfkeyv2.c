@@ -805,12 +805,8 @@ rcpfk_send_spdaddx(struct rcpfk_msg *rc, int type)
 {
 	rc_vchar_t *buf = 0;
 
-	if (rcpfk_set_sadbmsg(&buf, rc, type)) {
-    err:
-		if (buf)
-			rc_vfree(buf);
-		return -1;
-	}
+	if (rcpfk_set_sadbmsg(&buf, rc, type))
+		goto err;
 
 	if (rcpfk_set_sadbxsa2(&buf, rc))
 		goto err;
@@ -842,13 +838,15 @@ rcpfk_send_spdaddx(struct rcpfk_msg *rc, int type)
 
 	SADB_MSG(buf)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
 
-	if (rcpfk_send(rc, buf)) {
-		rc_vfree(buf);
-		return -1;
-	}
+	if (rcpfk_send(rc, buf))
+		goto err;
 
 	rc_vfree(buf);
 	return 0;
+err:
+	if (buf)
+		rc_vfree(buf);
+	return -1;
 }
 
 int
@@ -1091,6 +1089,10 @@ rcpfk_set_sadbaddress(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 		/* proxy can not be used */
 	default:
 		rcpfk_seterror(rc, EINVAL, "invalid address type=%d", type);
+		return -1;
+	}
+	if (sa == NULL) {
+		rcpfk_seterror(rc, EINVAL, "NULL address type=%d", type);
 		return -1;
 	}
 	extlen = sizeof(struct sadb_address) + PFKEY_ALIGN8(SA_LEN(sa));
