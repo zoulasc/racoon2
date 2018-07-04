@@ -71,11 +71,11 @@
 #define	PROTO_MAX	INT_STR_MAX
 
 static int env_add_addr(struct sockaddr *, const char *, const char *,
-			char ***, int *);
+			char ***, size_t *);
 static int env_add_addresses(struct rcf_address_list_head *, const char *,
-			     char ***, int *);
+			     char ***, size_t *);
 static int env_add_addrlist(struct rc_addrlist *, const char *, const char *,
-			    const char *, char ***, int *);
+			    const char *, char ***, size_t *);
 
 
 /*
@@ -108,7 +108,7 @@ ikev1_script_hook(struct ph1handle *iph1, int script)
 	char addrstr[IP_MAX];
 	char portstr[PORT_MAX];
 	char **envp = NULL;
-	int envc = 1;
+	size_t envc = 1;
 	struct sockaddr_in *sin;
 
 	if (iph1 == NULL ||
@@ -173,7 +173,7 @@ ikev1_child_script_hook(struct ph2handle *child_sa, int script)
 	struct sockaddr_storage	ss;
 	struct sockaddr	*addr;
 	char	**envp = NULL;
-	int	envc = 1;
+	size_t	envc = 1;
 	char	protostr[20];
 
 	if (!child_sa || !child_sa->ph1 || !child_sa->ph1->rmconf ||
@@ -287,7 +287,7 @@ ikev1_migrate_script_hook(struct ph1handle *iph1,
 			  struct sockaddr *new_src, struct sockaddr *new_dst)
 {
 	char	**envp = NULL;
-	int	envc = 1;
+	size_t	envc = 1;
 
 	if (env_add_addr(old_src, "OLD_SRC", NULL, &envp, &envc) ||
 	    env_add_addr(old_dst, "OLD_DST", NULL, &envp, &envc) ||
@@ -309,7 +309,7 @@ void
 ikev2_script_hook(struct ikev2_sa *ike_sa, int script)
 {
 	char **envp = NULL;
-	int envc = 1;
+	size_t envc = 1;
 
 	if (ike_sa == NULL ||
 	    ike_sa->rmconf == NULL ||
@@ -348,7 +348,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	struct sockaddr_storage	ss;
 	struct sockaddr	*addr;
 	char	**envp = NULL;
-	int	envc = 1;
+	size_t	envc = 1;
 	char	addrstr[IP_MAX];
 	char	protostr[PROTO_MAX];
 
@@ -555,7 +555,7 @@ ikev2_migrate_script_hook(struct ikev2_sa *ike_sa,
 			  struct sockaddr *new_src, struct sockaddr *new_dst)
 {
 	char	**envp = NULL;
-	int	envc = 1;
+	size_t	envc = 1;
 
 	if (env_add_addr(old_src, "OLD_SRC", NULL, &envp, &envc) ||
 	    env_add_addr(old_dst, "OLD_DST", NULL, &envp, &envc) ||
@@ -574,7 +574,7 @@ ikev2_migrate_script_hook(struct ikev2_sa *ike_sa,
 
 static int
 env_add_addr(struct sockaddr *sa, const char *addrname, const char *portname,
-    char ***envp, int *envc)
+    char ***envp, size_t *envc)
 {
 	char addrstr[IP_MAX];
 	char portstr[PORT_MAX];
@@ -604,7 +604,7 @@ env_add_addr(struct sockaddr *sa, const char *addrname, const char *portname,
 
 static int
 env_add_addresses(struct rcf_address_list_head *list, const char *envname,
-		  char ***envp, int *envc)
+		  char ***envp, size_t *envc)
 {
 	char	*buf;
 	struct rcf_address	*a;
@@ -629,7 +629,7 @@ env_add_addresses(struct rcf_address_list_head *list, const char *envname,
 			goto done;
 		}
 
-		len = strlen(addrstr);
+		len = strlen(addrstr) + 1;
 		buf = racoon_realloc(buf,
 				     buflen + (buflen > 1 ? 1 : 0) + len);
 		if (!buf)
@@ -638,7 +638,7 @@ env_add_addresses(struct rcf_address_list_head *list, const char *envname,
 			strcat(buf, " ");
 		strcat(buf, addrstr);
 
-		buflen += len + 1;
+		buflen += len;
 	}
 
 	if (script_env_append(envp, envc, envname, buf)) {
@@ -660,7 +660,7 @@ env_add_addresses(struct rcf_address_list_head *list, const char *envname,
 static int
 env_add_addrlist(struct rc_addrlist *addrlist, const char *netname,
 		 const char *prefixname, const char *portname,
-		 char ***envp, int *envc)
+		 char ***envp, size_t *envc)
 {
 	struct rc_addrlist	*addr;
 	int	prefixlen;
@@ -709,19 +709,22 @@ env_add_addrlist(struct rc_addrlist *addrlist, const char *netname,
 		 
 
 int
-script_env_append(char ***envp, int *envc, const char *name, const char *value)
+script_env_append(char ***envp, size_t *envc, const char *name, const char *value)
 {
 	char *envitem;
 	char **newenvp;
-	int newenvc;
+	size_t newenvc;
+	size_t len = strlen(name) + 1 + strlen(value) + 1;
 
-	envitem = racoon_malloc(strlen(name) + 1 + strlen(value) + 1);
+	envitem = racoon_malloc(len);
 	if (envitem == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "Cannot allocate memory: %s\n", strerror(errno));
 		return -1;
 	}
-	sprintf(envitem, "%s=%s", name, value);
+	snprintf(envitem, len, "%s=%s", name, value);
+	if (*envc == 0)
+		*envc = 1;
 
 	newenvc = (*envc) + 1;
 	newenvp = racoon_realloc(*envp, newenvc * sizeof(char *));
@@ -759,6 +762,7 @@ script_exec(const char *script, int name, char *const* envp)
 {
 	pid_t	pid;
 	const char *argv[3];
+	int status;
 
 	TRACE((PLOGLOC, "spawning %s\n", script));
 
@@ -766,37 +770,26 @@ script_exec(const char *script, int name, char *const* envp)
 	argv[1] = script_names[name];
 	argv[2] = NULL;
 
-	pid = fork();
-	switch (pid) { 
+	switch (pid = fork()) {
 	case 0:
-		/* double fork to prevent zombie */
-		switch (fork()) {
-		case 0:
-			execve(argv[0], (char *const*)(intptr_t)argv, envp);
-			plog(PLOG_INTERR, PLOGLOC, NULL,
-			     "execve(\"%s\") failed: %s\n",
-			     argv[0], strerror(errno));
-			_exit(1);
-			break;
-		case -1:
-			plog(PLOG_INTERR, PLOGLOC, NULL,
-			     "Cannot fork: %s\n", strerror(errno));
-			_exit(1);
-			break;
-		default:
-			_exit(0);
-			break;
-		}
+		execve(argv[0], (char *const*)(intptr_t)argv, envp);
+		plog(PLOG_INTERR, PLOGLOC, NULL,
+		     "execve(\"%s\") failed: %s\n",
+		     argv[0], strerror(errno));
+		_exit(1);
 		break;
 	case -1:
 		plog(PLOG_INTERR, PLOGLOC, NULL,
-		    "Cannot fork: %s\n", strerror(errno));
-		return -1;
+		     "Cannot fork: %s\n", strerror(errno));
+		_exit(1);
 		break;
 	default:
-		if (waitpid(pid, NULL, 0) == -1) {
+		if (waitpid(pid, &status, 0) == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			     "waitpid: %s\n", strerror(errno));
+		} else {
+			plog(PLOG_DEBUG, PLOGLOC, NULL,
+			     "Script exited %#x\n", status);
 		}
 		break;
 	}
