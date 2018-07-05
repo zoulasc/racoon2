@@ -729,9 +729,11 @@ ikev2_initiate(struct isakmp_acquire_request *req,
 		if (rm_info->ikev2->peers_ipaddr->type != RCT_ADDR_INET) {
 			isakmp_log(0, req->src, req->dst, 0,
 				   PLOG_INTERR, PLOGLOC,
-				   "unsupported peers_ipaddr format in policy %.*s\n",
+				   "unsupported peers_ipaddr format in policy %.*s (%.*s)\n",
 				   (int)policy->pl_index->l,
-				   policy->pl_index->s);
+				   policy->pl_index->s,
+				   (int)rm_info->ikev2->peers_ipaddr->a.vstr->l,
+				   rm_info->ikev2->peers_ipaddr->a.vstr->s);
 			goto fail;
 		}
 		peer = rcs_sadup(rm_info->ikev2->peers_ipaddr->a.ipaddr);
