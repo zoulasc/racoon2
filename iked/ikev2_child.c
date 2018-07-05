@@ -936,6 +936,7 @@ ikev2_child_getspi(struct ikev2_child_sa *child_sa)
 	assert(child_sa->state == IKEV2_CHILD_STATE_IDLING);
 	ikev2_child_state_set(child_sa, IKEV2_CHILD_STATE_GETSPI);
 
+	memset(&param, 0, sizeof(param));
 	param.seq = child_sa->sadb_request.seqno;
 
 	assert(child_sa->selector->pl);
@@ -1789,14 +1790,14 @@ ikev2_child_delete_outbound(struct ikev2_child_sa *child_sa)
 	struct rcf_policy *policy;
 	struct sockaddr *local;
 	struct sockaddr *remote;
+	struct sockaddr_storage lss, rss;
 
 	ike_sa = child_sa->parent;
 	policy = child_sa->selector->pl;
-	local = (policy->my_sa_ipaddr ?
-	    policy->my_sa_ipaddr->a.ipaddr : ike_sa->local);
-	remote = (policy->peers_sa_ipaddr &&
-	    !rcs_is_addr_rw(policy->peers_sa_ipaddr) ?
-	    policy->peers_sa_ipaddr->a.ipaddr : ike_sa->remote);
+	local = ike_determine_sa_endpoint(&lss, 
+	    policy->my_sa_ipaddr, ike_sa->local);
+	remote = ike_determine_sa_endpoint(&rss,
+	    policy->peers_sa_ipaddr, ike_sa->remote);
 
 	for (proposal = child_sa->peer_proposal;
 	     proposal;
@@ -1819,14 +1820,14 @@ ikev2_child_delete_inbound(struct ikev2_child_sa *child_sa)
 	struct rcf_policy *policy;
 	struct sockaddr *local;
 	struct sockaddr *remote;
+	struct sockaddr_storage lss, rss;
 
 	ike_sa = child_sa->parent;
 	policy = child_sa->selector->pl;
-	local = (policy->my_sa_ipaddr ?
-	    policy->my_sa_ipaddr->a.ipaddr : ike_sa->local);
-	remote = (policy->peers_sa_ipaddr &&
-	    !rcs_is_addr_rw(policy->peers_sa_ipaddr) ?
-	    policy->peers_sa_ipaddr->a.ipaddr : ike_sa->remote);
+	local = ike_determine_sa_endpoint(&lss, 
+	    policy->my_sa_ipaddr, ike_sa->local);
+	remote = ike_determine_sa_endpoint(&rss,
+	    policy->peers_sa_ipaddr, ike_sa->remote);
 
 	/* delete inbound */
 	for (proposal = child_sa->my_proposal[1];
