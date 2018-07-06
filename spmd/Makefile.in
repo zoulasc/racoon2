@@ -46,7 +46,7 @@ install: all
 	$(INSTALL_DATA) $(MANFILES) $(DESTDIR)$(man8dir)
 
 clean:
-	-rm -f $(TARGET) *.o $(COMMAND)
+	-rm -f $(TARGET) *.o $(COMMAND) *~
 
 distclean: clean
 	-rm -f config.cache config.log config.status config.h Makefile .depend

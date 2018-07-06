@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case ${SELECTOR_INDEX} in
+ike_tun_sel_out)
+setkey -c << EOF
+spddelete ${LOCAL_NET_ADDR}/${LOCAL_NET_PREFIXLEN} ${INTERNAL_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
+spddelete ${INTERNAL_ADDR} ${LOCAL_NET_ADDR}/${LOCAL_NET_PREFIXLEN} any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
+EOF
+;;
+esac

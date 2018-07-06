@@ -1,0 +1,28 @@
+# $Id: Makefile.in,v 1.28 2010/05/16 18:30:20 kamada Exp $
+
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@
+mandir=@mandir@
+
+INSTALL =@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+
+install: 
+	$(INSTALL) -d $(sysconfdir)/hook/child-down.d
+	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-down.d
+	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-down.d
+
+# empty
+depend:
+
+clean:
+	-rm -f *~
+
+distclean: clean
+	-rm -f Makefile

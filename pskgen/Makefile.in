@@ -29,5 +29,5 @@ depend:
 clean:
 
 distclean: clean
-	-rm -f $(PROG) autogen.spmd.pwd
+	-rm -f $(PROG) autogen.spmd.pwd *~
 	-rm -f Makefile config.cache config.status config.log .depend

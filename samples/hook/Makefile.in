@@ -1,0 +1,48 @@
+# $Id: Makefile.in,v 1.28 2010/05/16 18:30:20 kamada Exp $
+
+SUBDIR = child-down.d child-up.d ikesa-up.d
+
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@
+mandir=@mandir@
+
+INSTALL =@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+
+install: 
+	$(INSTALL) -d $(sysconfdir)/hook
+	$(INSTALL_DATA) functions $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/ikesa-up.d
+	$(INSTALL_SCRIPT) ikesa-up $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/ikesa-down.d
+	$(INSTALL_SCRIPT) ikesa-down $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/ikesa-rekey.d
+	$(INSTALL_SCRIPT) ikesa-rekey $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
+	$(INSTALL_SCRIPT) child-up $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/child-down.d
+	$(INSTALL_SCRIPT) child-down $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/child-rekey.d
+	$(INSTALL_SCRIPT) child-rekey $(sysconfdir)/hook
+	$(INSTALL) -d $(sysconfdir)/hook/migration.d
+	$(INSTALL_SCRIPT) migration $(sysconfdir)/hook
+
+# empty
+depend:
+
+clean:
+	-rm -f *~
+
+distclean: clean
+	-rm -f Makefile \
+		ikesa-up ikesa-down ikesa-rekey \
+		child-up child-down child-rekey \
+		migration ph1-up ph1-down
+
+include ../../subdir.mk

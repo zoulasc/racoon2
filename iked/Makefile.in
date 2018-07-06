@@ -106,7 +106,7 @@ eaytest: eaytest.o crypto_openssl.o str2val.o $(LIBRARIES)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
 clean:
-	rm -f $(OBJS) $(PROG) $(TESTPROG) $(TESTOBJ)
+	rm -f $(OBJS) $(PROG) $(TESTPROG) $(TESTOBJ) *~
 
 distclean: clean
 	-rm -f Makefile config.cache config.status config.log config.h \

@@ -64,10 +64,10 @@ sample: sample.o $(PROG)
 install: all
 
 clean:
-	-rm -f $(PROG) *.o *.core
+	-rm -f $(PROG) *.o *.core *~
 	-rm -f cfparse.c cfparse.h cftoken.c
 	-rm -f y.tab.h y.output lex.yy.c
-	-rm -f sample
+	-rm -f sample config.h
 
 distclean: clean
 	-rm -f Makefile config.cache config.status config.log .depend

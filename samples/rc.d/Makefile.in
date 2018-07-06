@@ -1,0 +1,30 @@
+# $Id: Makefile.in,v 1.28 2010/05/16 18:30:20 kamada Exp $
+
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+datarootdir=@datarootdir@
+mandir=@mandir@
+
+INSTALL =@INSTALL@ @INSTALL_OPTS@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+
+install:
+	$(INSTALL) -d $(sysconfdir)/rc.d
+	$(INSTALL_SCRIPT) iked $(sysconfdir)/rc.d/iked
+	$(INSTALL_SCRIPT) kinkd $(sysconfdir)/rc.d/kinkd
+	$(INSTALL_SCRIPT) spmd $(sysconfdir)/rc.d/spmd
+	$(INSTALL_SCRIPT) racoon2 $(sysconfdir)/rc.d/racoon2
+
+# empty
+depend:
+
+clean:
+	-rm -f *~
+
+distclean: clean
+	-rm -f Makefile iked kinkd spmd racoon2
