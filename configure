@@ -2043,13 +2043,13 @@ fi
 if test x"$enable_startup_scripts" = xyes; then
 	case $host_os in
 	netbsd*1.[56]*|netbsd*[2-9].*)
-		startup_scripts=rc-d
+		startup_scripts=rc.d
 		;;
 	freebsd[5-9].*)
-		startup_scripts=rc-d
+		startup_scripts=rc.d
 		;;
 	*)
-		startup_scripts=init-d
+		startup_scripts=init.d
 		;;
 	esac
 else
@@ -2104,7 +2104,7 @@ test -n "$perl_bindir" || perl_bindir="missing_perl"
 
 
 
-ac_config_files="$ac_config_files Makefile samples/Makefile samples/racoon2.conf samples/vals.conf samples/init.d-iked samples/init.d-kinkd samples/init.d-spmd samples/rc.d-racoon2 samples/rc.d-iked samples/rc.d-kinkd samples/rc.d-spmd samples/ikesa-up samples/ikesa-down samples/ikesa-rekey samples/child-up samples/child-down samples/child-rekey samples/migration samples/ph1-up samples/ph1-down pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd kinkd/kinkd.8 iked/iked.8"
+ac_config_files="$ac_config_files Makefile pskgen/Makefile pskgen/pskgen pskgen/autogen.spmd.pwd kinkd/kinkd.8 iked/iked.8 samples/hook/child-down samples/hook/child-rekey samples/hook/child-up samples/hook/ikesa-down samples/hook/ikesa-rekey samples/hook/ikesa-up samples/hook/ph1-down samples/hook/ph1-up samples/hook/migration samples/hook/child-down.d/Makefile samples/hook/child-up.d/Makefile samples/hook/ikesa-up.d/Makefile samples/hook/Makefile samples/Makefile samples/rc.d/iked samples/rc.d/kinkd samples/rc.d/racoon2 samples/rc.d/spmd samples/rc.d/Makefile samples/racoon2.conf samples/init.d/iked samples/init.d/kinkd samples/init.d/spmd samples/init.d/Makefile samples/vals.conf"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2813,30 +2813,36 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "samples/Makefile") CONFIG_FILES="$CONFIG_FILES samples/Makefile" ;;
-    "samples/racoon2.conf") CONFIG_FILES="$CONFIG_FILES samples/racoon2.conf" ;;
-    "samples/vals.conf") CONFIG_FILES="$CONFIG_FILES samples/vals.conf" ;;
-    "samples/init.d-iked") CONFIG_FILES="$CONFIG_FILES samples/init.d-iked" ;;
-    "samples/init.d-kinkd") CONFIG_FILES="$CONFIG_FILES samples/init.d-kinkd" ;;
-    "samples/init.d-spmd") CONFIG_FILES="$CONFIG_FILES samples/init.d-spmd" ;;
-    "samples/rc.d-racoon2") CONFIG_FILES="$CONFIG_FILES samples/rc.d-racoon2" ;;
-    "samples/rc.d-iked") CONFIG_FILES="$CONFIG_FILES samples/rc.d-iked" ;;
-    "samples/rc.d-kinkd") CONFIG_FILES="$CONFIG_FILES samples/rc.d-kinkd" ;;
-    "samples/rc.d-spmd") CONFIG_FILES="$CONFIG_FILES samples/rc.d-spmd" ;;
-    "samples/ikesa-up") CONFIG_FILES="$CONFIG_FILES samples/ikesa-up" ;;
-    "samples/ikesa-down") CONFIG_FILES="$CONFIG_FILES samples/ikesa-down" ;;
-    "samples/ikesa-rekey") CONFIG_FILES="$CONFIG_FILES samples/ikesa-rekey" ;;
-    "samples/child-up") CONFIG_FILES="$CONFIG_FILES samples/child-up" ;;
-    "samples/child-down") CONFIG_FILES="$CONFIG_FILES samples/child-down" ;;
-    "samples/child-rekey") CONFIG_FILES="$CONFIG_FILES samples/child-rekey" ;;
-    "samples/migration") CONFIG_FILES="$CONFIG_FILES samples/migration" ;;
-    "samples/ph1-up") CONFIG_FILES="$CONFIG_FILES samples/ph1-up" ;;
-    "samples/ph1-down") CONFIG_FILES="$CONFIG_FILES samples/ph1-down" ;;
     "pskgen/Makefile") CONFIG_FILES="$CONFIG_FILES pskgen/Makefile" ;;
     "pskgen/pskgen") CONFIG_FILES="$CONFIG_FILES pskgen/pskgen" ;;
     "pskgen/autogen.spmd.pwd") CONFIG_FILES="$CONFIG_FILES pskgen/autogen.spmd.pwd" ;;
     "kinkd/kinkd.8") CONFIG_FILES="$CONFIG_FILES kinkd/kinkd.8" ;;
     "iked/iked.8") CONFIG_FILES="$CONFIG_FILES iked/iked.8" ;;
+    "samples/hook/child-down") CONFIG_FILES="$CONFIG_FILES samples/hook/child-down" ;;
+    "samples/hook/child-rekey") CONFIG_FILES="$CONFIG_FILES samples/hook/child-rekey" ;;
+    "samples/hook/child-up") CONFIG_FILES="$CONFIG_FILES samples/hook/child-up" ;;
+    "samples/hook/ikesa-down") CONFIG_FILES="$CONFIG_FILES samples/hook/ikesa-down" ;;
+    "samples/hook/ikesa-rekey") CONFIG_FILES="$CONFIG_FILES samples/hook/ikesa-rekey" ;;
+    "samples/hook/ikesa-up") CONFIG_FILES="$CONFIG_FILES samples/hook/ikesa-up" ;;
+    "samples/hook/ph1-down") CONFIG_FILES="$CONFIG_FILES samples/hook/ph1-down" ;;
+    "samples/hook/ph1-up") CONFIG_FILES="$CONFIG_FILES samples/hook/ph1-up" ;;
+    "samples/hook/migration") CONFIG_FILES="$CONFIG_FILES samples/hook/migration" ;;
+    "samples/hook/child-down.d/Makefile") CONFIG_FILES="$CONFIG_FILES samples/hook/child-down.d/Makefile" ;;
+    "samples/hook/child-up.d/Makefile") CONFIG_FILES="$CONFIG_FILES samples/hook/child-up.d/Makefile" ;;
+    "samples/hook/ikesa-up.d/Makefile") CONFIG_FILES="$CONFIG_FILES samples/hook/ikesa-up.d/Makefile" ;;
+    "samples/hook/Makefile") CONFIG_FILES="$CONFIG_FILES samples/hook/Makefile" ;;
+    "samples/Makefile") CONFIG_FILES="$CONFIG_FILES samples/Makefile" ;;
+    "samples/rc.d/iked") CONFIG_FILES="$CONFIG_FILES samples/rc.d/iked" ;;
+    "samples/rc.d/kinkd") CONFIG_FILES="$CONFIG_FILES samples/rc.d/kinkd" ;;
+    "samples/rc.d/racoon2") CONFIG_FILES="$CONFIG_FILES samples/rc.d/racoon2" ;;
+    "samples/rc.d/spmd") CONFIG_FILES="$CONFIG_FILES samples/rc.d/spmd" ;;
+    "samples/rc.d/Makefile") CONFIG_FILES="$CONFIG_FILES samples/rc.d/Makefile" ;;
+    "samples/racoon2.conf") CONFIG_FILES="$CONFIG_FILES samples/racoon2.conf" ;;
+    "samples/init.d/iked") CONFIG_FILES="$CONFIG_FILES samples/init.d/iked" ;;
+    "samples/init.d/kinkd") CONFIG_FILES="$CONFIG_FILES samples/init.d/kinkd" ;;
+    "samples/init.d/spmd") CONFIG_FILES="$CONFIG_FILES samples/init.d/spmd" ;;
+    "samples/init.d/Makefile") CONFIG_FILES="$CONFIG_FILES samples/init.d/Makefile" ;;
+    "samples/vals.conf") CONFIG_FILES="$CONFIG_FILES samples/vals.conf" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
