@@ -29,7 +29,7 @@ run_hook() {
 
     if [ -f $script ]; then
     	logger -t "Racoon2" "call script $script"
-        . $script "$@"
+        . ./$script "$@"
 	exit_status=$?
     fi
 
