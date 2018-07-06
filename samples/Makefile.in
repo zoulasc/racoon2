@@ -40,7 +40,7 @@ depend:
 clean:
 	-rm -f *~
 
-distclean: clean
+distclean-here: clean
 	-rm -f Makefile racoon2.conf vals.conf
 
 include ../subdir.mk

@@ -39,7 +39,7 @@ depend:
 clean:
 	-rm -f *~
 
-distclean: clean
+distclean-here: clean
 	-rm -f Makefile \
 		ikesa-up ikesa-down ikesa-rekey \
 		child-up child-down child-rekey \

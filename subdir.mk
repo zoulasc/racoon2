@@ -31,10 +31,7 @@ clean-recursive: .MAKE
 			(cd $$d && $(MAKE) clean) \
 		fi ; done
 
-distclean-top:
-	-rm -f Makefile config.cache config.status config.log
-
-distclean: distclean-recursive distclean-top
+distclean: distclean-recursive distclean-here
 
 distclean-recursive: .MAKE
 	-@for d in $(ALLSUBDIR) ; do \
