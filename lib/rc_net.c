@@ -112,8 +112,8 @@ rcs_is_addrmacro(const rc_vchar_t *m)
 	return mx == NULL ? 0 : 1;
 }
 
-int
-rcs_is_addr_rw(struct rc_addrlist *al)
+static int
+rcs_is_addr_name(struct rc_addrlist *al, const char *name)
 {
 	const char *macro;
 
@@ -123,10 +123,22 @@ rcs_is_addr_rw(struct rc_addrlist *al)
 		return 0;
 
 	macro = rc_vmem2str(al->a.vstr);
-	if (strncmp(macro, "IP_RW", strlen(macro)))
+	if (strncmp(macro, name, strlen(macro)))
 		return 0;
 
 	return 1;
+}
+
+int
+rcs_is_addr_rw(struct rc_addrlist *al)
+{
+	return rcs_is_addr_name(al, "IP_RW");
+}
+
+int
+rcs_is_addr_any(struct rc_addrlist *al)
+{
+	return rcs_is_addr_name(al, "IP_ANY");
 }
 
 int

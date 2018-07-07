@@ -31,6 +31,7 @@ struct rc_addrlist;
 struct in6_addr;
 extern int rcs_is_addrmacro (const rc_vchar_t *);
 extern int rcs_is_addr_rw (struct rc_addrlist *);
+extern int rcs_is_addr_any (struct rc_addrlist *);
 extern int rcs_getaddrlistbymacro (const rc_vchar_t *,
 				       struct rc_addrlist **);
 extern void rcs_free_addrlist (struct rc_addrlist *);
