@@ -324,7 +324,7 @@ query_send(struct task *t)
 
 	wlen = sendto(s, msg, len, flags, sa, salen);
 	if (wlen < 0 || wlen > MAX_UDP_DNS_SIZE) {
-		SPMD_PLOG(SPMD_L_INTERR, "Can't send query, length=%d", wlen);
+		SPMD_PLOG(SPMD_L_INTERR, "Can't send query, length=%zd", wlen);
 		return -1;
 	}
 

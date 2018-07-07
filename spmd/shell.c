@@ -720,7 +720,7 @@ shell_gen_challenge(void)
 	challenge_len = digest_len*2+1;
 	challenge = spmd_calloc(challenge_len);
 	if (!challenge) {
-		SPMD_PLOG(SPMD_L_INTERR, "Out of memory(len=%d)", challenge_len);
+		SPMD_PLOG(SPMD_L_INTERR, "Out of memory(len=%zu)", challenge_len);
 		goto fin;
 	}
 	p = challenge;

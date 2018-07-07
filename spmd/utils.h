@@ -43,7 +43,8 @@ __spmd_salen(sa_family_t af)
 #define SPMD_SALEN(sa) __spmd_salen( (sa)->sa_family )
 
 extern int spmd_loglevel; 
-int __spmd_log(int priority, const char *location, const char *msg, ...);
+int __spmd_log(int priority, const char *location, const char *msg, ...)
+	__attribute__((__format__ (__printf__, 3, 4)));
 
 #define SPMD_L_MIN		0
 #define SPMD_L_CRIT		1

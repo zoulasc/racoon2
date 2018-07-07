@@ -214,9 +214,9 @@ spmd_pfkey_init(void)
 				SPMD_PLOG(SPMD_L_INTERR, 
 					"FQDN(dst=%.*s, src=%.*s) specified int selector %.*s, " 
 					"but resolver OFF. disregard this SP.",
-					rcald->a.vstr->l, rcald->a.vstr->v,
-					rcals->a.vstr->l, rcals->a.vstr->v,
-					sl->sl_index->l, sl->sl_index->v);
+					(int)rcald->a.vstr->l, rcald->a.vstr->s,
+					(int)rcals->a.vstr->l, rcals->a.vstr->s,
+					(int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
 			fqdn_str = rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
@@ -234,8 +234,8 @@ spmd_pfkey_init(void)
 				SPMD_PLOG(SPMD_L_INTERR, 
 					"FQDN(src=%.*s) specified in selector %.*s, "
 					"but resolver OFF. disregard this SP.",
-					rcals->a.vstr->l, rcals->a.vstr->v,
-					sl->sl_index->l, sl->sl_index->v);
+					(int)rcals->a.vstr->l, rcals->a.vstr->s,
+					(int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
 			fqdn_str = rc_vmem2str(rcals->a.vstr); /* add src to fqdn_db */
@@ -250,8 +250,8 @@ spmd_pfkey_init(void)
 				SPMD_PLOG(SPMD_L_INTERR, 
 					"FQDN(dst=%.*s) specified in selector %.*s,"
 					"but resolver OFF. disregard this SP.",
-					rcald->a.vstr->l, rcald->a.vstr->v,
-					sl->sl_index->l, sl->sl_index->v);
+					(int)rcald->a.vstr->l, rcald->a.vstr->s,
+					(int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
 			fqdn_str = rc_vmem2str(rcald->a.vstr); /* add dst to fqdn_db */
@@ -264,7 +264,7 @@ spmd_pfkey_init(void)
 		else if (rcals->type == RCT_ADDR_MACRO && rcald->type == RCT_ADDR_MACRO) {
 			SPMD_PLOG(SPMD_L_INTERR, 
 				  "Not supported: both src and dst are macro (selector=%.*s)", 
-				  sl->sl_index->l, sl->sl_index->v);
+				  (int)sl->sl_index->l, sl->sl_index->s);
 			return -1; /* XXX we have to support this. */
 			spd_add_skip=1;
 		}
@@ -331,7 +331,6 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	struct rc_addrlist *al = NULL;
 	struct rc_addrlist *ipal = NULL;
 	struct rc_addrlist *ipal_tmp = NULL;
-	const char *macro;
 	struct rcpfk_msg *rc = NULL;
 	int ret;
 	int urgent = 1;
@@ -345,7 +344,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 
 	if (pl->install != RCT_BOOL_ON) {
 		SPMD_PLOG(SPMD_L_DEBUG, "No install for (selector=%.*s)",
-			  sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return 0;
 	}
 
@@ -363,7 +362,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	if (set_pltype(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
 			 "Can't set policy type, check your configuration file (selector=%.*s)",
-			 sl->sl_index->l, sl->sl_index->v);
+			 (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	if (rc->pltype != RCT_ACT_AUTO_IPSEC) {
@@ -379,7 +378,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	if (set_satype(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
-			sl->sl_index->l, sl->sl_index->v);
+			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
@@ -387,7 +386,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	if (set_samode(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			"Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
-			sl->sl_index->l, sl->sl_index->v);
+			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
@@ -395,19 +394,19 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	if (set_ipsec_level(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
 			"Can't set suitable ipsec_level, check your configuration file (selector=%.*s)",
-			sl->sl_index->l, sl->sl_index->v);
+			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
 	if (rc->samode == RCT_IPSM_TUNNEL) {
 		if (!pl->my_sa_ipaddr) {
 			SPMD_PLOG(SPMD_L_INTERR, "No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
-										pl->pl_index->l, pl->pl_index->v);
+			(int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		if (!pl->peers_sa_ipaddr) {
 			SPMD_PLOG(SPMD_L_INTERR, "No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
-										pl->pl_index->l, pl->pl_index->v);
+			(int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		/* set the source address of the sa */
@@ -429,13 +428,13 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		case RCT_ADDR_FQDN:
 			SPMD_PLOG(SPMD_L_INTERR, 
 				  "FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)", 
-				  							pl->pl_index->l, pl->pl_index->v);
+				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
 		default:
 			SPMD_PLOG(SPMD_L_INTERR, 
 				  "Unknown address type in my_sa_ipaddr, check your configuration file (policy=%.*s)", 
-				  							pl->pl_index->l, pl->pl_index->v);
+				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
 		}
@@ -458,13 +457,13 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		case RCT_ADDR_FQDN:
 			SPMD_PLOG(SPMD_L_INTERR, 
 				"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)", 
-				pl->pl_index->l, pl->pl_index->v);
+				(int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
 		default:
 			SPMD_PLOG(SPMD_L_INTERR, 
 				"Unknown address type in peers_sa_ipaddr, check your configuration file (policy=%.*s)", 
-				pl->pl_index->l, pl->pl_index->v);
+				(int)pl->pl_index->l, pl->pl_index->s);
 			goto err; /* never reach */
 		}
 	}
@@ -472,15 +471,20 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
     set_selectors:
 	if (!sl->src || !sl->dst) {
 		SPMD_PLOG(SPMD_L_INTERR, "No selector src or/and dst address(es) (selector=%.*s)", 
-								sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 	al = sl->src; /* do we need to care multiple entries? - NO, but FQDN/MACRO OK*/ 
 	switch (al->type) {
 	case RCT_ADDR_MACRO:
-		macro = rc_vmem2str(al->a.vstr);
-		if (!strncmp(macro, "IP_ANY", strlen(macro))) {
+		if (rcs_is_addr_any(al) || rcs_is_addr_rw(al)) {
 			af = sl->dst->a.ipaddr->sa_family;
+		} else {
+			SPMD_PLOG(SPMD_L_INTERR,
+				"macro %.*s not supported, check your configuration file (selector=%.*s)",
+				(int)al->a.vstr->l, al->a.vstr->s,
+				(int)sl->sl_index->l, sl->sl_index->s);
+			goto err;
 		}
 		rcs_getaddrlistbymacro(al->a.vstr, &ipal);
 		for (ipal_tmp=ipal;ipal_tmp;ipal_tmp=ipal_tmp->next) {
@@ -498,12 +502,12 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	case RCT_ADDR_FQDN:
 		/* this type have to be filtered out by spmd_pfkey_init() */
 		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector source address (selector=%.*s)", 
-									sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err; /* XXX */
 		break; /* never reach */
 	default:
 		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector source address (selector=%.*s)", 
-						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 		break; /* never reach */
 	}
@@ -512,9 +516,13 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	al = sl->dst; /* do we need to care multiple entries? - ditto */ 
 	switch (al->type) {
 	case RCT_ADDR_MACRO:
-		macro = rc_vmem2str(al->a.vstr);
-		if (!strncmp(macro, "IP_ANY", strlen(macro))) {
+		if (rcs_is_addr_any(al) || rcs_is_addr_rw(al)) {
 			af = sl->src->a.ipaddr->sa_family;
+		} else {
+			SPMD_PLOG(SPMD_L_INTERR,
+				"macro %.*s not supported, check your configuration file (selector=%.*s)",
+				(int)al->a.vstr->l, al->a.vstr->s,
+				(int)sl->sl_index->l, sl->sl_index->s);
 		}
 		rcs_getaddrlistbymacro(al->a.vstr, &ipal);
 		for (ipal_tmp=ipal;ipal_tmp;ipal_tmp=ipal_tmp->next) {
@@ -532,12 +540,12 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	case RCT_ADDR_FQDN:
 		/* this type have to be filtered out by spmd_pfkey_init() */
 		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector dstination address (selector=%.*s)", 
-										sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err; /* XXX */
 		break; /* never reach */
 	default:
 		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector dstination address (selector=%.*s)", 
-										sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 		break; /* never reach */
 	}
@@ -545,25 +553,25 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 
 	if (set_ul_proto(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't set upper layer protocol, check your configuration(selector=%.*s)",
-										sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
 	if (set_tagname(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't set tag name, check your configuration(selector=%.*s)",
-										sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
 	if (set_dir(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't set direction, check your configuration (selector=%.*s)",
-										sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
 	if (set_reqid(sl, rc)<0) {
 		 SPMD_PLOG(SPMD_L_INTERR, "Can't set reqid, check your configuration (selector=%.*s)",
-										(int)sl->sl_index->l, sl->sl_index->v);
+			   (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
@@ -574,7 +582,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	 */
 	ret = spmd_spd_update(sl, rc, urgent); /* urgent == 1 */
 	if (ret<0) {
-		SPMD_PLOG(SPMD_L_INTERR, "Maybe can't set SP: selector=%.*s", sl->sl_index->l, sl->sl_index->v);
+		SPMD_PLOG(SPMD_L_INTERR, "Maybe can't set SP: selector=%.*s", (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 	spmd_free_rcpfk_msg(rc);
@@ -740,7 +748,7 @@ spmd_spd_delete(uint32_t spid, int urgent)
 
 	if (rcf_get_selectorlist(&sl_head) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't get selector list in your configuration file (selector=%.*s)",
-											sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err_fin;
 	}
 	for (sl = sl_head;sl;sl=sl->next) {
@@ -748,7 +756,7 @@ spmd_spd_delete(uint32_t spid, int urgent)
 		if ( (len == strlen(rc_vmem2str(sl->sl_index))) && (!strncmp(rc_vmem2str(sl->sl_index), slid, len)) ) {
 			if (!sl->pl) {
 				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)", 
-											sl->sl_index->l, sl->sl_index->v);
+					  (int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
 			found = 1;
@@ -867,7 +875,7 @@ spmd_migrate(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent)
 	}
 	if (!sd) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't find policy (sl_index=%.*s)",
-			  (int)sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		ret = -1;
 		goto fin;
 	}
@@ -1141,7 +1149,7 @@ set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (!sl->pl) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			"No policy found, check your configuration file (selector=%.*s)", 
-			sl->sl_index->l, sl->sl_index->v);
+			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	pl = sl->pl;
@@ -1149,7 +1157,7 @@ set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (!sl->pl->ips) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			"No IPsec info, check your configuration file (selector=%.*s)", 
-			sl->sl_index->l, sl->sl_index->v);
+			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	ips = sl->pl->ips;
@@ -1204,8 +1212,8 @@ set_samode(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	}
 	if (!sl->pl) {
 		SPMD_PLOG(SPMD_L_INTERR, 
-			"No policy found, check your configuration file (selector=%.*s)", 
-			sl->sl_index->l, sl->sl_index->v);
+			  "No policy found, check your configuration file (selector=%.*s)", 
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	pl = sl->pl;
@@ -1299,8 +1307,8 @@ set_ipsec_level(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	}
 	if (!sl->pl) {
 		SPMD_PLOG(SPMD_L_INTERR,
-			"No policy found, check your configuration file (selector=%.*s)",
-			sl->sl_index->l, sl->sl_index->v);
+			  "No policy found, check your configuration file (selector=%.*s)",
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	pl = sl->pl;
@@ -1325,8 +1333,8 @@ set_pltype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	}
 	if (!sl->pl) {
 		SPMD_PLOG(SPMD_L_INTERR,
-			"No policy found, check your configuration file (selector=%.*s)",
-			sl->sl_index->l, sl->sl_index->v);
+			  "No policy found, check your configuration file (selector=%.*s)",
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	pl = sl->pl;
@@ -1362,7 +1370,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_ul_proto(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			  "Can't set upper layer protocol, check your configuration(selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
@@ -1370,7 +1378,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_dir(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			  "Can't set direction, check your configuration (selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
@@ -1378,7 +1386,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_reqid(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
 			  "Can't set reqid, check your configuration file (selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
@@ -1386,7 +1394,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_pltype(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
 			 "Can't set policy type, check your configuration file (selector=%.*s)",
-			  						sl->sl_index->l, sl->sl_index->v);
+			 (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	if (rc->pltype != RCT_ACT_AUTO_IPSEC) {
@@ -1398,7 +1406,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_satype(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			  "Can't set suitable SA type, check your configuration file (selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
@@ -1406,7 +1414,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_samode(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR, 
 			  "Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
@@ -1414,7 +1422,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	if (set_ipsec_level(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
 			  "Can't set suitable ipsec_level, check your configuration file (selector=%.*s)", 
-			  						sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
@@ -1423,13 +1431,13 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 		if (!pl->my_sa_ipaddr) {
 			SPMD_PLOG(SPMD_L_INTERR, 
 				  "No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
-				  					pl->pl_index->l, pl->pl_index->v);
+				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		if (!pl->peers_sa_ipaddr) {
 			SPMD_PLOG(SPMD_L_INTERR, 
 				  "No peers_sa_ipaddr, check your configuration file (policy=%.*s)", 
-				  					pl->pl_index->l, pl->pl_index->v);
+				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		al = pl->my_sa_ipaddr; /* always single entry */
@@ -1574,8 +1582,8 @@ spmd_msg_update(struct rcf_selector *sl, struct sockaddr *src,
 
 	if (rcs_getsaport(src) == NULL) {
 		SPMD_PLOG(SPMD_L_INTERR, "Unknown address family, "
-		    "check your configuration file (selector=%.*s)", 
-		    sl->sl_index->l, sl->sl_index->v);
+			  "check your configuration file (selector=%.*s)", 
+			  (int)sl->sl_index->l, sl->sl_index->s);
 		return;
 	}
 
@@ -2174,7 +2182,7 @@ static int spmd_handle_external(struct rcpfk_msg *rc)
 
 		/* We have found a selector */
 		SPMD_PLOG(SPMD_L_DEBUG, "Found selector(=%.*s) suitable for the external policy.",
-			  sl->sl_index->l, sl->sl_index->v);
+			  (int)sl->sl_index->l, sl->sl_index->s);
 
 		if (spid_data_add_complete(rc->slid /* this is the spid */, rc_vmem2str(sl->sl_index)) < 0)
 		{
