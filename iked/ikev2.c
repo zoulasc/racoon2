@@ -763,7 +763,7 @@ ikev2_initiate(struct isakmp_acquire_request *req,
 				   peer->sa_family);
 			goto fail;
 		}
-		*prt = isakmp_port_dest;
+		*prt = htons(isakmp_port_dest);
 
 		if (req->src2 && ike_ipsec_mode(policy) == RCT_IPSM_TRANSPORT)
 			myself = getlocaladdr(peer, req->src2, isakmp_port);
