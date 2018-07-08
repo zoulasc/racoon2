@@ -968,6 +968,21 @@ rcs_sa2str(const struct sockaddr *sa)
 	return vbuf->v;
 }
 
+const char *
+rcs_addrlist2str(const struct rc_addrlist *al)
+{
+	switch (al->type) {
+	case RCT_ADDR_INET:
+		return rcs_sa2str(al->a.ipaddr);
+	case RCT_ADDR_FQDN:
+	case RCT_ADDR_MACRO:
+	case RCT_ADDR_FILE:
+		return rc_vmem2str(al->a.vstr);
+	default:
+		return "*bad addresslist type*";
+	}
+}
+
 /*
  * compare two sockaddr without the port number.
  * OUT:	0: equal.

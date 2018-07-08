@@ -44,6 +44,7 @@ extern int rcs_getport (const char *);
 extern int rcs_getsalen (const struct sockaddr *);
 extern const char *rcs_sa2str_wop (const struct sockaddr *);
 extern const char *rcs_sa2str (const struct sockaddr *);
+extern const char *rcs_addrlist2str (const struct rc_addrlist *);
 extern int rcs_cmpsa_wop (const struct sockaddr *, const struct sockaddr *);
 extern int rcs_cmpsa (const struct sockaddr *, const struct sockaddr *);
 extern int rcs_addrlist_cmp(struct rc_addrlist *, struct rc_addrlist *);
