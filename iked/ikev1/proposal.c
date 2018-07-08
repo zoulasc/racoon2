@@ -556,7 +556,7 @@ cmpsatrns(int proto_id, const struct satrns *tr1, const struct satrns *tr2)
 	if (tr1->encklen > tr2->encklen) {
 		plog(PLOG_PROTOWARN, PLOGLOC, NULL,
 			"less key length proposed, "
-			"mine:%d peer:%d.  Use initiaotr's one.\n",
+			"mine:%d peer:%d.  Use initiator's one.\n",
 			tr2->encklen, tr1->encklen);
 		/* FALLTHRU */
 	}
