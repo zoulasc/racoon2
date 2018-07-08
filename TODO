@@ -12,19 +12,27 @@ List of work needed on the racoon2 package
    ph1 was unound so execution did not enter the path where the ipsec sa
    is deleted.
 
-2. Debug generate policy for IKEv1. This is supposed to be enabled
+2. Add a racoon2ctl tool to allow an initiator to connect and disconnect
+   gracefully. With ikev1, there is the further problem that when
+   SIGTERM is sent to iked according to the iked man page, the connection
+   is not deleted as it is with IKEv2 connections. Specifically, The ipsec
+   security associations and the phase 1 security assiciation is not
+   deleted, and. the notify message with delete payload is not sent
+   to the peer. Fix this for IKEv1.
+
+3. Debug generate policy for IKEv1. This is supposed to be enabled
    with peers ip address set to IP_RW and also both my and peers 
    sa_ipaddress set to IP_RW in the policy specification, but it is not
    functioning.
 
-3. IPv6 support- it is not clear why iked is not using IPv6 addresses 
+4. IPv6 support- it is not clear why iked is not using IPv6 addresses 
    when ike is set to use MY_IP, which is supposed to use all addresses 
    not just IPv4 addresses. Now, iked is behaving as if we set ike in
    the interface section of racoon2.conf to MY_IPV4 instead of MY_IP. It
    would be desireable to get iked to use IPv6 addresses so we can test
    racoon2 with IPv6.
 
-4. For NAT traversal in transport mode, NAT original address payloads are
+5. For NAT traversal in transport mode, NAT original address payloads are
    ignored on input. Also, iked does not send the NAT original address
    payloads to the peer. This can be fixed by using the addresses
    in the id payload from the peer at the beginning of phase 2 which are also
@@ -36,14 +44,6 @@ List of work needed on the racoon2 package
    over the entire packet and replace that expensive computation with an
    incremental checksum over just a few bytes.
 
-5. Improve the make install target. Currently some of the configuration
-   examples are not being generated correctly and some are not being installed.
-   It is not clear if this is a problem in the racoon2-glue project or this
-   project. The problem was observed when using racoon2-glue to build and
-   install racoon2 natively on NetBSD current. The executable files and some
-   of the configuration files were installed, but others were not. The most
-   important files missing from the installation were the rc-d startup scripts.
-
 6. For the IKEv1 NAT-T transport mode case, investigate why it is necessary to
    have selectors on the responder's for the addresses that are valid only
    the initiator side. According to RFC 7296 [1], these should not be necessary.
@@ -53,8 +53,5 @@ List of work needed on the racoon2 package
    transport_ike_natt.conf file, implement it. This can probably be accomplished
    by implementing address substition on the traffic selectors, as described
    in RFC 7296.
-
-7. Test IKEv2 functionality. Currently it has not been successfully configured
-   yet on NetBSD current.
 
 [1] https://tools.ietf.org/html/rfc7296#section-2.23.1
