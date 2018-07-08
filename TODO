@@ -16,7 +16,7 @@ List of work needed on the racoon2 package
    gracefully. With ikev1, there is the further problem that when
    SIGTERM is sent to iked according to the iked man page, the connection
    is not deleted as it is with IKEv2 connections. Specifically, The ipsec
-   security associations and the phase 1 security assiciation is not
+   security associations and the phase 1 security association is not
    deleted, and. the notify message with delete payload is not sent
    to the peer. Fix this for IKEv1.
 
