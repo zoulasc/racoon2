@@ -1,6 +1,10 @@
 $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
-2018-07-02 Christos Zoulas, Chuckz Zmudzinski
+2018-07-08 Christos Zoulas, Chuck Zmudzinski
+
+	* iked: IKEv2 connections to Mac OS X and ios successfully tested
+
+2018-07-02 Christos Zoulas, Chuck Zmudzinski
 
 	* successful port of racoon2 to to NetBSD 8.99.x using github project 
 	https://github.com/zoulasc/racoon2-glue
