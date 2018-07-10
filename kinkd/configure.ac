@@ -1,6 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
-AC_INIT(kink.h)
+AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)
 
@@ -281,5 +282,6 @@ AC_DEFINE(DEFAULT_NONCE_SIZE, 16, [Default nonce size])
 
 AC_SUBST(ADDOBJS)
 AC_SUBST(KRB5_TYPE)
-AC_CONFIG_HEADER(config.h)
-AC_OUTPUT(Makefile)
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([kinkd.8 Makefile])
+AC_OUTPUT

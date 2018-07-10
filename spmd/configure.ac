@@ -1,10 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
-AC_INIT(main.c)
+AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)
-
-AC_CANONICAL_SYSTEM
 
 dnl check OPTFLAG
 AC_SUBST(OPTFLAG)
@@ -131,5 +130,6 @@ RC_IF_INSTALL_OPTS
 
 RC_CHECK_PFKEYV2_H
 
-AC_CONFIG_HEADER(config.h)
-AC_OUTPUT(Makefile)
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

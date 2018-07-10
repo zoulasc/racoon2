@@ -144,6 +144,9 @@
 /* define if IPv6 is enabled */
 #undef INET6
 
+/* Name of package */
+#undef PACKAGE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -173,6 +176,9 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
+
+/* Version number of package */
+#undef VERSION
 
 /* define to use OpenSSL ENGINE */
 #undef WITH_OPENSSL_ENGINE

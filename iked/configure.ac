@@ -2,15 +2,12 @@
 # $Id: configure.in,v 1.66 2009/03/19 05:38:31 fukumoto Exp $
 # Process this file with autoconf to produce a configure script.
 
-dnl # AC_PREREQ(2.59)
-dnl # AC_INIT([racoon2 iked], [0.1], [ipsec@wide.ad.jp])
-dnl # AC_CONFIG_SRCDIR([ikev2.c])
-dnl ## AC_CONFIG_HEADER([config.h])
-
 AC_PREREQ(2.13)
-AC_INIT([ikev2.c])
+AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)
+AC_CONFIG_HEADERS([config.h])
 
 AC_CANONICAL_HOST
 
@@ -335,10 +332,6 @@ fi
 CPPFLAGS="-I$RACOONINCLUDEDIR $CPPFLAGS"
 LDFLAGS="-L$RACOONLIBDIR $LDFLAGS"
 LIBS="-lracoon $LIBS"
-LIBRARIES="$RACOONLIBDIR/libracoon.a"
-AC_SUBST(LIBRARIES)
 
-dnl #AC_CONFIG_FILES([Makefile])
-dnl #AC_OUTPUT
-AC_CONFIG_HEADER(config.h)
-AC_OUTPUT([Makefile])
+AC_CONFIG_FILES([Makefile iked.8])
+AC_OUTPUT
