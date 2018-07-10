@@ -40,7 +40,7 @@
 #include "rc_pcap.h"
 #include "rc_queue.h"
 #include "script.h"
-#include "missing/missing.h"
+#include "extra/missing.h"
 
 #define RACOON_CONF	SYSCONFDIR "/racoon2.conf"
 

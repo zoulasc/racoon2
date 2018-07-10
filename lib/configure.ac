@@ -1,8 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
-AC_INIT(cfsetup.c)
+AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)
+AC_CONFIG_HEADERS([config.h])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -13,6 +15,7 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 RC_PROG_MKDEP
+RC_IF_INSTALL_OPTS
 
 AC_CANONICAL_HOST
 
@@ -212,5 +215,5 @@ else
 	IF_GMAKE='#'
 fi
 
-AC_CONFIG_HEADER(config.h)
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
