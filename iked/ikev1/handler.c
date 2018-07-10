@@ -1596,6 +1596,14 @@ purge_ipsec_spi(struct ph1handle *ph1,
 							       iph2->src,
 							       iph2->dst,
 							       proto_id, spi);
+					/*
+					 * XXX: Temporary hack, until it is
+					 * fixed properly.
+					 */
+					(void) delete_ipsec_sa(&iph2->sadb_request,
+							       iph2->dst,
+							       iph2->src,
+							       proto_id, pr->spi);
 					pr->spi_p = 0;
 				} else if (pr->spi_p != 0) {
 					all_done = FALSE;
