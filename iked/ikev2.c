@@ -50,6 +50,7 @@
 #include <netdb.h>
 
 #include "racoon.h"
+#include "safefile.h"
 
 #include "isakmp.h"
 #include "ikev2.h"
@@ -2448,6 +2449,70 @@ ikev2_responder_state1_send(struct ikev2_sa *ike_sa,
 	if (!auth)
 		goto fail;
 
+	/* Get my_cert from the remote configuration
+	 * if we can use the rsasig authentication method */
+
+	/* XXX	This is based on ikev2_public_key from ike_conf.c,
+	 *	which is very incomplete but this should work with
+	 *	the sample vals.conf and the other sample *.conf files
+	 *	if the public key is stored in a certificate file
+	 *	using the x509 PEM format */
+
+	struct rc_alglist *kmp_auth_method = ike_sa->rmconf->ikev2->kmp_auth_method;
+	while (kmp_auth_method) {
+		if (kmp_auth_method->algtype == RCT_ALG_RSASIG) {
+			const char *filename = 0;
+			int err;
+			struct rc_pklist *pk = ike_sa->rmconf->ikev2->my_pubkey;
+			while (pk) {
+				if (pk->ftype == RCT_FTYPE_X509PEM)
+					filename = rc_vmem2str(pk->pubkey);
+				pk = pk->next;
+			}
+			if (!filename) {
+				plog(PLOG_INTERR, PLOGLOC, 0,
+					   "failed obtaining filename string\n");
+				goto fail_no_my_cert;
+			}
+			err = rc_safefile(filename, FALSE);
+			if (err == -1) {
+				plog(PLOG_INTERR, PLOGLOC, 0,
+					   "failed accessing file %s: %s\n",
+					   filename, strerror(errno));
+				goto fail_no_my_cert;
+			} else if (err != 0) {
+				plog(PLOG_INTERR, PLOGLOC, 0,
+					   "file %s is not safe, code %d: %s\n",
+					   filename, err,
+					   rc_safefile_strerror(err));
+				goto fail_no_my_cert;
+			}
+			plog(PLOG_INFO, PLOGLOC, 0,
+				   "reading cert (%s)\n",
+				   filename);
+			rc_vchar_t *my_cert_data = eay_get_x509cert(filename);
+			uint8_t value = 4;	/* See RFC 7296, section 3.6 */
+			void *cert_encoding = &value;
+			my_cert = rc_vprepend(my_cert_data, cert_encoding, sizeof(value));
+			if (!my_cert) {
+				plog(PLOG_INTERR, PLOGLOC, 0,
+					   "failed reading cert (%s)\n",
+					   filename);
+				goto fail_no_my_cert;
+			}
+			err = eay_check_x509cert(my_cert_data, NULL);
+			rc_vfree(my_cert_data);
+			if (err) {
+				plog(PLOG_INTERR, PLOGLOC, 0,
+				     "failed validating my certificate (%s)\n",
+				     filename);
+				rc_vfree(my_cert);
+				goto fail_no_my_cert;
+			}
+		}
+		kmp_auth_method = kmp_auth_method->next;
+	}
+
 	sa_r2 = ikev2_construct_sa(child_sa);
 	if (!sa_r2)
 		goto fail_create_sa;
@@ -2607,6 +2672,13 @@ ikev2_responder_state1_send(struct ikev2_sa *ike_sa,
 	isakmp_log(ike_sa, 0, 0, 0,
 		   PLOG_INTERR, PLOGLOC,
 		   "configuration lacks my_id\n");
+	++isakmpstat.fail_send_packet;
+	goto done;
+
+      fail_no_my_cert:
+	isakmp_log(ike_sa, 0, 0, 0,
+		   PLOG_INTERR, PLOGLOC,
+		   "configuration lacks my valid certificate\n");
 	++isakmpstat.fail_send_packet;
 	goto done;
 
