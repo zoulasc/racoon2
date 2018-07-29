@@ -2024,6 +2024,148 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
 }
 
 /*
+ * returns two adequate TS in vmbuf, one for AF_INET and one for AF_INET6
+ *
+ *   currently, returning TS is created from proto/addr/prefixlen
+ *   ignoring peer's TS (assuming it is checked by ts_payload_is_matching())
+ */
+static rc_vchar_t *
+ts_match_dual(struct ikev2payl_traffic_selector *ts, int num_ts,
+	 int proto1, int proto2, struct sockaddr *addr1,
+	 struct sockaddr *addr2, int prefixlen1, int prefixlen2)
+{
+	uint8_t *addr1ptr, *addr2ptr;
+	size_t addr1size, addr2size;
+	unsigned int port1, port2;
+	rc_vchar_t *resultbuf;
+	struct ikev2payl_ts_h *r_tsh;
+	struct ikev2_traffic_selector *r_ts1, *r_ts2;
+	uint8_t *r_saddr1, *r_saddr2;
+	uint8_t *r_eaddr1, *r_eaddr2;
+	int i;
+
+	switch (addr1->sa_family) {
+	case AF_INET:
+		addr1ptr = (uint8_t *)&((struct sockaddr_in *)addr1)->sin_addr.s_addr;
+		addr1size = sizeof(struct in_addr);
+		break;
+#ifdef INET6
+	case AF_INET6:
+		addr1ptr = (uint8_t *)&((struct sockaddr_in6 *)addr1)->sin6_addr;
+		addr1size = sizeof(struct in6_addr);
+		break;
+#endif
+	default:
+		return 0;
+	}
+	port1 = sockaddr_port(addr1);
+
+	switch (addr2->sa_family) {
+	case AF_INET:
+		addr2ptr = (uint8_t *)&((struct sockaddr_in *)addr2)->sin_addr.s_addr;
+		addr2size = sizeof(struct in_addr);
+		break;
+#ifdef INET6
+	case AF_INET6:
+		addr2ptr = (uint8_t *)&((struct sockaddr_in6 *)addr2)->sin6_addr;
+		addr2size = sizeof(struct in6_addr);
+		break;
+#endif
+	default:
+		return 0;
+	}
+	port2 = sockaddr_port(addr2);
+
+	resultbuf = rc_vmalloc(sizeof(struct ikev2payl_ts_h)
+			    + sizeof(struct ikev2_traffic_selector)
+			    + 2 * addr1size
+			    + sizeof(struct ikev2_traffic_selector)
+			    + 2 * addr2size);
+	if (!resultbuf)
+		return 0;
+
+	r_tsh = (void *)resultbuf->u;
+	r_ts1 = (void *)(resultbuf->u + sizeof(struct ikev2payl_ts_h));
+	r_saddr1 = (uint8_t *)(r_ts1 + 1);
+	r_eaddr1 = r_saddr1 + addr1size;
+	r_ts2 = (void *)(r_eaddr1 + addr1size);
+	r_saddr2 = (uint8_t *)(r_ts2 + 1);
+	r_eaddr2 = r_saddr2 + addr2size;
+
+	memset(r_tsh, 0, sizeof(struct ikev2payl_ts_h));
+	r_tsh->num_ts = num_ts; /* so far, num_ts = 2 always here */
+	switch (addr1->sa_family) {
+	case AF_INET:
+		r_ts1->ts_type = IKEV2_TS_IPV4_ADDR_RANGE;
+		break;
+#ifdef INET6
+	case AF_INET6:
+		r_ts1->ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
+		break;
+#endif
+	}
+	switch (addr2->sa_family) {
+	case AF_INET:
+		r_ts2->ts_type = IKEV2_TS_IPV4_ADDR_RANGE;
+		break;
+#ifdef INET6
+	case AF_INET6:
+		r_ts2->ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
+		break;
+#endif
+	}
+	r_ts1->protocol_id = proto1;
+	r_ts2->protocol_id = proto2;
+	put_uint16(&r_ts1->selector_length,
+		   sizeof(struct ikev2_traffic_selector) + 2 * addr1size);
+	put_uint16(&r_ts2->selector_length,
+		   sizeof(struct ikev2_traffic_selector) + 2 * addr2size);
+	if (port1 == 0) {
+		put_uint16(&r_ts1->start_port, 0);
+		put_uint16(&r_ts1->end_port, 65535);
+	} else {
+		put_uint16(&r_ts1->start_port, port1);
+		put_uint16(&r_ts1->end_port, port1);
+	}
+	if (port2 == 0) {
+		put_uint16(&r_ts2->start_port, 0);
+		put_uint16(&r_ts2->end_port, 65535);
+	} else {
+		put_uint16(&r_ts2->start_port, port2);
+		put_uint16(&r_ts2->end_port, port2);
+	}
+
+	for (i = 0; i < (int)addr1size; ++i) {
+		unsigned int bits;
+		const int BITS = CHAR_BIT;
+		if (prefixlen1 >= BITS * (i + 1)) {
+			bits = 0xFF;
+		} else if (prefixlen1 > BITS * i) {
+			bits = 0xFF & (~0U << (BITS * (i + 1) - prefixlen1));
+		} else {
+			bits = 0;
+		}
+		r_saddr1[i] = addr1ptr[i] & bits;
+		r_eaddr1[i] = addr1ptr[i] | ~bits;
+	}
+	for (i = 0; i < (int)addr2size; ++i) {
+		unsigned int bits;
+		const int BITS = CHAR_BIT;
+		if (prefixlen2 >= BITS * (i + 1)) {
+			bits = 0xFF;
+		} else if (prefixlen2 > BITS * i) {
+			bits = 0xFF & (~0U << (BITS * (i + 1) - prefixlen2));
+		} else {
+			bits = 0;
+		}
+		r_saddr2[i] = addr2ptr[i] & bits;
+		r_eaddr2[i] = addr2ptr[i] | ~bits;
+	}
+
+	return resultbuf;
+}
+
+/*
  * Config payload support
  */
 void
@@ -2111,6 +2253,82 @@ free_selectorlist(struct rcf_selector *s)
 	}
 }
 
+struct rc_addrlist *
+ike_conf_find_ikev2src_by_ts(struct ikev2payl_traffic_selector *ts_l,
+			     struct ikev2_child_sa *child_sa,
+			     struct rcf_remote *rmconf, int af,
+			     unsigned int *upper_layer_protocol)
+{
+	struct ikev2_child_param *param = &child_sa->child_param;
+	struct rcf_selector *s;
+	struct rcf_selector *s_next;
+	int err;
+	struct rc_addrlist *srclist;
+	int src_prefixlen;
+	rc_type action;
+	if (rcf_get_selectorlist(&s)) {
+		TRACE((PLOGLOC, "rcf_get_selectorlist() failed\n"));
+		return 0;
+	}
+	for (; s; s_next = s->next, rcf_free_selector(s), s = s_next) {
+		assert(s->pl != NULL);
+		action = s->pl->action;
+		if (!action)
+			POLICY_DEFAULT(action, action, 0);
+		if (action != RCT_ACT_AUTO_IPSEC)
+			continue;
+
+		/* use only if the selector is for the remote node */
+		if (! ((s->pl->rm_index == NULL && rmconf->rm_index == NULL) ||
+		       (s->pl->rm_index != NULL && rmconf->rm_index != NULL &&
+			rc_vmemcmp(s->pl->rm_index, rmconf->rm_index) == 0))) {
+			continue;
+		}
+
+		if (s->direction != RCT_DIR_OUTBOUND)
+			continue;
+
+		if (ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+			if (!param->use_transport_mode)
+				continue;
+		}
+
+		srclist = 0;
+		err = rcs_extend_addrlist(s->src, &srclist);
+		if (err != 0) {
+			isakmp_log(0, 0, 0, 0,
+				   PLOG_INTWARN, PLOGLOC,
+				   "expanding src address of selector %s: %s\n",
+				   rc_vmem2str(s->sl_index), gai_strerror(err));
+			goto next_sel;
+		}
+		if (!srclist) {
+			TRACE((PLOGLOC, "empty srclist\n"));
+			goto next_sel;
+		}
+		if (srclist && srclist->next) {
+			plog(PLOG_INTWARN, PLOGLOC, 0,
+			     "selector %s src is ambiguous, using the first one of the expanded addresses\n",
+			     rc_vmem2str(s->sl_index));
+		}
+		if (srclist->a.ipaddr->sa_family == af) {
+			src_prefixlen = srclist ? addr_prefixlen(srclist) : 0;
+			*upper_layer_protocol = s->upper_layer_protocol;
+			if (*upper_layer_protocol == RC_PROTO_ANY)
+				*upper_layer_protocol = IKEV2_TS_PROTO_ANY;
+			if (ts_payload_is_matching(ts_l,
+						   *upper_layer_protocol,
+						   srclist->a.ipaddr,
+						   src_prefixlen))
+				return srclist;
+		}
+	next_sel:
+	  if (srclist)
+		rcs_free_addrlist(srclist);
+	}
+	return 0;
+}
+
 struct rcf_selector *
 ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 			     struct ikev2_payload_header *ts_localside,
@@ -2130,6 +2348,7 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 	struct rc_addrlist *srclist;
 	struct rc_addrlist *dstlist;
 	rc_type action;
+	int dual_stack = 0;
 
 	ts_r = (struct ikev2payl_traffic_selector *)ts_remoteside;
 	ts_l = (struct ikev2payl_traffic_selector *)ts_localside;
@@ -2315,15 +2534,15 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 			/* 
 			 * if peer requested INTERNAL_IP*_ADDR,
 			 * confirm TS matches with allocated address,
-			 * then deallocate unmatching allocated address
+			 * then check if peer requests dual stack
 			 */
 			struct rcf_address	*a;
-			struct rcf_address	*next_a;
-			struct rcf_address	*target;
-			struct sockaddr_storage	ss;
+			struct rcf_address	*target, *target2;
+			struct sockaddr_storage	ss, ss2;
 			int prefixlen;
 
 			target = 0;
+			target2 = 0;
 			for (a = LIST_FIRST(&child_sa->lease_list);
 			     a != 0;
 			     a = LIST_NEXT(a, link_sa)) {
@@ -2334,34 +2553,78 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 							   upper_layer_protocol,
 							   (struct sockaddr *)&ss,
 							   prefixlen)) {
-					target = a;
-					break;
+					if (!target && !target2)
+						target = a;
+					else
+						target2 = a;
+					if (target2)
+						break;
 				}
 			}
 			if (!target)
 				goto next_selector;
 
-			/* remove all but one matching address */
-			for (a = LIST_FIRST(&child_sa->lease_list); a != 0; a = next_a) {
-				next_a = LIST_NEXT(a, link_sa);
-				if (a != target)
-					rc_addrpool_release_addr(a);
+			/* check if peer requests a dual stack configuration */
+			if (target && target2) {
+				if (target->af != target2->af)
+					dual_stack = 1;
 			}
 
 			TRACE((PLOGLOC, "using selector %s\n",
 			       rc_vmem2str(s->sl_index)));
-			param->ts_r = ts_match(ts_l,
-					       ts_l->tsh.num_ts,
-					       upper_layer_protocol,
-					       srclist->a.ipaddr,
-					       src_prefixlen);
-			ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss,
-						target,
-						&prefixlen);
-			param->ts_i = ts_match(ts_r, 1,
-					       upper_layer_protocol,
-					       (struct sockaddr *)&ss,
-					       prefixlen);
+			if (dual_stack) {
+			/* Find TS for the address family of target2 */
+				struct rc_addrlist *srclist2; /* src of another selector for opposite family */
+				int prefixlen2; /* prefixlen of target2 */
+				int src_prefixlen2; /* prefixlen of srclist2 */
+				int af = AF_INET;
+				if (srclist->a.ipaddr->sa_family == AF_INET)
+					af = AF_INET6;
+				if (srclist->a.ipaddr->sa_family == AF_INET6)
+					af = AF_INET;
+				unsigned int upper_layer_protocol2 = IKEV2_TS_PROTO_ANY;
+				srclist2 = ike_conf_find_ikev2src_by_ts(ts_l, child_sa, rmconf, af,
+									&upper_layer_protocol2);
+				if (!srclist2) {
+					plog(PLOG_INTERR, PLOGLOC, 0,
+						"failed to find local TS for dual stack configuration\n");
+					return 0;
+				}
+				src_prefixlen2 = srclist2 ? addr_prefixlen(srclist2) : 0;
+
+				param->ts_r = ts_match_dual(ts_l, 2,
+						       upper_layer_protocol,
+						       upper_layer_protocol2,
+						       srclist->a.ipaddr,
+						       srclist2->a.ipaddr,
+						       src_prefixlen, src_prefixlen2);
+				ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss,
+							target,
+							&prefixlen);
+				ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss2,
+							target2,
+							&prefixlen2);
+				param->ts_i = ts_match_dual(ts_r, 2,
+						       upper_layer_protocol,
+						       upper_layer_protocol2,
+						       (struct sockaddr *)&ss,
+						       (struct sockaddr *)&ss2,
+						       prefixlen, prefixlen2);
+			}
+			else {
+				param->ts_r = ts_match(ts_l,
+						       ts_l->tsh.num_ts,
+						       upper_layer_protocol,
+						       srclist->a.ipaddr,
+						       src_prefixlen);
+				ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss,
+							target,
+							&prefixlen);
+				param->ts_i = ts_match(ts_r, 1,
+						       upper_layer_protocol,
+						       (struct sockaddr *)&ss,
+						       prefixlen);
+			}
 			IF_TRACE({
 				TRACE((PLOGLOC, "traffic selectors for response:\n"));
 				ikev2_dump_traffic_selector_h("TSi",

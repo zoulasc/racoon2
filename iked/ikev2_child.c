@@ -554,8 +554,8 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 		int prefixlen;
 		struct rc_addrlist ra;
 
-		/* XXX so far, lease list should be single address only */
-		assert(LIST_NEXT(LIST_FIRST(&child_sa->lease_list), link_sa) == 0);
+		/* allow lease list to have two addresses, one AF_INET, one AF_INET6 */
+/*		assert(LIST_NEXT(LIST_FIRST(&child_sa->lease_list), link_sa) == 0); */
 
 		IPSEC_CONF(lifetime, pol->ips, ipsec_sa_lifetime_time, 0);
 		for (a = LIST_FIRST(&child_sa->lease_list); a != 0;
@@ -567,6 +567,9 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 			ra.port = 0;
 			ra.prefixlen = prefixlen;
 			ra.a.ipaddr = (struct sockaddr *)&ss;
+			/* address family check */
+			if (ra.a.ipaddr->sa_family != sel->src->a.ipaddr->sa_family)
+				continue;
 			if (spmif_post_policy_add(ike_spmif_socket(), NULL, NULL,
 						  child_sa->selector->sl_index,
 						  lifetime, ike_ipsec_mode(pol),

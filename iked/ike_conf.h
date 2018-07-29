@@ -258,6 +258,10 @@ struct rcf_selector *ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *,
 						  struct ikev2_payload_header *,
 						  struct ikev2_child_sa *,
 						  struct rcf_remote *);
+struct rc_addrlist *ike_conf_find_ikev2src_by_ts(struct ikev2payl_traffic_selector *,
+						  struct ikev2_child_sa *,
+						  struct rcf_remote *, int,
+						  unsigned int *);
 struct rcf_selector *ike_conf_find_selector_by_addr(struct sockaddr *,
 						    struct sockaddr *);
 struct algdef *isakmp_dhinfo(unsigned int, struct algdef *);
