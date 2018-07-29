@@ -28,7 +28,7 @@ if [ "x${entryipv6}" != "x" ]; then
 	spdadd ${INTERNAL6_ADDR} ::/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 	spddelete ${INTERNAL6_ADDR} :: any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 EOF
-if [ "x${INTERNAL__ADDR}" != "x" ]; then
+if [ "x${INTERNAL_ADDR}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: adding policies for IPv4 0.0.0.0/0 network" >> /var/log/messages
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL_ADDR}" >> /var/log/messages
 	setkey -c << EOF
@@ -49,7 +49,7 @@ if [ "x${entryipv4}" != "x" ]; then
 	spdadd ${INTERNAL_ADDR} 0.0.0.0/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 	spddelete ${INTERNAL_ADDR} 0.0.0.0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 EOF
-if [ "x${INTERNAL6__ADDR}" != "x" ]; then
+if [ "x${INTERNAL6_ADDR}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: adding policies for IPv6 ::/0 network" >> /var/log/messages
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL6_ADDR}" >> /var/log/messages
 	setkey -c << EOF
