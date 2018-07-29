@@ -2573,7 +2573,7 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 			TRACE((PLOGLOC, "using selector %s\n",
 			       rc_vmem2str(s->sl_index)));
 			if (dual_stack) {
-			/* Find TS for the address family of target2 */
+			/* Find TS for both address families */
 				struct rc_addrlist *srclist2; /* src of another selector for opposite family */
 				int prefixlen2; /* prefixlen of target2 */
 				int src_prefixlen2; /* prefixlen of srclist2 */
