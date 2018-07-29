@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# This script is for the case when you are using tunnel mode and IKEv2.
+# It sets up a gif tunnel that can tunnel IPv4 and IPv6 inside a tunnel whose
+# endpoint addresses are those that the ike_sa uses. It will only work on
+# systems that have the gif pseudo interface available. See gif(4) for details.
+# The endopoint addresses are either IPv4 or IPv6 addresses. This script
+# has been tested for the case of IPv6 and IPv4 tunneled over IPv4.
+
+# Set local addresses/prefixlen for the gif tunnel interface
+localaddr4=10.0.0.129/25
+ipv6prefix=2001:587f:3c5a:18d2
+ipv6prefixlen=64
+localipv6identifier=:34d5:3e08:867:39c6
+localaddr6=${ipv6prefix}${localipv6identifier}/${ipv6prefixlen}
+# This is set to the external interface of our Internet connection
+extif=wm0
+
+# XXX Need to verify gif0 does not already exist
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: creating tunnel interface gif0: ${LOCAL_ADDR} -> ${REMOTE_ADDR}" >> /var/log/messages
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: local IPv4 address of gif tunnel interface: ${localaddr4}" >> /var/log/messages
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: local IPv6 address of gif tunnel interface: ${localaddr6}" >> /var/log/messages
+ifconfig gif0 create && ifconfig gif0 tunnel ${LOCAL_ADDR} ${REMOTE_ADDR}
+ifconfig gif0 inet ${localaddr4} up
+ifconfig gif0 inet6 ${localaddr6} alias
+
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: INTERNAL_ADDR (leased to peer): ${INTERNAL_ADDR}" >> /var/log/messages
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: INTERNAL6_ADDR (leased to peer): ${INTERNAL6_ADDR}" >> /var/log/messages
+
+# any routing or arp configuration for IPv4 is done here
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: configuring IPv4 routing for ${INTERNAL_ADDR}" >> /var/log/messages
+
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: configuring IPv6 routing for ${INTERNAL6_ADDR}" >> /var/log/messages
+# These are needed to make ndp proxy work with a custom patch to the NetBSD kernel
+route add -inet6 ${INTERNAL6_ADDR} ${ipv6prefix}${localipv6identifier} -interface -proxy
+# This puts us on the solicited node mulitcast address of the peer, so we will respond to neighbor
+# soliticitations for the peer. We do this because we are acting as a proxy for the peer on
+# our network. We should remove this alias address in a corresponding child-down script
+ll_peer=$(echo ${INTERNAL6_ADDR} | sed -e s/${ipv6prefix}/fe80:/)
+ifconfig ${extif} inet6 ${ll_peer} prefixlen 64 alias

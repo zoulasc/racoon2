@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Use this script to tear down a gif0 interface if one was set up with a
+# corresponding 02ifconfig-gif script in child-up.d.
+
+# Set local parameters (should correspond to child-up.d/02ifconfig-gif)
+ipv6prefix=2001:587f:3c5a:18d2
+localipv6identifier=:34d5:3e08:867:39c6
+# This is set to the external interface of our Internet connection
+extif=wm0
+
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: setting gif0 interface down" >> /var/log/messages
+ifconfig gif0 down
+
+# Clean up the IPv6 routing configuration
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: deleting IPv6 route for ${INTERNAL6_ADDR}" >> /var/log/messages
+route delete -inet6 ${INTERNAL6_ADDR} ${ipv6prefix}${localipv6identifier} -interface -proxy
+ll_peer=$(echo ${INTERNAL6_ADDR} | sed -e s/${ipv6prefix}/fe80:/)
+ifconfig ${extif} inet6 ${ll_peer} prefixlen 64 -alias
+
+# Finish cleaning up
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: destroying gif0 interface" >> /var/log/messages
+ifconfig gif0 deletetunnel
+ifconfig gif0 destroy

@@ -67,6 +67,11 @@ setval {
 ### Tunnel Mode Settings ###
 	# Your Network Address or Host Address (host-to-host tunnel mode)
 	MY_NET		"10.0.0.0/24";
+	# Use this to act as a gateway to the IPv4 Internet for the client
+	# MY_NET	"0.0.0.0/0";
+	# Use this also to act as a gateway to the IPv6 Internet for the client
+	# (and add selectors that reference MY_NET6 if you use this)
+	# MY_NET6	"::/0";
 	# Peer's Network Address or Host Address (host-to-host tunnel mode)
 	PEERS_NET	"10.0.1.0/24";
 
