@@ -443,17 +443,40 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 		goto fail;
 
 	/*
-	 * INTERNAL_ADDR
+	 * INTERNAL_ADDR, INTERNAL6_ADDR
 	 */
 	if (!LIST_EMPTY(&child_sa->lease_list)) {
 		int prefixlen;
-		struct rcf_address	*a;
+		struct rcf_address	*a, *a2;
 
 		a = LIST_FIRST(&child_sa->lease_list);
 		ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss, a, &prefixlen);
-		if (env_add_addr((struct sockaddr *)&ss, 
-				 "INTERNAL_ADDR", NULL, &envp, &envc))
-			goto out;
+		if (a->af == AF_INET) {
+			if (env_add_addr((struct sockaddr *)&ss,
+					 "INTERNAL_ADDR", NULL, &envp, &envc))
+				goto out;
+		}
+		else if (a->af == AF_INET6) {
+			if (env_add_addr((struct sockaddr *)&ss,
+					 "INTERNAL6_ADDR", NULL, &envp, &envc))
+				goto out;
+		}
+		a2 = LIST_NEXT(a, link_sa);
+		if (a2) {
+			if (a->af != a2->af) {
+				ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss, a2, &prefixlen);
+				if (a2->af == AF_INET) {
+					if (env_add_addr((struct sockaddr *)&ss,
+							 "INTERNAL_ADDR", NULL, &envp, &envc))
+						goto out;
+				}
+				else if (a2->af == AF_INET6) {
+					if (env_add_addr((struct sockaddr *)&ss,
+							 "INTERNAL6_ADDR", NULL, &envp, &envc))
+						goto out;
+				}
+			}
+		}
 	}
 
 	/*
