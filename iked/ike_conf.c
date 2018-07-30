@@ -2254,7 +2254,7 @@ free_selectorlist(struct rcf_selector *s)
 }
 
 struct rc_addrlist *
-ike_conf_find_ikev2src_by_ts(struct ikev2payl_traffic_selector *ts_l,
+ike_conf_find_ikev2addrlist_by_af(struct ikev2payl_traffic_selector *ts_l,
 			     struct ikev2_child_sa *child_sa,
 			     struct rcf_remote *rmconf, int af,
 			     unsigned int *upper_layer_protocol)
@@ -2573,8 +2573,9 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 			TRACE((PLOGLOC, "using selector %s\n",
 			       rc_vmem2str(s->sl_index)));
 			if (dual_stack) {
-			/* Find TS for both address families */
-				struct rc_addrlist *srclist2; /* src of another selector for opposite family */
+			/* We have found TS for one address family */
+			/* Now we try to find TS for the other address family */
+				struct rc_addrlist *srclist2;
 				int prefixlen2; /* prefixlen of target2 */
 				int src_prefixlen2; /* prefixlen of srclist2 */
 				int af = AF_INET;
@@ -2583,7 +2584,7 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 				if (srclist->a.ipaddr->sa_family == AF_INET6)
 					af = AF_INET;
 				unsigned int upper_layer_protocol2 = IKEV2_TS_PROTO_ANY;
-				srclist2 = ike_conf_find_ikev2src_by_ts(ts_l, child_sa, rmconf, af,
+				srclist2 = ike_conf_find_ikev2addrlist_by_af(ts_l, child_sa, rmconf, af,
 									&upper_layer_protocol2);
 				if (!srclist2) {
 					plog(PLOG_INTERR, PLOGLOC, 0,
