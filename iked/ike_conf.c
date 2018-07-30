@@ -2256,7 +2256,7 @@ free_selectorlist(struct rcf_selector *s)
 struct rc_addrlist *
 ike_conf_find_ikev2addrlist_by_af(struct ikev2payl_traffic_selector *ts_l,
 			     struct ikev2_child_sa *child_sa,
-			     struct rcf_remote *rmconf, int af,
+			     struct rcf_remote *rmconf, sa_family_t af,
 			     unsigned int *upper_layer_protocol)
 {
 	struct ikev2_child_param *param = &child_sa->child_param;
@@ -2578,7 +2578,7 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 				struct rc_addrlist *srclist2;
 				int prefixlen2; /* prefixlen of target2 */
 				int src_prefixlen2; /* prefixlen of srclist2 */
-				int af = AF_INET;
+				sa_family_t af = AF_INET;
 				if (srclist->a.ipaddr->sa_family == AF_INET)
 					af = AF_INET6;
 				if (srclist->a.ipaddr->sa_family == AF_INET6)
