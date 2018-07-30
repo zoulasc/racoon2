@@ -2491,7 +2491,7 @@ ikev2_responder_state1_send(struct ikev2_sa *ike_sa,
 				   "reading cert (%s)\n",
 				   filename);
 			rc_vchar_t *my_cert_data = eay_get_x509cert(filename);
-			uint8_t value = 4;	/* See RFC 7296, section 3.6 */
+			uint8_t value = IKEV2_CERT_X509_SIGN;
 			void *cert_encoding = &value;
 			my_cert = rc_vprepend(my_cert_data, cert_encoding, sizeof(value));
 			if (!my_cert) {
