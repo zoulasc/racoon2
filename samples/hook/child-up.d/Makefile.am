@@ -4,4 +4,6 @@ install-exec-hook:
 	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
 	$(INSTALL_DATA) 00childup_sample $(sysconfdir)/hook/child-up.d
 	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 01setkey-fix $(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 02ifconfig-gif $(sysconfdir)/hook/child-up.d
 	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-up.d
