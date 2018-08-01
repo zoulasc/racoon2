@@ -24,11 +24,11 @@ ifconfig gif0 create && ifconfig gif0 tunnel ${LOCAL_ADDR} ${REMOTE_ADDR}
 ifconfig gif0 inet ${localaddr4} up
 ifconfig gif0 inet6 ${localaddr6} alias
 
-echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: INTERNAL_ADDR (leased to peer): ${INTERNAL_ADDR}" >> /var/log/messages
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: INTERNAL4_ADDR (leased to peer): ${INTERNAL4_ADDR}" >> /var/log/messages
 echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: INTERNAL6_ADDR (leased to peer): ${INTERNAL6_ADDR}" >> /var/log/messages
 
 # any routing or arp configuration for IPv4 is done here
-echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: configuring IPv4 routing for ${INTERNAL_ADDR}" >> /var/log/messages
+echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: configuring IPv4 routing for ${INTERNAL4_ADDR}" >> /var/log/messages
 
 echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: configuring IPv6 routing for ${INTERNAL6_ADDR}" >> /var/log/messages
 # These are needed to make ndp proxy work with a custom patch to the NetBSD kernel

@@ -2,5 +2,5 @@
 
 case ${SELECTOR_INDEX} in
 ike_tun_sel_out)
-arp -d ${INTERNAL_ADDR}
+arp -d ${INTERNAL4_ADDR}
 esac

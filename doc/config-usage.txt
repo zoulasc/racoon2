@@ -784,7 +784,8 @@ remote
 		    REMOTE_NET_PREFIXLEN
 		    REMOTE_NET_PORT
 		    UPPER_LAYER_PROTOCOL (decimal number or any)
-		    INTERNAL_ADDR (only if an address is leased to peer)
+		    INTERNAL4_ADDR (only if an IPv4 address is leased to peer)
+		    INTERNAL6_ADDR (only if an IPv6 address is leased to peer)
 		    INTERNAL_ADDR4 (leased from peer)
 		    INTERNAL_DNS4
 		    INTERNAL_WINS4

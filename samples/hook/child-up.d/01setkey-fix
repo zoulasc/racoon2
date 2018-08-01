@@ -14,11 +14,11 @@
 echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: running script $0" >> /var/log/messages
 
 # Look for two entries for :: and 0.0.0.0
-entryipv4=`setkey -DP | grep ${INTERNAL_ADDR} | grep "0\.0\.0\.0\[" | sed -n 2p`
+entryipv4=`setkey -DP | grep ${INTERNAL4_ADDR} | grep "0\.0\.0\.0\[" | sed -n 2p`
 entryipv6=`setkey -DP | grep ${INTERNAL6_ADDR} | grep "::\[" | sed -n 2p`
 
 # If found, fix IPv6 policy entries by replacing with policies with prefix length set to 0
-# Then add the policies for IPv4 if INTERNAL_ADDR is not empty
+# Then add the policies for IPv4 if INTERNAL4_ADDR is not empty
 if [ "x${entryipv6}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: fixing policies for IPv6 ::/0 network" >> /var/log/messages
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL6_ADDR}" >> /var/log/messages
@@ -28,12 +28,12 @@ if [ "x${entryipv6}" != "x" ]; then
 	spdadd ${INTERNAL6_ADDR} ::/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 	spddelete ${INTERNAL6_ADDR} :: any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 EOF
-if [ "x${INTERNAL_ADDR}" != "x" ]; then
+if [ "x${INTERNAL4_ADDR}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: adding policies for IPv4 0.0.0.0/0 network" >> /var/log/messages
-	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL_ADDR}" >> /var/log/messages
+	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL4_ADDR}" >> /var/log/messages
 	setkey -c << EOF
-	spdadd 0.0.0.0/0 ${INTERNAL_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
-	spdadd ${INTERNAL_ADDR} 0.0.0.0/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
+	spdadd 0.0.0.0/0 ${INTERNAL4_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
+	spdadd ${INTERNAL4_ADDR} 0.0.0.0/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 EOF
 fi
 fi
@@ -42,12 +42,12 @@ fi
 # Then add the policies for IPv6 if INTERNAL6_ADDR is not empty
 if [ "x${entryipv4}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: fixing policies for IPv4 0.0.0.0/0 network" >> /var/log/messages
-	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL_ADDR}" >> /var/log/messages
+	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: remote address: ${INTERNAL4_ADDR}" >> /var/log/messages
 	setkey -c << EOF
-	spdadd 0.0.0.0/0 ${INTERNAL_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
-	spddelete 0.0.0.0 ${INTERNAL_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
-	spdadd ${INTERNAL_ADDR} 0.0.0.0/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
-	spddelete ${INTERNAL_ADDR} 0.0.0.0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
+	spdadd 0.0.0.0/0 ${INTERNAL4_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
+	spddelete 0.0.0.0 ${INTERNAL4_ADDR} any -P out ipsec esp/tunnel/${LOCAL_ADDR}-${REMOTE_ADDR}/require;
+	spdadd ${INTERNAL4_ADDR} 0.0.0.0/0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
+	spddelete ${INTERNAL4_ADDR} 0.0.0.0 any -P in ipsec esp/tunnel/${REMOTE_ADDR}-${LOCAL_ADDR}/require;
 EOF
 if [ "x${INTERNAL6_ADDR}" != "x" ]; then
 	echo "`date +"%b %e %H:%M:%S"` `hostname` iked: [INFO]: adding policies for IPv6 ::/0 network" >> /var/log/messages
