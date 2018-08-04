@@ -443,7 +443,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 		goto fail;
 
 	/*
-	 * INTERNAL4_ADDR, INTERNAL6_ADDR
+	 * INTERNAL_ADDR, INTERNAL4_ADDR, INTERNAL6_ADDR
 	 */
 	if (!LIST_EMPTY(&child_sa->lease_list)) {
 		int prefixlen;
@@ -476,6 +476,11 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 						goto out;
 				}
 			}
+		}
+		else if (!a2) {
+			if (env_add_addr((struct sockaddr *)&ss,
+					 "INTERNAL_ADDR", NULL, &envp, &envc))
+				goto out;
 		}
 	}
 

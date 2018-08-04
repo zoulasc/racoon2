@@ -2,5 +2,5 @@
 
 case ${SELECTOR_INDEX} in
 ike_tun_sel_out)
-arp -s ${INTERNAL4_ADDR} auto pub permanent proxy;;
+arp -s ${INTERNAL_ADDR} auto pub permanent proxy;;
 esac
