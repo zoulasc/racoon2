@@ -786,6 +786,7 @@ remote
 		    UPPER_LAYER_PROTOCOL (decimal number or any)
 		    INTERNAL4_ADDR (only if an IPv4 address is leased to peer)
 		    INTERNAL6_ADDR (only if an IPv6 address is leased to peer)
+		    INTERNAL_ADDR (only if a single address is leased to peer)
 		    INTERNAL_ADDR4 (leased from peer)
 		    INTERNAL_DNS4
 		    INTERNAL_WINS4
