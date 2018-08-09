@@ -2250,6 +2250,7 @@ free_selectorlist(struct rcf_selector *s)
 	for (; s; s = s_next) {
 		s_next = s->next;
 		rcf_free_selector(s);
+		s->next = 0;
 	}
 }
 
@@ -2520,6 +2521,7 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 			child_sa->srclist = srclist;
 			child_sa->dstlist = dstlist;
 			free_selectorlist(s->next);
+			s->next = 0;
 			return s;
 		} else if (ts_payload_is_matching(ts_l,
 						  upper_layer_protocol,
@@ -2636,6 +2638,7 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 			child_sa->srclist = srclist;
 			child_sa->dstlist = dstlist;
 			free_selectorlist(s->next);
+			s->next = 0;
 			return s;
 		}
 
