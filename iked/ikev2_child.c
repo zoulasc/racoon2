@@ -258,13 +258,13 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 		policy = selector->pl;
 
 	if (!LIST_EMPTY(&sa->lease_list)) {
-		struct rcf_address	*a;
+	/*	struct rcf_address	*a; */
 
-		/* XXX so far it should be single address in list */
-
-		for (a = LIST_FIRST(&sa->lease_list);
+		/* There can be one IPv4 and one IPv6 address in lease_list */
+		/* XXX a is not used in this for loop, so we comment it out */
+	/*	for (a = LIST_FIRST(&sa->lease_list);
 		     a != 0;
-		     a = LIST_NEXT(a, link_sa)) {
+		     a = LIST_NEXT(a, link_sa)) { */
 			/* XXX need individual slid, XXX: selector NULL */
 			if (selector && spmif_post_policy_delete(ike_spmif_socket(),
 						     NULL, NULL,
@@ -273,7 +273,14 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 					   PLOG_INTERR, PLOGLOC,
 					   "failed to send delete policy request to spmd\n");
 			}
-		}
+			if (selector->next && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     selector->next->sl_index)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+	/*	} */
 	} else if (policy && policy->peers_sa_ipaddr &&
 		   rcs_is_addr_rw(policy->peers_sa_ipaddr)) {
 		if (spmif_post_policy_delete(ike_spmif_socket(),
@@ -282,6 +289,15 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 			isakmp_log(0, 0, 0, 0,
 				   PLOG_INTERR, PLOGLOC,
 				   "failed to send delete policy request to spmd\n");
+		}
+		if (selector->next) {
+			if (spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     selector->next->sl_index)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
 		}
 	}
 
@@ -305,6 +321,8 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 		rc_vfree(sa->ts_i);
 	if (sa->ts_r)
 		rc_vfree(sa->ts_r);
+	if (sa->selector->next)
+		rcf_free_selector(sa->selector->next);
 	if (sa->selector)
 		rcf_free_selector(sa->selector);
 	if (sa->my_proposal)
@@ -370,7 +388,7 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 {
 	size_t nonce_size;
 	struct prop_pair **parsed_sa = 0;
-	struct rcf_selector *sel;
+	struct rcf_selector *sel4, *sel6;
 	struct rcf_policy *pol;
 	struct prop_pair **my_proposal = 0;
 	struct prop_pair *matching_peer_proposal = 0;
@@ -435,22 +453,30 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 
 	/* choose conf by ts_i and ts_r, use_transport_mode */
 	/* and obtain matching ts_i and ts_r in child_param */
-	sel = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
-					   child_sa,
+	sel4 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+					   child_sa, AF_INET,
 					   ike_sa->rmconf);
-	if (!sel) {
+	sel6 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+					   child_sa, AF_INET6,
+					   ike_sa->rmconf);
+	if (!sel4 && !sel6) {
 		/* additional_ts_possible? */
 		/* single_pair_required? */
 		goto ts_unacceptable;
 	}
-	child_sa->selector = sel;
+	if (sel4)
+		child_sa->selector = sel4;
+	else
+		child_sa->selector = sel6;
+	if (sel4 && sel6)
+		child_sa->selector->next = sel6;
 
 	if (cfg) {
 		if (ikev2_create_config_reply(ike_sa, child_sa, &child_sa->child_param))
 			goto fail_nomem;
 	}
 
-	pol = sel->pl;		/* policy */
+	pol = child_sa->selector->pl;		/* policy */
 	assert(pol != 0);
 
 	/* choose SA as a union of  sa_i2, use_transport_mode, conf */
@@ -554,8 +580,7 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 		int prefixlen;
 		struct rc_addrlist ra;
 
-		/* allow lease list to have two addresses, one AF_INET, one AF_INET6 */
-/*		assert(LIST_NEXT(LIST_FIRST(&child_sa->lease_list), link_sa) == 0); */
+		/* lease list can have 2 addresses, one AF_INET, one AF_INET6 */
 
 		IPSEC_CONF(lifetime, pol->ips, ipsec_sa_lifetime_time, 0);
 		for (a = LIST_FIRST(&child_sa->lease_list); a != 0;
@@ -567,17 +592,30 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 			ra.port = 0;
 			ra.prefixlen = prefixlen;
 			ra.a.ipaddr = (struct sockaddr *)&ss;
-			/* address family check */
-			if (ra.a.ipaddr->sa_family != sel->src->a.ipaddr->sa_family)
-				continue;
-			if (spmif_post_policy_add(ike_spmif_socket(), NULL, NULL,
-						  child_sa->selector->sl_index,
-						  lifetime, ike_ipsec_mode(pol),
- 						  sel->src,
-						  &ra,
-						  child_sa->local,
-						  child_sa->remote)) {
-				goto fail_internal;
+
+			switch (ra.a.ipaddr->sa_family) {
+			case AF_INET:
+				if (spmif_post_policy_add(ike_spmif_socket(), NULL, NULL,
+							  sel4->sl_index,
+							  lifetime, ike_ipsec_mode(pol),
+							  sel4->src,
+							  &ra,
+							  child_sa->local,
+							  child_sa->remote)) {
+					goto fail_internal;
+				}
+				break;
+			case AF_INET6:
+				if (spmif_post_policy_add(ike_spmif_socket(), NULL, NULL,
+							  sel6->sl_index,
+							  lifetime, ike_ipsec_mode(pol),
+							  sel6->src,
+							  &ra,
+							  child_sa->local,
+							  child_sa->remote)) {
+					goto fail_internal;
+				}
+				break;
 			}
 		}
 	} else if (!old_child_sa && 
@@ -588,6 +626,13 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 					      child_sa->local, child_sa->remote,
 					      ike_sa->rmconf) < 0)
 			goto fail_internal;
+		if (child_sa->selector->next) {
+			if (ike_spmif_post_policy_add(child_sa->selector->next,
+						      ike_ipsec_mode(pol), lifetime,
+						      child_sa->local, child_sa->remote,
+						      ike_sa->rmconf) < 0)
+				goto fail_internal;
+		}
 	}
 
 	sadb_request_initialize(&child_sa->sadb_request,
@@ -1441,6 +1486,24 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 		goto abort;
 	default:
 		break;
+	}
+	if (child_sa->selector->next) {
+		switch (ikev2_confirm_ts(ts_i, ts_r, child_sa->selector->next)) {
+		case -1:
+			isakmp_log(child_sa->parent, 0, 0, 0,
+				   PLOG_PROTOERR, PLOGLOC,
+				   "responder's TSi does not match my selector\n");
+			err = IKEV2_NO_PROPOSAL_CHOSEN;
+			goto abort;
+		case -2:
+			isakmp_log(child_sa->parent, 0, 0, 0,
+				   PLOG_PROTOERR, PLOGLOC,
+				   "responder's TSr does not match my selector\n");
+			err = IKEV2_NO_PROPOSAL_CHOSEN;
+			goto abort;
+		default:
+			break;
+		}
 	}
 
 	/*

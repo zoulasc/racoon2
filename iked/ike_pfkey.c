@@ -824,24 +824,28 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		    ((struct sockaddr_in *)child_sa->remote)->sin_addr =
 		      ((struct sockaddr_in *)ike_sa->remote)->sin_addr;
 
-		  policy = child_sa->selector->pl;
-		  if (policy->my_sa_ipaddr) {
-		    if (policy->my_sa_ipaddr->type != RCT_ADDR_INET) {
-		      TRACE((PLOGLOC, "unexpected type\n"));
-		      continue;
+		  for (selector = child_sa->selector;
+		       selector != 0;
+		       selector = selector->next) {
+		    policy = selector->pl;
+		    if (policy->my_sa_ipaddr) {
+			  if (policy->my_sa_ipaddr->type != RCT_ADDR_INET) {
+			    TRACE((PLOGLOC, "unexpected type\n"));
+			    continue;
+			  }
+			  ((struct sockaddr_in *)policy->my_sa_ipaddr->a.ipaddr)->sin_addr =
+			    ((struct sockaddr_in *)ike_sa->local)->sin_addr;
 		    }
-		    ((struct sockaddr_in *)policy->my_sa_ipaddr->a.ipaddr)->sin_addr =
-		      ((struct sockaddr_in *)ike_sa->local)->sin_addr;
-		  }
-		  if (policy->peers_sa_ipaddr) {
-		    if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET) {
-		      TRACE((PLOGLOC, "unexpected type\n"));
-		      continue;
+		    if (policy->peers_sa_ipaddr) {
+			  if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET) {
+			    TRACE((PLOGLOC, "unexpected type\n"));
+			    continue;
+			  }
+			  ((struct sockaddr_in *)policy->peers_sa_ipaddr->a.ipaddr)->sin_addr =
+			    ((struct sockaddr_in *)ike_sa->local)->sin_addr;
 		    }
-		    ((struct sockaddr_in *)policy->peers_sa_ipaddr->a.ipaddr)->sin_addr =
-		      ((struct sockaddr_in *)ike_sa->local)->sin_addr;
 		  }
-		  break;
+		break;
 #ifdef INET6
 		case AF_INET6:
 		  if (child_sa->local)
@@ -853,26 +857,30 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			   &((struct sockaddr_in6 *)ike_sa->remote)->sin6_addr,
 			   sizeof(struct in6_addr));
 
-		  policy = child_sa->selector->pl;
-		  if (policy->my_sa_ipaddr) {
-		    if (policy->my_sa_ipaddr->type != RCT_ADDR_INET) {
-		      TRACE((PLOGLOC, "unexpected type\n"));
-		      continue;
+		  for (selector = child_sa->selector;
+		       selector != 0;
+		       selector = selector->next) {
+		    policy = selector->pl;
+		    if (policy->my_sa_ipaddr) {
+		      if (policy->my_sa_ipaddr->type != RCT_ADDR_INET) {
+		        TRACE((PLOGLOC, "unexpected type\n"));
+		        continue;
+		      }
+		      memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr,
+			     &((struct sockaddr_in6 *)ike_sa->local)->sin6_addr,
+			     sizeof(struct in6_addr));
 		    }
-		    memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr, 
-			   &((struct sockaddr_in6 *)ike_sa->local)->sin6_addr,
-			   sizeof(struct in6_addr));
-		  }
-		  if (policy->peers_sa_ipaddr) {
-		    if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET) {
-		      TRACE((PLOGLOC, "unexpected type\n"));
-		      continue;
+		    if (policy->peers_sa_ipaddr) {
+		      if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET) {
+		        TRACE((PLOGLOC, "unexpected type\n"));
+		        continue;
+		      }
+		      memcpy(&((struct sockaddr_in6 *)policy->peers_sa_ipaddr->a.ipaddr)->sin6_addr,
+			     &((struct sockaddr_in6 *)ike_sa->remote)->sin6_addr,
+			     sizeof(struct in6_addr));
 		    }
-		    memcpy(&((struct sockaddr_in6 *)policy->peers_sa_ipaddr->a.ipaddr)->sin6_addr,
-			   &((struct sockaddr_in6 *)ike_sa->remote)->sin6_addr,
-			   sizeof(struct in6_addr));
 		  }
-		  break;
+		break;
 #endif
 		}
 		plog(PLOG_INFO, PLOGLOC, 0, "move child_sa(%p)\n", child_sa);

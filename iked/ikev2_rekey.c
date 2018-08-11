@@ -145,6 +145,13 @@ ikev2_rekey_childsa(struct ikev2_child_sa *old_child_sa, rc_type satype,
 		TRACE((PLOGLOC, "failed rcf_get_selector()\n"));
 		goto fail;
 	}
+	if (old_child_sa->selector->next) {
+		if (rcf_get_selector(rc_vmem2str(old_child_sa->selector->next->sl_index),
+				     &new_child_sa->selector->next) != 0) {
+			TRACE((PLOGLOC, "failed rcf_get_selector()\n"));
+			goto fail;
+		}
+	}
 
 	new_child_sa->srclist = old_child_sa->srclist;
 	old_child_sa->srclist = 0;

@@ -389,11 +389,16 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 		goto out;
 
 	/*
-	 * SELECTOR_INDEX
+	 * SELECTOR_INDEX, SELECTOR2_INDEX
 	 */
 	if (script_env_append(&envp, &envc, "SELECTOR_INDEX",
 			      rc_vmem2str(selector->sl_index)))
 		goto fail;
+	if (selector->next) {
+		if (script_env_append(&envp, &envc, "SELECTOR2_INDEX",
+				      rc_vmem2str(selector->next->sl_index)))
+			goto fail;
+	}
 
 	/*
 	 * IPSEC_MODE

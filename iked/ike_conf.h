@@ -256,12 +256,8 @@ void ike_conf_release(struct rcf_remote *);
 /* rc_vchar_t * ikev2_conf_sa(struct ikev2_sa *, struct rcf_remote *); */
 struct rcf_selector *ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *,
 						  struct ikev2_payload_header *,
-						  struct ikev2_child_sa *,
+						  struct ikev2_child_sa *, sa_family_t,
 						  struct rcf_remote *);
-struct rc_addrlist *ike_conf_find_ikev2addrlist_by_af(struct ikev2payl_traffic_selector *,
-						  struct ikev2_child_sa *,
-						  struct rcf_remote *, sa_family_t,
-						  unsigned int *);
 struct rcf_selector *ike_conf_find_selector_by_addr(struct sockaddr *,
 						    struct sockaddr *);
 struct algdef *isakmp_dhinfo(unsigned int, struct algdef *);
