@@ -45,6 +45,13 @@ struct shell_sock {
 		struct sockaddr_un slocal;
 	} sock;
 };
+
+#define _IN6_IS_ADDR_UNSPECIFIED(a)	\
+	((a).__u6_addr.__u6_addr32[0] == 0 &&	\
+	 (a).__u6_addr.__u6_addr32[1] == 0 &&	\
+	 (a).__u6_addr.__u6_addr32[2] == 0 &&	\
+	 (a).__u6_addr.__u6_addr32[3] == 0)
+
 static struct shell_sock *shhead = NULL;
 static int seed_fd;
 
@@ -1459,11 +1466,19 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			if ((src_plen <= 0) || (src_plen > 32)) {
 				src_plen = 32;
 			}
+			if ((src_plen == 32) &&
+			    (((struct sockaddr_in *)sres->ai_addr)->sin_addr.s_addr == 0)) {
+				src_plen = 0;
+			}
 			src_port = htons(sl1->src->port);
 			((struct sockaddr_in *)sres->ai_addr)->sin_port = src_port;
 		} else if (sres->ai_family == AF_INET6) {
 			if ((src_plen <= 0) || (src_plen > 128)) {
 				src_plen = 128;
+			}
+			if ((src_plen == 128) &&
+			    (_IN6_IS_ADDR_UNSPECIFIED(((struct sockaddr_in6 *)sres->ai_addr)->sin6_addr))) {
+				src_plen = 0;
 			}
 			src_port = htons(sl1->src->port);
 			((struct sockaddr_in6 *)sres->ai_addr)->sin6_port = src_port;
@@ -1475,11 +1490,19 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			if ((dst_plen <= 0) || (dst_plen > 32)) {
 				dst_plen = 32;
 			}
+			if ((dst_plen == 32) &&
+			    (((struct sockaddr_in *)dres->ai_addr)->sin_addr.s_addr == 0)) {
+				dst_plen = 0;
+			}
 			dst_port = htons(sl1->dst->port);
 			((struct sockaddr_in *)dres->ai_addr)->sin_port = dst_port;
 		} else if (dres->ai_family == AF_INET6) {
 			if ((dst_plen <= 0) || (dst_plen > 128)) {
 				dst_plen = 128;
+			}
+			if ((dst_plen == 128) &&
+			    (_IN6_IS_ADDR_UNSPECIFIED(((struct sockaddr_in6 *)dres->ai_addr)->sin6_addr))) {
+				dst_plen = 0;
 			}
 			dst_port = htons(sl1->dst->port);
 			((struct sockaddr_in6 *)dres->ai_addr)->sin6_port = dst_port;
