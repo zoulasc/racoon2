@@ -2029,6 +2029,11 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
  *
  *   currently, returning TS is created from proto/addr/prefixlen
  *   ignoring peer's TS (assuming it is checked by ts_payload_is_matching())
+ *
+ *   This function is used when acting as a responder and it adds a matching
+ *   TS to a TS payload to be sent to the initiator/peer. Currently the TS to
+ *   be sent to the peer are stored in child_sa->child_param.ts_i and in
+ *   child_sa->child_param.ts_r
  */
 static rc_vchar_t *
 ts_add_return(rc_vchar_t *ptr, int proto, struct sockaddr *addr, int prefixlen)

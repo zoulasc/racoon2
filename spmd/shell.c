@@ -45,13 +45,6 @@ struct shell_sock {
 		struct sockaddr_un slocal;
 	} sock;
 };
-
-#define _IN6_IS_ADDR_UNSPECIFIED(a)	\
-	((a).__u6_addr.__u6_addr32[0] == 0 &&	\
-	 (a).__u6_addr.__u6_addr32[1] == 0 &&	\
-	 (a).__u6_addr.__u6_addr32[2] == 0 &&	\
-	 (a).__u6_addr.__u6_addr32[3] == 0)
-
 static struct shell_sock *shhead = NULL;
 static int seed_fd;
 
@@ -1323,6 +1316,8 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 	char *src_addrstr = NULL, *dst_addrstr = NULL;
 	char *src_plenstr = NULL, *dst_plenstr = NULL;
 	int src_plen = 0, dst_plen = 0;
+	struct in_addr src_sin, dst_sin;
+	struct in6_addr src_sin6, dst_sin6;
 	in_port_t src_port, dst_port; /* host byte order */
 	int not_urgent = 0;
 
@@ -1463,21 +1458,23 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		sl_to_rc_wo_addr(sl1, rc1);
 		rc1->lft_hard_time = lifetime;
 		if (sres->ai_family == AF_INET) {
+			src_sin = ((struct sockaddr_in *)sres->ai_addr)->sin_addr;
 			if ((src_plen <= 0) || (src_plen > 32)) {
 				src_plen = 32;
 			}
 			if ((src_plen == 32) &&
-			    (((struct sockaddr_in *)sres->ai_addr)->sin_addr.s_addr == 0)) {
+			    (src_sin.s_addr == 0)) {
 				src_plen = 0;
 			}
 			src_port = htons(sl1->src->port);
 			((struct sockaddr_in *)sres->ai_addr)->sin_port = src_port;
 		} else if (sres->ai_family == AF_INET6) {
+			src_sin6 = ((struct sockaddr_in6 *)sres->ai_addr)->sin6_addr;
 			if ((src_plen <= 0) || (src_plen > 128)) {
 				src_plen = 128;
 			}
 			if ((src_plen == 128) &&
-			    (_IN6_IS_ADDR_UNSPECIFIED(((struct sockaddr_in6 *)sres->ai_addr)->sin6_addr))) {
+			     IN6_IS_ADDR_UNSPECIFIED(&src_sin6)) {
 				src_plen = 0;
 			}
 			src_port = htons(sl1->src->port);
@@ -1487,21 +1484,23 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		rc1->sp_src = rcs_sadup(sres->ai_addr);
 
 		if (dres->ai_family == AF_INET) {
+			dst_sin = ((struct sockaddr_in *)dres->ai_addr)->sin_addr;
 			if ((dst_plen <= 0) || (dst_plen > 32)) {
 				dst_plen = 32;
 			}
 			if ((dst_plen == 32) &&
-			    (((struct sockaddr_in *)dres->ai_addr)->sin_addr.s_addr == 0)) {
+			    (dst_sin.s_addr == 0)) {
 				dst_plen = 0;
 			}
 			dst_port = htons(sl1->dst->port);
 			((struct sockaddr_in *)dres->ai_addr)->sin_port = dst_port;
 		} else if (dres->ai_family == AF_INET6) {
+			dst_sin6 = ((struct sockaddr_in6 *)dres->ai_addr)->sin6_addr;
 			if ((dst_plen <= 0) || (dst_plen > 128)) {
 				dst_plen = 128;
 			}
 			if ((dst_plen == 128) &&
-			    (_IN6_IS_ADDR_UNSPECIFIED(((struct sockaddr_in6 *)dres->ai_addr)->sin6_addr))) {
+			     IN6_IS_ADDR_UNSPECIFIED(&dst_sin6)) {
 				dst_plen = 0;
 			}
 			dst_port = htons(sl1->dst->port);
