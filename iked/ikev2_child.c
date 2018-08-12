@@ -248,7 +248,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 {
 
 	/* ikev2_remove_child() must be called before this */
-#if 0
+    if (!sa->rekey_inprogress) {
 	struct rcf_selector	*selector;
 	struct rcf_policy	*policy;
 
@@ -300,7 +300,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 			}
 		}
 	}
-#endif
+    }
 	sadb_request_finish(&sa->sadb_request);
 	rc_addrpool_release_all(&sa->lease_list);
 	if (sa->local)
