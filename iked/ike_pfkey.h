@@ -75,6 +75,8 @@
  *
  */
 
+struct rcpfk_msg;
+
 struct sadb_request_method {
 	int (*getspi)(struct rcpfk_msg *);
 	int (*acquire_error)(struct rcpfk_msg *);

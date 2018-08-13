@@ -64,6 +64,7 @@ struct isakmp_gen;
 struct ipsecdoi_pl_id;		/* XXX */
 struct isakmp_pl_ke;		/* XXX */
 struct isakmp_pl_nonce;		/* XXX */
+struct rcf_remote;
 
 extern int isakmp_handler (int);
 extern int isakmp_ph1begin_i (struct rcf_remote *, struct sockaddr *,
