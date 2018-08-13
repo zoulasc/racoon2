@@ -67,6 +67,9 @@
 #ifdef WITH_PARSECOA
 #  include "parse_coa.h"
 #endif
+#ifdef WITH_ADMIN
+#  include "admin.h"
+#endif
 
 const char *racoon_config_path = RACOON_CONF;
 int opt_foreground = FALSE;
@@ -379,7 +382,14 @@ main(int argc, char **argv)
 		iked_exit(IKED_EXIT_FAILURE);
 	}
 #endif
-
+#ifdef WITH_ADMIN
+	if (admin_open() != 0) {
+		plog(PLOG_CRITICAL, PLOGLOC, 0,
+		     "failed opening admin inteface socket: %s\n",
+		     strerror(errno));
+		iked_exit(IKED_EXIT_FAILURE);
+	}
+#endif
 
 	if (!debug_spmif && ike_spmif_init() == -1) {
 		plog(PLOG_CRITICAL, PLOGLOC, 0,
@@ -437,21 +447,34 @@ main(int argc, char **argv)
 	/*NOTREACHED*/
 }
 
+static int
+monitor_fd(int fd, fd_set *fdset, int *nfds)
+{
+	if (fd < 0)
+		return -1;
+	if (fd >= *nfds)
+		*nfds = fd + 1;
+	FD_SET(fd, fdset);
+	return 0;
+}
+
 static void
 iked_mainloop(void)
 {
-	int fd;
 	int num_fds;
 	int nfds;
 	int spmif_fd;
 	fd_set fdset;
 	struct timeval *timeout;
-	int isakmp_sock;
+	int isakmp_sock, sadbsock_fd;
 #ifdef WITH_RTSOCK
 	int rtsock_fd;
 #endif
 #ifdef WITH_PARSECOA
-	int nlx_socket;
+	int nlxsock_fd;
+#endif
+#ifdef WITH_ADMIN
+	int adminsock_fd;
 #endif
 
 	for (;;) {
@@ -464,36 +487,22 @@ iked_mainloop(void)
 		nfds = isakmp_fdset(&fdset);
 
 		if (!debug_pfkey) {
-			fd = sadb_socket();
-			if (fd >= nfds)
-				nfds = fd + 1;
-			FD_SET(fd, &fdset);
+			monitor_fd(sadbsock_fd = sadb_socket(), &fdset, &nfds);
+		} else {
+			sadbsock_fd = -1;
 		}
 
-		spmif_fd = ike_spmif_socket();
-		if (spmif_fd >= 0) {
-			if (spmif_fd >= nfds)
-				nfds = spmif_fd + 1;
-			FD_SET(spmif_fd, &fdset);
-		}
+		monitor_fd(spmif_fd = ike_spmif_socket(), &fdset, &nfds);
 
 #ifdef WITH_RTSOCK
-		rtsock_fd = rtsock_socket();
-		if (rtsock_fd >= 0) {
-			if (rtsock_fd >= nfds)
-				nfds = rtsock_fd + 1;
-			FD_SET(rtsock_fd, &fdset);
-		}
+		monitor_fd(rtsock_fd = rtsock_socket(), &fdset, &nfds);
 #endif
 #ifdef WITH_PARSECOA
-		nlx_socket = nl_xfrm_socket();
-		if (nlx_socket >= 0) {
-			if (nlx_socket >= nfds)
-				nfds = nlx_socket + 1;
-			FD_SET(nlx_socket, &fdset);
-		}
+		monitor_fd(nlxsock_fd = nl_xfrm_socket(), &fdset, &nfds);
 #endif
-
+#ifdef WITH_ADMIN
+		monitor_fd(adminsock_fd = admin_socket(), &fdset, &nfds);
+#endif
 		timeout = scheduler();
 		num_fds = select(nfds, &fdset, NULL, NULL, timeout);
 		if (num_fds == -1) {
@@ -507,11 +516,15 @@ iked_mainloop(void)
 			rtsock_process();
 #endif
 #ifdef WITH_PARSECOA
-		if (nlx_socket >= 0 && FD_ISSET(nlx_socket, &fdset))
+		if (nlsock_fd >= 0 && FD_ISSET(nlxsock_fd, &fdset))
 			nl_xfrm_process();
 #endif
+#ifdef WITH_ADMIN
+		if (adminsock_fd >= 0 && FD_ISSET(adminsock_fd, &fdset))
+			admin_process();
+#endif
 
-		if (!debug_pfkey && FD_ISSET(sadb_socket(), &fdset)) {
+		if (sadbsock_fd >= 0 && FD_ISSET(sadbsock_fd, &fdset)) {
 			sadb_poll();
 		}
 
