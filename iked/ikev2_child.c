@@ -249,10 +249,15 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 
 	/* ikev2_remove_child() must be called before this */
     if (!sa->rekey_inprogress) {
-	struct rcf_selector	*selector;
+	struct rcf_selector	*selector, *rvrs_selector;
 	struct rcf_policy	*policy;
 
 	selector = sa->selector;
+	if (rcf_get_rvrs_selector(selector, &rvrs_selector)<0) {
+		isakmp_log(0, 0, 0, 0,
+			   PLOG_INTERR, PLOGLOC,
+			   "failed to get reverse selector\n");
+	}
 	policy = 0;
 	if (selector)
 		policy = selector->pl;
@@ -273,6 +278,20 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 					   PLOG_INTERR, PLOGLOC,
 					   "failed to send delete policy request to spmd\n");
 			}
+			if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     rvrs_selector->sl_index)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+			if (rvrs_selector)
+				rcf_free_selector(rvrs_selector);
+			if (rcf_get_rvrs_selector(selector->next, &rvrs_selector)<0) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to get reverse selector\n");
+			}
 			if (selector->next && spmif_post_policy_delete(ike_spmif_socket(),
 						     NULL, NULL,
 						     selector->next->sl_index)) {
@@ -280,6 +299,15 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 					   PLOG_INTERR, PLOGLOC,
 					   "failed to send delete policy request to spmd\n");
 			}
+			if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     rvrs_selector->sl_index)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+			if (rvrs_selector)
+				rcf_free_selector(rvrs_selector);
 	/*	} */
 	} else if (policy && policy->peers_sa_ipaddr &&
 		   rcs_is_addr_rw(policy->peers_sa_ipaddr)) {
