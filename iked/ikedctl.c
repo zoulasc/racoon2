@@ -67,46 +67,39 @@
 
 #include "var.h"
 #include "vmbuf.h"
-#include "misc.h"
 #include "gcmalloc.h"
 
 #include "ikedctl.h"
 #include "admin.h"
 #include "schedule.h"
-#include "handler.h"
 #include "sockmisc.h"
-#include "vmbuf.h"
 #include "plog.h"
-#include "isakmp_var.h"
 #include "isakmp.h"
-#include "isakmp_xauth.h"
-#include "isakmp_cfg.h"
-#include "isakmp_unity.h"
+#include "isakmp_var.h"
 #include "ipsec_doi.h"
-#include "evt.h"
 
-char *adminsock_path = ADMINSOCK_PATH;
+const char *adminsock_path = ADMINSOCK_PATH;
 
 static void usage(void);
-static vchar_t *get_combuf(int, char **);
-static int handle_recv(vchar_t *);
-static vchar_t *f_reload(int, char **);
-static vchar_t *f_getsched(int, char **);
-static vchar_t *f_getsa(int, char **);
-static vchar_t *f_getsacert(int, char **);
-static vchar_t *f_flushsa(int, char **);
-static vchar_t *f_deletesa(int, char **);
-static vchar_t *f_exchangesa(int, char **);
-static vchar_t *f_vpnc(int, char **);
-static vchar_t *f_vpnd(int, char **);
-static vchar_t *f_getevt(int, char **);
+static rc_vchar_t *get_combuf(int, char **);
+static int handle_recv(rc_vchar_t *);
+static rc_vchar_t *f_reload(int, char **);
+static rc_vchar_t *f_getsched(int, char **);
+static rc_vchar_t *f_getsa(int, char **);
+static rc_vchar_t *f_getsacert(int, char **);
+static rc_vchar_t *f_flushsa(int, char **);
+static rc_vchar_t *f_deletesa(int, char **);
+static rc_vchar_t *f_exchangesa(int, char **);
+static rc_vchar_t *f_vpnc(int, char **);
+static rc_vchar_t *f_vpnd(int, char **);
+static rc_vchar_t *f_getevt(int, char **);
 #ifdef ENABLE_HYBRID
-static vchar_t *f_logoutusr(int, char **);
+static rc_vchar_t *f_logoutusr(int, char **);
 #endif
 
-struct cmd_tag {
-	vchar_t *(*func)(int, char **);
-	char *str;
+static const struct cmd_tag {
+	rc_vchar_t *(*func)(int, char **);
+	const char *str;
 } cmdtab[] = {
 	{ f_reload,	"reload-config" },
 	{ f_reload,	"rc" },
@@ -135,9 +128,9 @@ struct cmd_tag {
 	{ NULL, NULL },
 };
 
-struct evtmsg {
+static const struct evtmsg {
 	int type;
-	char *msg;
+	const char *msg;
 } evtmsg[] = {
 	{ EVT_IKED_QUIT,		"Racoon terminated" },
 
@@ -158,17 +151,17 @@ struct evtmsg {
 	{ EVT_PHASE2_NO_RESPONSE,	"Phase 2 error: no response" },
 };
 
-static vchar_t *get_proto_and_index(int, char **, u_int16_t *);
+static rc_vchar_t *get_proto_and_index(int, char **, uint16_t *);
 static int get_proto(char *);
-static vchar_t *get_index(int, char **);
+static rc_vchar_t *get_index(int, char **);
 static int get_family(char *);
-static vchar_t *get_comindexes(int, int, char **);
+static rc_vchar_t *get_comindexes(int, int, char **);
 static int get_comindex(char *, char **, char **, char **);
 static int get_ulproto(char *);
 
-struct proto_tag {
+static struct proto_tag {
 	int proto;
-	char *str;
+	const char *str;
 } prototab[] = {
 	{ ADMIN_PROTO_ISAKMP,	"isakmp" },
 	{ ADMIN_PROTO_IPSEC,	"ipsec" },
@@ -178,9 +171,9 @@ struct proto_tag {
 	{ 0, NULL },
 };
 
-struct ulproto_tag {
+static struct ulproto_tag {
 	int ul_proto;
-	char *str;
+	const char *str;
 } ulprototab[] = {
 	{ 0,		"any" },
 	{ IPPROTO_ICMP,	"icmp" },
@@ -198,17 +191,17 @@ char *pname;
 int long_format = 0;
 int evt_quit_event = 0;
 
-void dump_isakmp_sa(char *, int);
-void dump_internal(char *, int);
-char *pindex_isakmp(isakmp_index *);
-void print_schedule(caddr_t, int);
-void print_evt(struct evt_async *);
-char * fixed_addr(char *, char *, int);
+static void dump_isakmp_sa(char *, size_t);
+static void dump_internal(char *, size_t);
+static char *pindex_isakmp(isakmp_index *);
+static void print_schedule(char *, size_t);
+static void print_evt(struct evt_async *);
+static char *fixed_addr(char *, char *, size_t);
 
-static void
-usage()
+static __dead void
+usage(void)
 {
-	printf(
+	fprintf(stderr, 
 "Usage:\n"
 "  %s [opts] reload-config\n"
 "  %s [opts] show-schedule\n"
@@ -236,8 +229,9 @@ usage()
 "    <family>: \"inet\" or \"inet6\"\n"
 "    <ul_proto>: \"icmp\", \"tcp\", \"udp\", \"gre\" or \"any\"\n"
 "\n",
-		pname, pname, pname, pname, pname, pname, pname, pname, pname, pname,
-		ADMINSOCK_PATH);
+	pname, pname, pname, pname, pname, pname, pname, pname, pname, pname,
+	ADMINSOCK_PATH);
+    exit(EXIT_FAILURE);
 }
 
 /*
@@ -248,11 +242,9 @@ usage()
 #endif
 
 int
-main(ac, av)
-	int ac;
-	char **av;
+main(int ac, char **av)
 {
-	vchar_t *combuf;
+	rc_vchar_t *combuf;
 	int c;
 
 	pname = *av;
@@ -262,7 +254,7 @@ main(ac, av)
 	 */
 	if ((ikedctl_interface_major != IKEDCTL_INTERFACE_MAJOR) ||
 	    (ikedctl_interface < IKEDCTL_INTERFACE))
-		errx(1, "Incompatible ikedctl interface");
+		errx(EXIT_FAILURE, "Incompatible ikedctl interface");
 
 #ifdef __linux__
 	/*
@@ -287,19 +279,20 @@ main(ac, av)
 
 		default:
 			usage();
-			exit(0);
 		}
 	}
 
 	ac -= optind;
 	av += optind;
 
-	combuf = get_combuf(ac, av);
+	combuf = get_combuf(int ac, char **av);
 	if (!combuf)
 		err(1, "kmpstat");
 
-	if (loglevel)
-		iked_hexdump(combuf, ((struct admin_com *)combuf)->ac_len);
+	if (loglevel) {
+		struct admin_com *ac = combuf->v;
+		iked_hexdump(ac, ac->ac_len);
+	}
 
 	com_init();
 
@@ -317,29 +310,26 @@ main(ac, av)
 	} while (evt_quit_event != 0);
 
 	close(so);
-	exit(0);
+	return EXIT_SUCCESS;
 
 bad:
 	close(so);
 	if (errno == EEXIST)
-		exit(0);
-	exit(1);
+		return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
 
 /* %%% */
 /*
  * return command buffer.
  */
-static vchar_t *
-get_combuf(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+get_combuf(int ac, char **av)
 {
-	struct cmd_tag *cp;
+	const struct cmd_tag *cp;
 
 	if (ac == 0) {
 		usage();
-		exit(0);
 	}
 
 	/* checking the string of command. */
@@ -356,18 +346,18 @@ get_combuf(ac, av)
 
 	ac--;
 	av++;
-	return (cp->func)(ac, av);
+	return (cp->func)(int ac, char **av);
 }
 
-static vchar_t *
-make_request(u_int16_t cmd, u_int16_t proto, size_t len)
+static rc_vchar_t *
+make_request(uint16_t cmd, uint16_t proto, size_t len)
 {
-	vchar_t *buf;
+	rc_vchar_t *buf;
 	struct admin_com *head;
 
-	buf = vmalloc(sizeof(struct admin_com) + len);
+	buf = racoon_malloc(sizeof(struct admin_com) + len);
 	if (buf == NULL)
-		errx(1, "not enough core");
+		errx(EXIT_FAILURE, "not enough core");
 
 	head = (struct admin_com *) buf->v;
 	head->ac_len = buf->l;
@@ -378,121 +368,109 @@ make_request(u_int16_t cmd, u_int16_t proto, size_t len)
 	return buf;
 }
 
-static vchar_t *
-f_reload(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_reload(int ac, char **av)
 {
 	return make_request(ADMIN_RELOAD_CONF, 0, 0);
 }
 
-static vchar_t *
-f_getevt(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_getevt(int ac, char **av)
 {
 	evt_quit_event = -1;
 	if (ac >= 1)
-		errx(1, "too many arguments");
+		errx(EXIT_FAILURE, "too many arguments");
 
 	return make_request(ADMIN_SHOW_EVT, 0, 0);
 }
 
-static vchar_t *
-f_getsched(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_getsched(int ac, char **av)
 {
 	return make_request(ADMIN_SHOW_SCHED, 0, 0);
 }
 
-static vchar_t *
-f_getsa(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_getsa(int ac, char **av)
 {
 	int proto;
 
 	/* need protocol */
 	if (ac != 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 	proto = get_proto(*av);
 	if (proto == -1)
-		errx(1, "unknown protocol %s", *av);
+		errx(EXIT_FAILURE, "unknown protocol %s", *av);
 
 	return make_request(ADMIN_SHOW_SA, proto, 0);
 }
 
-static vchar_t *
-f_getsacert(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_getsacert(int ac, char **av)
 {
-	vchar_t *buf, *index;
+	rc_vchar_t *buf, *index;
 	struct admin_com_indexes *com;
 
-	index = get_index(ac, av);
+	index = get_index(int ac, char **av);
 	if (index == NULL)
 		return NULL;
 
-	com = (struct admin_com_indexes *) index->v;
+	com = index->v;
 	buf = make_request(ADMIN_GET_SA_CERT, ADMIN_PROTO_ISAKMP, index->l);
 	if (buf == NULL)
-		errx(1, "Cannot allocate buffer");
+		errx(EXIT_FAILURE, "Cannot allocate buffer");
 
-	memcpy(buf->v+sizeof(struct admin_com), index->v, index->l);
+	memcpy(buf->s + sizeof(struct admin_com), index->v, index->l);
 
 	vfree(index);
 
 	return buf;
 }
 
-static vchar_t *
-f_flushsa(ac, av)
+static rc_vchar_t *
+f_flushsa(int ac, char **av)
 	int ac;
 	char **av;
 {
-	vchar_t *buf;
+	rc_vchar_t *buf;
 	struct admin_com *head;
 	int proto;
 
 	/* need protocol */
 	if (ac != 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 	proto = get_proto(*av);
 	if (proto == -1)
-		errx(1, "unknown protocol %s", *av);
+		errx(EXIT_FAILURE, "unknown protocol %s", *av);
 
 	return make_request(ADMIN_FLUSH_SA, proto, 0);
 }
 
-static vchar_t *
-f_deletesa(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_deletesa(int ac, char **av)
 {
-	vchar_t *buf, *index;
+	rc_vchar_t *buf, *index;
 	int proto;
 
 	/* need protocol */
 	if (ac < 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 	proto = get_proto(*av);
 	if (proto == -1)
-		errx(1, "unknown protocol %s", *av);
+		errx(EXIT_FAILURE, "unknown protocol %s", *av);
 
 	/* get index(es) */
 	av++;
 	ac--;
 	switch (proto) {
 	case ADMIN_PROTO_ISAKMP:
-		index = get_index(ac, av);
+		index = get_index(int ac, char **av);
 		if (index == NULL)
 			return NULL;
 		break;
 	case ADMIN_PROTO_AH:
 	case ADMIN_PROTO_ESP:
-		index = get_index(ac, av);
+		index = get_index(int ac, char **av);
 		if (index == NULL)
 			return NULL;
 		break;
@@ -505,7 +483,7 @@ f_deletesa(ac, av)
 	if (buf == NULL)
 		goto out;
 
-	memcpy(buf->v + sizeof(struct admin_com), index->v, index->l);
+	memcpy(buf->s + sizeof(struct admin_com), index->v, index->l);
 
 out:
 	if (index != NULL)
@@ -514,13 +492,11 @@ out:
 	return buf;
 }
 
-static vchar_t *
-f_deleteallsadst(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_deleteallsadst(int ac, char **av)
 {
-	vchar_t *buf, *index;
-	u_int16_t proto;
+	rc_vchar_t *buf, *index;
+	uint16_t proto;
 
 	index = get_proto_and_index(ac, av, &proto);
 	if (index == NULL)
@@ -530,7 +506,7 @@ f_deleteallsadst(ac, av)
 	if (buf == NULL)
 		goto out;
 
-	memcpy(buf->v+sizeof(struct admin_com), index->v, index->l);
+	memcpy(buf->s + sizeof(struct admin_com), index->v, index->l);
 
 out:
 	if (index != NULL)
@@ -539,13 +515,11 @@ out:
 	return buf;
 }
 
-static vchar_t *
-f_exchangesa(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_exchangesa(int ac, char **av)
 {
-	vchar_t *buf, *index;
-	u_int16_t proto;
+	rc_vchar_t *buf, *index;
+	uint16_t proto;
 	int cmd = ADMIN_ESTABLISH_SA;
 	size_t com_len = 0;
 	char *id = NULL;
@@ -555,16 +529,16 @@ f_exchangesa(ac, av)
 	int wait = 0;
 
 	if (ac < 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 
 	/* Optional -u identity */
 	if (strcmp(av[0], "-u") == 0) {
 		if (ac < 2)
-			errx(1, "-u require an argument");
+			errx(EXIT_FAILURE, "-u require an argument");
 
 		id = av[1];
 		if ((key = getpass("Password: ")) == NULL)
-			errx(1, "getpass() failed: %s", strerror(errno));
+			err(EXIT_FAILURE, "getpass() failed");
 		
 		com_len += sizeof(*acp) + strlen(id) + 1 + strlen(key) + 1;
 		cmd = ADMIN_ESTABLISH_SA_PSK;
@@ -612,18 +586,18 @@ f_exchangesa(ac, av)
 	com_len += index->l;
 	buf = make_request(cmd, proto, com_len);
 	if (buf == NULL)
-		errx(1, "Cannot allocate buffer");
+		errx(EXIT_FAILURE, "Cannot allocate buffer");
 
-	memcpy(buf->v+sizeof(struct admin_com), index->v, index->l);
+	memcpy(buf->s + sizeof(struct admin_com), index->v, index->l);
 
 	if (proto == ADMIN_PROTO_ISAKMP && cmd == ADMIN_ESTABLISH_SA &&
 	    remoteconf != NULL) {
-		strcpy(buf->v + sizeof(struct admin_com) + index->l,
+		strcpy(buf->s + sizeof(struct admin_com) + index->l,
 		       remoteconf);
 	} else if (id && key) {
 		char *data;
 		acp = (struct admin_com_psk *)
-		    (buf->v + sizeof(struct admin_com) + index->l);
+		    (buf->s + sizeof(struct admin_com) + index->l);
 
 		acp->id_type = IDTYPE_USERFQDN;
 		acp->id_len = strlen(id) + 1;
@@ -641,10 +615,8 @@ f_exchangesa(ac, av)
 	return buf;
 }
 
-static vchar_t *
-f_vpnc(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_vpnc(int ac, char **av)
 {
 	char *nav[] = {NULL, NULL, NULL, NULL, NULL, NULL};
 	int nac = 0;
@@ -656,14 +628,14 @@ f_vpnc(ac, av)
 	char *idx;
 
 	if (ac < 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 
 	evt_quit_event = EVT_PHASE1_MODE_CFG;
 	
 	/* Optional -u identity */
 	if (strcmp(av[0], "-u") == 0) {
 		if (ac < 2)
-			errx(1, "-u require an argument");
+			errx(EXIT_FAILURE, "-u require an argument");
 
 		nav[nac++] = av[0];
 		nav[nac++] = av[1];
@@ -673,7 +645,7 @@ f_vpnc(ac, av)
 	}
 
 	if (ac < 1)
-		errx(1, "VPN gateway required");
+		errx(EXIT_FAILURE, "VPN gateway required");
 	if (ac > 1)
 		warnx("Extra arguments");
 
@@ -684,17 +656,17 @@ f_vpnc(ac, av)
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	if (getaddrinfo(av[0], "4500", &hints, &res) != 0)
-		errx(1, "Cannot resolve destination address");
+		errx(EXIT_FAILURE, "Cannot resolve destination address");
 
 	if ((src = getlocaladdr(res->ai_addr)) == NULL)
-		errx(1, "cannot find source address");
+		errx(EXIT_FAILURE, "cannot find source address");
 
 	if ((srcaddr = saddr2str(src)) == NULL)
-		errx(1, "cannot read source address");
+		errx(EXIT_FAILURE, "cannot read source address");
 
 	/* We get "ip[port]" strip the port */
 	if ((idx = index(srcaddr, '[')) == NULL) 
-		errx(1, "unexpected source address format");
+		errx(EXIT_FAILURE, "unexpected source address format");
 	*idx = '\0';
 
 	nav[nac++] = isakmp;
@@ -705,20 +677,18 @@ f_vpnc(ac, av)
 	return f_exchangesa(nac, nav);
 }
 
-static vchar_t *
-f_vpnd(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_vpnd(int ac, char **av)
 {
 	char *nav[] = {NULL, NULL, NULL, NULL};
 	int nac = 0;
-	char *isakmp = "isakmp";
-	char *inet = "inet";
-	char *anyaddr = "0.0.0.0";
+	const char *isakmp = "isakmp";
+	const char *inet = "inet";
+	const char *anyaddr = "0.0.0.0";
 	char *idx;
 
 	if (ac < 1)
-		errx(1, "VPN gateway required");
+		errx(EXIT_FAILURE, "VPN gateway required");
 	if (ac > 1)
 		warnx("Extra arguments");
 
@@ -733,47 +703,42 @@ f_vpnd(ac, av)
 }
 
 #ifdef ENABLE_HYBRID
-static vchar_t *
-f_logoutusr(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+f_logoutusr(int ac, char **av)
 {
-	vchar_t *buf;
+	rc_vchar_t *buf;
 	char *user;
 	size_t userlen;
 
 	/* need username */
 	if (ac < 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 	user = av[0];
 	userlen = strlen(user);
 	if ((user == NULL) || (userlen > LOGINLEN))
-		errx(1, "bad login (too long?)");
+		errx(EXIT_FAILURE, "bad login (too long?)");
 
 	buf = make_request(ADMIN_LOGOUT_USER, 0, userlen);
 	if (buf == NULL)
 		return NULL;
 
-	strncpy(buf->v + sizeof(struct admin_com), user, userlen);
+	strncpy(buf->s + sizeof(struct admin_com), user, userlen);
 
 	return buf;
 }
 #endif /* ENABLE_HYBRID */
 
-static vchar_t *
-get_proto_and_index(ac, av, proto)
-	int ac;
-	char **av;
-	u_int16_t *proto;
+static rc_vchar_t *
+get_proto_and_index(int ac, char **av, uint16_t proto)
 {
-	vchar_t *index = NULL;
+	rc_vchar_t *index = NULL;
 
 	/* need protocol */
 	if (ac < 1)
-		errx(1, "insufficient arguments");
+		errx(EXIT_FAILURE, "insufficient arguments");
 	*proto = get_proto(*av);
-	if (*proto == (u_int16_t) -1)
-		errx(1, "unknown protocol %s", *av);
+	if (*proto == (uint16_t) -1)
+		errx(EXIT_FAILURE, "unknown protocol %s", *av);
 
 	/* get index(es) */
 	av++;
@@ -782,7 +747,7 @@ get_proto_and_index(ac, av, proto)
 	case ADMIN_PROTO_ISAKMP:
 	case ADMIN_PROTO_AH:
 	case ADMIN_PROTO_ESP:
-		index = get_index(ac, av);
+		index = get_index(int ac, char **av);
 		break;
 	default:
 		errno = EPROTONOSUPPORT;
@@ -792,8 +757,7 @@ get_proto_and_index(ac, av, proto)
 }
 
 static int
-get_proto(str)
-	char *str;
+get_proto(const char *str)
 {
 	struct proto_tag *cp;
 
@@ -812,10 +776,8 @@ get_proto(str)
 	return -1;
 }
 
-static vchar_t *
-get_index(ac, av)
-	int ac;
-	char **av;
+static rc_vchar_t *
+get_index(int ac, char **av)
 {
 	int family;
 
@@ -835,8 +797,7 @@ get_index(ac, av)
 }
 
 static int
-get_family(str)
-	char *str;
+get_family(const char *str)
 {
 	if (strcmp("inet", str) == 0)
 		return AF_INET;
@@ -848,13 +809,10 @@ get_family(str)
 	return -1;
 }
 
-static vchar_t *
-get_comindexes(family, ac, av)
-	int family;
-	int ac;
-	char **av;
+static rc_vchar_t *
+get_comindexes(int family, int ac, char **av)
 {
-	vchar_t *buf;
+	rc_vchar_t *buf;
 	struct admin_com_indexes *ci;
 	char *p_name = NULL, *p_port = NULL;
 	char *p_prefs = NULL, *p_prefd = NULL;
@@ -895,20 +853,20 @@ get_comindexes(family, ac, av)
 	if (dst == NULL)
 		goto bad;
 
-	buf = vmalloc(sizeof(*ci));
+	buf = racoon_malloc(sizeof(*ci));
 	if (buf == NULL)
 		goto bad;
 
 	av++;
 	ac--;
-	if(ac){
+	if (ac) {
 		ulproto = get_ulproto(*av);
 		if (ulproto == -1)
 			goto bad;
-	}else
-		ulproto=0;
+	} else
+		ulproto = 0;
 
-	ci = (struct admin_com_indexes *)buf->v;
+	ci = buf->v;
 	if(p_prefs)
 		ci->prefs = (u_int8_t)atoi(p_prefs); /* XXX should be handled error. */
 	else
@@ -939,8 +897,7 @@ get_comindexes(family, ac, av)
 }
 
 static int
-get_comindex(str, name, port, pref)
-	char *str, **name, **port, **pref;
+get_comindex(char *str, char **name, char **port, char **pref)
 {
 	char *p;
 
@@ -998,8 +955,7 @@ get_comindex(str, name, port, pref)
 }
 
 static int
-get_ulproto(str)
-	char *str;
+get_ulproto(const char *str)
 {
 	struct ulproto_tag *cp;
 
@@ -1020,9 +976,7 @@ get_ulproto(str)
 
 /* %%% */
 void
-dump_isakmp_sa(buf, len)
-	char *buf;
-	int len;
+dump_isakmp_sa(const char *buf, size_t len)
 {
 	struct ph1dump *pd;
 	struct tm *tm;
@@ -1054,7 +1008,7 @@ char *header3 =
    xxx  xxxxx 1234567890123456789012 1234567890123456789012
 */
 
-	static char *estr[] = { "", "B", "M", "U", "A", "I", };
+	static const char *estr[] = { "", "B", "M", "U", "A", "I", };
 
 	switch (long_format) {
 	case 0:
@@ -1141,9 +1095,7 @@ char *header3 =
 
 /* %%% */
 void
-dump_internal(buf, tlen)
-	char *buf;
-	int tlen;
+dump_internal(const char *buf, size_t tlen)
 {
 	struct ph2handle *iph2;
 	struct sockaddr *addr;
@@ -1193,8 +1145,7 @@ char *long_h1 =
 
 /* %%% */
 char *
-pindex_isakmp(index)
-	isakmp_index *index;
+pindex_isakmp(isakmp_index *index)
 {
 	static char buf[64];
 	u_char *p;
@@ -1220,24 +1171,22 @@ pindex_isakmp(index)
 }
 
 /* print schedule */
-char *str_sched_stat[] = {
-"off",
-"on",
-"dead",
+static const char *str_sched_stat[] = {
+	"off",
+	"on",
+	"dead",
 };
 
-char *str_sched_id[] = {
-"PH1resend",
-"PH1lifetime",
-"PH2resend",
-"PSTacquire",
-"PSTlifetime",
+static const char *str_sched_id[] = {
+	"PH1resend",
+	"PH1lifetime",
+	"PH2resend",
+	"PSTacquire",
+	"PSTlifetime",
 };
 
 void
-print_schedule(buf, len)
-	caddr_t buf;
-	int len;
+print_schedule(const char *buf, size_t len)
 {
 	struct scheddump *sc = (struct scheddump *)buf;
 	struct tm *tm;
@@ -1267,8 +1216,7 @@ print_schedule(buf, len)
 
 
 void
-print_evt(evtdump)
-	struct evt_async *evtdump;
+print_evt(const struct evt_async *evtdump)
 {
 	int i;
 	char *srcstr;
@@ -1299,9 +1247,7 @@ print_evt(evtdump)
  * Print ISAKMP mode config info (IP and banner)
  */
 void
-print_cfg(buf, len)
-	caddr_t buf;
-	int len;
+print_cfg(const char *buf, size_t len)
 {
 	struct evt_async *evtdump = (struct evt_async *)buf;
 	struct isakmp_data *attr;
@@ -1389,13 +1335,11 @@ print_cfg(buf, len)
 
 
 char *
-fixed_addr(addr, port, len)
-	char *addr, *port;
-	int len;
+fixed_addr(const char *addr, const *port, size_t len)
 {
 	static char _addr_buf_[BUFSIZ];
 	char *p;
-	int plen, i;
+	size_t plen, i;
 
 	/* initialize */
 	memset(_addr_buf_, ' ', sizeof(_addr_buf_));
@@ -1418,8 +1362,7 @@ fixed_addr(addr, port, len)
 }
 
 static int
-handle_recv(combuf)
-	vchar_t *combuf;
+handle_recv(rc_vchar_t *combuf)
 {
         struct admin_com *com;
         caddr_t buf;
@@ -1427,11 +1370,11 @@ handle_recv(combuf)
 
 	com = (struct admin_com *)combuf->v;
 	if (com->ac_cmd & ADMIN_FLAG_LONG_REPLY)
-		len = ((u_int32_t)com->ac_len) + (((u_int32_t)com->ac_len_high) << 16);
+		len = ((uint32_t)com->ac_len) + (((uint32_t)com->ac_len_high) << 16);
 	else
 		len = com->ac_len;
 	len -= sizeof(*com);
-	buf = combuf->v + sizeof(*com);
+	buf = combuf->s + sizeof(*com);
 
 	switch (com->ac_cmd & ~ADMIN_FLAG_LONG_REPLY) {
 	case ADMIN_SHOW_SCHED:
@@ -1446,7 +1389,7 @@ handle_recv(combuf)
 			break;
 
 		if (len < sizeof(struct evt_async))
-			errx(1, "Short buffer\n");
+			errx(EXIT_FAILURE, "Short buffer");
 
 		ec = (struct evt_async *) buf;
 		if (evt_quit_event <= 0)

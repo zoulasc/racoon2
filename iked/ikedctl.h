@@ -36,17 +36,17 @@
 
 /* bumped on any change to the interface */
 #define IKEDCTL_INTERFACE	20050619
-extern u_int32_t ikedctl_interface;
+extern uint32_t ikedctl_interface;
 
 /* bumped when introducing changes that break backward compatibility */
 #define IKEDCTL_INTERFACE_MAJOR	1	
-extern u_int32_t ikedctl_interface_major;
+extern uint32_t ikedctl_interface_major;
 
-extern u_int32_t loglevel;
+extern uint32_t loglevel;
 
 int com_init(void);
-int com_send(vchar_t *);
-int com_recv(vchar_t **);
+int com_send(rc_vchar_t *);
+int com_recv(rc_vchar_t **);
 struct sockaddr *get_sockaddr(int, char *, char *);
 
 #endif /* _IKEDCTL_H */
