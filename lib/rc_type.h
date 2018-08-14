@@ -158,7 +158,7 @@ struct rc_addrlist {
 	 * the port must be always host byte order.
 	 */
 	int port;
-	int prefixlen;	/* zero means maximum prefix length of the family */
+	int prefixlen;	/* except for IP_ANY, zero means maximum prefix length of the family */
 	union {
 		struct sockaddr *ipaddr;
 		rc_vchar_t *vstr;
