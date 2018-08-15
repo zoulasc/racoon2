@@ -1262,19 +1262,19 @@ spmd_rcpfk_cont_sock_free(struct rcpfk_msg *rc)
 	if (!rc) 
 		return;
 
-	if (rc->sa_src) {
+	if (rc->sa_src && (rc->sa_src != (void *)&rc->sa_src_storage)) {
 		rc_free(rc->sa_src);
 		rc->sa_src = NULL;
 	}
-	if (rc->sa_dst) {
+	if (rc->sa_dst && (rc->sa_dst != (void *)&rc->sa_dst_storage)) {
 		rc_free(rc->sa_dst);
 		rc->sa_dst = NULL;
 	}
-	if (rc->sp_src) {
+	if (rc->sp_src && (rc->sp_src != (void *)&rc->sp_src_storage)) {
 		rc_free(rc->sp_src);
 		rc->sp_src = NULL;
 	}
-	if (rc->sp_dst) {
+	if (rc->sp_dst && (rc->sp_dst != (void *)&rc->sp_dst_storage)) {
 		rc_free(rc->sp_dst);
 		rc->sp_dst = NULL;
 	}

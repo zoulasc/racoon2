@@ -1709,9 +1709,8 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			dst_port = htons(sl1->dst->port);
 			((struct sockaddr_in6 *)dres->ai_addr)->sin6_port = dst_port;
 		}
-/*		if (spmd_spd_match_delete_by_slid(selector_index, samode, sres, dres,
-						  src_plen, dst_plen, sa_sres, sa_dres)<0) { */
-		if (spmd_spd_delete_by_slid(selector_index)<0) {
+		if (spmd_spd_match_delete_by_slid(selector_index, samode, sres, dres,
+						  src_plen, dst_plen, sa_sres, sa_dres)<0) {
 			strlcpy(status, "550 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);
 			goto err_fin;
