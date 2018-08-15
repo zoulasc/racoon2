@@ -517,7 +517,9 @@ fail:
 
 int
 spmif_post_policy_delete(int fd, int (*callback)(void *, int),
-    void *tag, rc_vchar_t *slid)
+    void *tag, rc_vchar_t *slid, rc_type samode,
+    struct rc_addrlist *sp_src, struct rc_addrlist *sp_dst,
+    struct sockaddr *sa_src, struct sockaddr *sa_dst)
 {
 	char *bufend, *p;
 	struct spmif_job *job;
@@ -530,8 +532,19 @@ spmif_post_policy_delete(int fd, int (*callback)(void *, int),
 	p = &job->buf[0];
 	bufend = &job->buf[0] + sizeof(job->buf);
 
-	if (saprintf(&p, bufend, "POLICY DELETE %s", rc_vmem2str(slid)))
+	if (saprintf(&p, bufend, "POLICY DELETE %s %s %s/%d %s/%d",
+	    rc_vmem2str(slid),
+	    samode == RCT_IPSM_TUNNEL ? "tunnel" : "transport",
+	    rcs_sa2str_wop(sp_src->a.ipaddr), sp_src->prefixlen,
+	    rcs_sa2str_wop(sp_dst->a.ipaddr), sp_dst->prefixlen))
 		goto fail;
+
+	if (samode == RCT_IPSM_TUNNEL) {
+		if (saprintf(&p, bufend, " %s %s",
+		    rcs_sa2str_wop(sa_src), rcs_sa2str_wop(sa_dst)))
+			goto fail;
+	}
+
 	if (saprintf(&p, bufend, CRLF_STR))
 		goto fail;
 

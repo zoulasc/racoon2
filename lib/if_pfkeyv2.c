@@ -902,6 +902,36 @@ rcpfk_send_spddelete2(struct rcpfk_msg *rc)
 }
 
 /*
+ * send a SADB_SPDGET to kernel.
+ *     <base, x_policy>
+ */
+int
+rcpfk_send_spdget(struct rcpfk_msg *rc)
+{
+	rc_vchar_t *buf = 0;
+
+	if (rcpfk_set_sadbmsg(&buf, rc, SADB_X_SPDGET)) {
+    err:
+		if (buf)
+			rc_vfree(buf);
+		return -1;
+	}
+
+	if (rcpfk_set_sadbxpolicy(&buf, rc, SADB_X_SPDGET))
+		goto err;
+
+	SADB_MSG(buf)->sadb_msg_satype = SADB_SATYPE_UNSPEC;
+
+	if (rcpfk_send(rc, buf)) {
+		rc_vfree(buf);
+		return -1;
+	}
+
+	rc_vfree(buf);
+	return 0;
+}
+
+/*
  * send a SADB_SPDDUMP to kernel.
  *     <base>
  */
@@ -998,6 +1028,7 @@ rcpfk_set_sadbmsg(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	case SADB_X_SPDADD:
 	case SADB_X_SPDDELETE:
 	case SADB_X_SPDDELETE2:
+	case SADB_X_SPDGET:
 	case SADB_X_SPDDUMP:
 	/* XXX other SADB_X_SPD* ? */
 #ifdef SADB_X_MIGRATE
@@ -1330,7 +1361,8 @@ rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
 	size_t len, prevlen, extlen;
 
 	extlen = sizeof(*xpl);
-	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2) {
+	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2 &&
+	    type != SADB_X_SPDGET) {
 		switch (rc->satype) {
 		case RCT_SATYPE_AH:
 		case RCT_SATYPE_ESP:
@@ -1365,7 +1397,8 @@ rcpfk_set_sadbxpolicy_transport(rc_vchar_t **msg, struct rcpfk_msg *rc,
 	xpl->sadb_x_policy_dir = rct2pfk_dir(rc->dir);
 	xpl->sadb_x_policy_id = rc->slid;
 
-	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2)
+	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2 ||
+	    type == SADB_X_SPDGET)
 		goto end;
 
 	xisr = (void *)(xpl + 1);
@@ -1418,7 +1451,8 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	uint8_t *p;
 
 	extlen = sizeof(*xpl);
-	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2) {
+	if (type != SADB_X_SPDDELETE && type != SADB_X_SPDDELETE2 &&
+	    type != SADB_X_SPDGET) {
 		switch (rc->satype) {
 		case RCT_SATYPE_AH:
 		case RCT_SATYPE_ESP:
@@ -1464,7 +1498,8 @@ rcpfk_set_sadbxpolicy_tunnel(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 	xpl->sadb_x_policy_dir = rct2pfk_dir(rc->dir);
 	xpl->sadb_x_policy_id = rc->slid;
 
-	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2)
+	if (type == SADB_X_SPDDELETE || type == SADB_X_SPDDELETE2 ||
+	    type == SADB_X_SPDGET)
 		goto end;
 
 	xisr = (void *)(xpl + 1);
@@ -2392,18 +2427,146 @@ rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 {
 	struct sadb_msg *base;
 	struct sadb_x_policy *xpl;
+	struct sockaddr *sp_src, *sp_dst, *sa_src, *sa_dst;
+	struct sadb_address *addr_src, *addr_dst;
+	struct sadb_x_ipsecrequest *xisr;
+	size_t xisr_len;
+	unsigned int	ipsec_proto = 0;
+#define SPDMP_PRT_A 1
+#define SPDMP_PRT_E 2
+#define SPDMP_PRT_C 4
+	rc_type ipsec_mode = 0;
 
 	/* validity check */
-	if (mhp[0] == 0) {
+	if (mhp[0] == 0 ||
+	    mhp[SADB_EXT_ADDRESS_SRC] == 0 ||
+	    mhp[SADB_EXT_ADDRESS_DST] == 0 ||
+	    mhp[SADB_X_EXT_POLICY] == 0) {
 		rcpfk_seterror(rc, EINVAL,
 		    "inappropriate SPDGET message passed");
 		return -1;
 	}
 	base = (void *)mhp[0];
 	xpl = (void *)mhp[SADB_X_EXT_POLICY];
+	sp_src = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_SRC]);
+	addr_src = (void *)mhp[SADB_EXT_ADDRESS_SRC];
+	sp_dst = PFKEY_ADDR_SADDR(mhp[SADB_EXT_ADDRESS_DST]);
+	addr_dst = (void *)mhp[SADB_EXT_ADDRESS_DST];
 
 	rc->seq = base->sadb_msg_seq;
+	rc->sp_src = (void *)&rc->sp_src_storage;
+	memcpy(rc->sp_src, sp_src, SA_LEN(sp_src));
+	rc->pref_src = addr_src->sadb_address_prefixlen;
+	rc->sp_dst = (void *)&rc->sp_dst_storage;
+	memcpy(rc->sp_dst, sp_dst, SA_LEN(sp_dst));
+	rc->pref_dst = addr_dst->sadb_address_prefixlen;
+	if (addr_dst->sadb_address_proto != addr_src->sadb_address_proto) {
+		rcpfk_seterror(rc, 0, "ignore SPDGET message "
+		    "bacause src and dst proto aren't same");
+		return 0;
+	}
+	rc->ul_proto = addr_dst->sadb_address_proto;
 	rc->slid = xpl->sadb_x_policy_id;
+
+	rc->pltype = app2rct_action(xpl->sadb_x_policy_type);
+	if (rc->pltype == 0) {
+		rcpfk_seterror(rc, 0, "unknown policy type");
+		return 0;
+	}
+	rc->dir = pfk2rct_dir(xpl->sadb_x_policy_dir);
+
+	xisr = (void *)(xpl + 1); 
+	xisr_len = PFKEY_EXTLEN(xpl) - sizeof(*xpl);
+	while (xisr_len > 0) { 
+		/* 
+		 * racoon2 supports header orders below:
+		 *   |ip|(ah)|(esp)|ip|data| or |ip|(ah)|(esp)|data| 
+		 * we don't care about other orders.
+		 */ 
+		switch (xisr->sadb_x_ipsecrequest_proto) {
+		case IPPROTO_AH:
+			ipsec_proto |= SPDMP_PRT_A;
+			break;
+		case IPPROTO_ESP:
+			ipsec_proto |= SPDMP_PRT_E;
+			break;
+		case IPPROTO_IPCOMP:
+			ipsec_proto |= SPDMP_PRT_C;
+			break;
+		default:
+			rcpfk_seterror(rc, 0, "unknown IPsec proto");
+			return 0;
+		}
+		 /* 
+		  * all policies under racoon2 policy management, 
+		  * are always 'require' level.
+		  * this is just info.
+		  */
+		switch (xisr->sadb_x_ipsecrequest_level) {
+		case IPSEC_LEVEL_USE:
+			rc->ipsec_level = RCT_IPSL_USE;
+			break;
+		case IPSEC_LEVEL_REQUIRE:
+			rc->ipsec_level = RCT_IPSL_REQUIRE;
+			break;
+		case IPSEC_LEVEL_UNIQUE:
+			rc->ipsec_level = RCT_IPSL_UNIQUE;
+			break;
+		default:
+			rcpfk_seterror(rc, 0, "unknown IPsec Level");
+			return 0;
+		}
+		/*
+		 * in kame pfkey, a tunnel mode policy is specfied 
+		 * as a combination of transport mode and tunnel mode.
+		 * e.g., ah/transport and esp/tunnel,
+		 * but we just want to know the actual mode.
+		 */
+		switch (xisr->sadb_x_ipsecrequest_mode) {
+		case IPSEC_MODE_TRANSPORT:
+			if (ipsec_mode != RCT_IPSM_TUNNEL)  {
+				ipsec_mode = RCT_IPSM_TRANSPORT;
+			}
+			xisr_len -= xisr->sadb_x_ipsecrequest_len; /* not 64-bit unit */
+			xisr++;
+			break;
+		case IPSEC_MODE_TUNNEL:
+			ipsec_mode = RCT_IPSM_TUNNEL;
+			xisr_len -= xisr->sadb_x_ipsecrequest_len; /* not 64-bit unit */
+			sa_src = (void *)(xisr+1);
+			sa_dst = (void *)((uint8_t *)(void *)sa_src + SA_LEN(sa_src));
+			xisr = (void *)((uint8_t *)(void *)sa_dst + SA_LEN(sa_dst));
+			rc->sa_src = (void *)&rc->sa_src_storage;
+			memcpy(rc->sa_src, sa_src, SA_LEN(sa_src));
+			rc->sa_dst = (void *)&rc->sa_dst_storage;
+			memcpy(rc->sa_dst, sa_dst, SA_LEN(sa_dst));
+			break;
+		default:
+			rcpfk_seterror(rc, 0, "unknown IPsec mode");
+			return 0;
+		}
+				
+	}
+
+	if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+		rc->satype = RCT_SATYPE_AH_ESP_IPCOMP;
+	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) ) {
+		rc->satype = RCT_SATYPE_AH_ESP;
+	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_C) ) { 
+		rc->satype = RCT_SATYPE_AH_IPCOMP;
+	} else if ( (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+		rc->satype = RCT_SATYPE_ESP_IPCOMP;
+	} else if (ipsec_proto&SPDMP_PRT_A) { 
+		rc->satype = RCT_SATYPE_AH;
+	} else if (ipsec_proto&SPDMP_PRT_E) { 
+		rc->satype = RCT_SATYPE_ESP;
+	} else if (ipsec_proto&SPDMP_PRT_C) { 
+		rc->satype = RCT_SATYPE_IPCOMP;
+	} else {
+		rcpfk_seterror(rc, 0, "unknown IPsec proto");
+		return 0;
+	}
+	rc->samode = ipsec_mode;
 
 	if (cb->cb_spdget != 0 && cb->cb_spdget(rc) < 0)
 		return -1;

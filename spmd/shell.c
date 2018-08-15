@@ -1558,12 +1558,159 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			status, (int)sl1->sl_index->l, sl1->sl_index->s, (int)sl2->sl_index->l, sl2->sl_index->s);
 		goto fin;
 	} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) { 
-		if (sh_argc != 2) {
+		if (sh_argc != 5 && sh_argc !=7) {
 			strlcpy(status, "500 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
 			goto fin;
 		}
 		selector_index = spmd_strdup(sh_argv[1]); /* XXX check and remove "" ? */
+		if (!strncasecmp(sh_argv[2], "TUNNEL", strlen("TUNNEL"))) {
+			samode = RCT_IPSM_TUNNEL;
+		} else if (!strncasecmp(sh_argv[2], "TRANSPORT", strlen("TRANSPORT"))) {
+			samode = RCT_IPSM_TRANSPORT;
+		} else {
+			strlcpy(status, "500 ", sizeof(status));
+			snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
+			ret = -1;
+			goto fin;
+		}
+		
+		/* src */
+		src_addrstr = sh_argv[3];
+		if ((src_plenstr = strchr(src_addrstr, '/')) != NULL) {
+			*src_plenstr = '\0';
+			src_plenstr++;
+		}
+		if (src_plenstr) {
+			src_plen = strtol(src_plenstr, &bp, 10);
+			if (*bp != '\0') {
+				strlcpy(status, "500 ", sizeof(status));
+				snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
+				ret = -1;
+				goto fin;
+			}
+		}
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_flags = AI_NUMERICHOST;
+		gai_err = getaddrinfo(src_addrstr, NULL, &hints, &sres);
+		if (gai_err) {
+			SPMD_PLOG(SPMD_L_INTERR, "%s", gai_strerror(gai_err));
+			strlcpy(status, "550 ", sizeof(status));
+			snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);
+			ret = -1;
+			goto fin;
+		}
+		/* dst */
+		dst_addrstr = sh_argv[4];
+		if ((dst_plenstr = strchr(dst_addrstr, '/')) != NULL) {
+			*dst_plenstr = '\0';
+			dst_plenstr++;
+		}
+		if (dst_plenstr) {
+			dst_plen = strtol(dst_plenstr, &bp, 10);
+			if (*bp != '\0') {
+				strlcpy(status, "500 ", sizeof(status));
+				snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
+				ret = -1;
+				goto fin;
+			}
+		}
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_flags = AI_NUMERICHOST;
+		gai_err = getaddrinfo(dst_addrstr, NULL, &hints, &dres);
+		if (gai_err) {
+			SPMD_PLOG(SPMD_L_INTERR, "%s", gai_strerror(gai_err));
+			strlcpy(status, "550 ", sizeof(status));
+			snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);
+			ret = -1;
+			goto fin;
+		}
+
+		if (samode == RCT_IPSM_TUNNEL) {
+			/* sa src */
+			memset(&hints, 0, sizeof(hints));
+			hints.ai_flags = AI_NUMERICHOST;
+			gai_err = getaddrinfo(sh_argv[5], NULL, &hints, &sa_sres);
+			if (gai_err) {
+				SPMD_PLOG(SPMD_L_INTERR, "%s", gai_strerror(gai_err));
+				strlcpy(status, "550 ", sizeof(status));
+				snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);
+				ret = -1;
+				goto fin;
+			}
+			/* sa dst */
+			memset(&hints, 0, sizeof(hints));
+			hints.ai_flags = AI_NUMERICHOST;
+			gai_err = getaddrinfo(sh_argv[6], NULL, &hints, &sa_dres);
+			if (gai_err) {
+				SPMD_PLOG(SPMD_L_INTERR, "%s", gai_strerror(gai_err));
+				strlcpy(status, "550 ", sizeof(status));
+				snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);
+				ret = -1;
+				goto fin;
+			}
+		}
+
+		/* 
+		 * *** Do actual policy operations *** 
+		 */
+		/*** search selectors ***/
+		if (rcf_get_selector(selector_index, &sl1)<0) {
+			strlcpy(status, "550 ", sizeof(status));
+			snprintf(buf, sizeof(buf), "%sOperation Failed, selector not found\r\n", status);
+			goto fin;
+		}
+
+		/*** set src to dst policy ***/
+		if (sres->ai_family == AF_INET) {
+			src_sin = ((struct sockaddr_in *)sres->ai_addr)->sin_addr;
+			if ((src_plen <= 0) || (src_plen > 32)) {
+				src_plen = 32;
+			}
+			if ((src_plen == 32) &&
+			    (src_sin.s_addr == 0)) {
+				src_plen = 0;
+			}
+			src_port = htons(sl1->src->port);
+			((struct sockaddr_in *)sres->ai_addr)->sin_port = src_port;
+		} else if (sres->ai_family == AF_INET6) {
+			src_sin6 = ((struct sockaddr_in6 *)sres->ai_addr)->sin6_addr;
+			if ((src_plen <= 0) || (src_plen > 128)) {
+				src_plen = 128;
+			}
+			if ((src_plen == 128) &&
+			     IN6_IS_ADDR_UNSPECIFIED(&src_sin6)) {
+				src_plen = 0;
+			}
+			src_port = htons(sl1->src->port);
+			((struct sockaddr_in6 *)sres->ai_addr)->sin6_port = src_port;
+		}
+
+		if (dres->ai_family == AF_INET) {
+			dst_sin = ((struct sockaddr_in *)dres->ai_addr)->sin_addr;
+			if ((dst_plen <= 0) || (dst_plen > 32)) {
+				dst_plen = 32;
+			}
+			if ((dst_plen == 32) &&
+			    (dst_sin.s_addr == 0)) {
+				dst_plen = 0;
+			}
+			dst_port = htons(sl1->dst->port);
+			((struct sockaddr_in *)dres->ai_addr)->sin_port = dst_port;
+		} else if (dres->ai_family == AF_INET6) {
+			dst_sin6 = ((struct sockaddr_in6 *)dres->ai_addr)->sin6_addr;
+			if ((dst_plen <= 0) || (dst_plen > 128)) {
+				dst_plen = 128;
+			}
+			if ((dst_plen == 128) &&
+			     IN6_IS_ADDR_UNSPECIFIED(&dst_sin6)) {
+				dst_plen = 0;
+			}
+			dst_port = htons(sl1->dst->port);
+			((struct sockaddr_in6 *)dres->ai_addr)->sin6_port = dst_port;
+		}
+/*		if (spmd_spd_match_delete_by_slid(selector_index, samode, sres, dres,
+						  src_plen, dst_plen, sa_sres, sa_dres)<0) { */
 		if (spmd_spd_delete_by_slid(selector_index)<0) {
 			strlcpy(status, "550 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sOperation Failed\r\n", status);

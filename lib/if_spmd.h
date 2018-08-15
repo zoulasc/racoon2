@@ -37,7 +37,9 @@ int spmif_post_policy_add(int fd, int (*callback)(void *, int), void *tag,
     /*struct sockaddr *sp_src, struct sockaddr *sp_dst,*/
     struct sockaddr *sa_src, struct sockaddr *sa_dst);
 int spmif_post_policy_delete(int fd, int (*callback)(void *, int),
-    void *tag, rc_vchar_t *slid);
+    void *tag, rc_vchar_t *slid, rc_type samode,
+    struct rc_addrlist *sp_src, struct rc_addrlist *sp_dst,
+    struct sockaddr *sa_src, struct sockaddr *sa_dst);
 int spmif_post_migrate(int fd, int (*callback)(void *, int),
     void *tag, rc_vchar_t *slid,
     struct sockaddr *sa_src, struct sockaddr *sa_dst,

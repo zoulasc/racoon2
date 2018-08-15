@@ -58,6 +58,10 @@ static uint32_t pfkey_seq = 0;
 /*int spmd_spd_update(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent);*/
 static int spmd_pfkey_send_spdupdate(struct task *t);
 static int spmd_spd_delete(uint32_t spid, int urgent);
+static int spmd_spd_match_delete(uint32_t spid, rc_type samode,
+			struct addrinfo *sres, struct addrinfo *dres,
+			int src_plen, int dst_plen, struct addrinfo *sa_sres,
+			struct addrinfo *sa_dres, int urgent);
 static int spmd_pfkey_send_spddelete(struct task *t);
 /*int spmd_migrate(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent);*/
 static int spmd_pfkey_send_migrate(struct task *t);
@@ -798,6 +802,174 @@ spmd_spd_delete(uint32_t spid, int urgent)
 		t->func = spmd_pfkey_send_spddelete;
 		task_list_add(t, &spmd_task_root->write);
 		goto fin;
+	}
+
+err_fin:
+	if (rc)
+		spmd_free_rcpfk_msg(rc);
+fin:
+	if (slid)
+		spmd_free(slid);
+	return ret;
+}
+
+/*
+ * Create SPDDELETE task, delete only if after doing SPDGET on spid,
+ * the returned data matches the other arguments
+ */
+static int
+spmd_spd_match_delete(uint32_t spid, rc_type samode,
+			struct addrinfo *sres, struct addrinfo *dres,
+			int src_plen, int dst_plen, struct addrinfo *sa_sres,
+			struct addrinfo *sa_dres, int urgent)
+{
+	struct rcf_selector *sl_head = NULL; /* dynamic */
+	struct rcf_selector *sl = NULL;
+	char *slid = NULL; /* dynamic */
+	int found=0;	/* dynamic */
+	size_t len=0;
+	int ret = 0;
+	struct rcpfk_msg *rc = NULL; /* dynamic */
+	struct task *t = NULL; /* dynamic */
+	int dodelete = 1;
+	struct in_addr sin, rc_sin;
+	struct in6_addr sin6, rc_sin6;
+
+	rc = spmd_alloc_rcpfk_msg();
+	if (!rc) {
+		SPMD_PLOG(SPMD_L_INTERR, "Out of memory");
+		goto err_fin;
+	}
+
+	if (get_slid_by_spid(spid, &slid)<0) {
+		SPMD_PLOG(SPMD_L_INTERR, "No such a selector");
+		goto err_fin;
+	}
+
+	if (rcf_get_selectorlist(&sl_head) < 0) {
+		SPMD_PLOG(SPMD_L_INTERR, "Can't get selector list in your configuration file (selector=%.*s)",
+			  (int)sl->sl_index->l, sl->sl_index->s);
+		goto err_fin;
+	}
+	for (sl = sl_head;sl;sl=sl->next) {
+		 len = strlen(rc_vmem2str(sl->sl_index));
+		if ( (len == strlen(rc_vmem2str(sl->sl_index))) && (!strncmp(rc_vmem2str(sl->sl_index), slid, len)) ) {
+			if (!sl->pl) {
+				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)", 
+					  (int)sl->sl_index->l, sl->sl_index->s);
+				continue;
+			}
+			found = 1;
+			set_pltype(sl, rc);
+			if (rc->pltype == RCT_ACT_AUTO_IPSEC) {
+				set_samode(sl, rc);
+				set_satype(sl, rc);
+			} else
+				rc->samode = RCT_IPSM_TRANSPORT;
+			set_dir(sl, rc);
+			break;
+		}
+	}
+	rcf_free_selector(sl_head);
+	if (!found) {
+		SPMD_PLOG(SPMD_L_INTERR, "Can't get selector suitable for spid(%u) in your configuration file", spid);
+		goto err_fin;
+	}
+
+	rc->seq = (pfkey_seq++) != 0 ? pfkey_seq : (pfkey_seq++);
+	rc->slid = spid;
+
+	ret = rcpfk_send_spdget(rc);
+	if (ret<0) {
+		SPMD_PLOG(SPMD_L_INTERR, "Failed to send spdget message for spid(%u)", spid);
+		goto err_fin;
+	}
+	ret = rcpfk_handler(rc);
+	if (ret<0) {
+		SPMD_PLOG(SPMD_L_INTERR, "Failed to receive spdget response for spid(%u)", spid);
+		goto err_fin;
+	}
+
+	if (rc->samode != samode || rc->sp_src->sa_family != sres->ai_family ||
+	    rc->sp_dst->sa_family != dres->ai_family)
+		dodelete = 0;
+
+	if (dodelete)
+		if (samode == RCT_IPSM_TUNNEL && (rc->sa_src->sa_family != sa_sres->ai_family ||
+		                                  rc->sa_dst->sa_family != sa_dres->ai_family))
+			dodelete = 0;
+	if (dodelete) {
+		switch (sres->ai_family) {
+			case AF_INET:
+				sin = ((struct sockaddr_in *)sres->ai_addr)->sin_addr;
+				rc_sin = ((struct sockaddr_in *)rc->sp_src)->sin_addr;
+				if (sin.s_addr != rc_sin.s_addr)
+					dodelete = 0;
+				sin = ((struct sockaddr_in *)dres->ai_addr)->sin_addr;
+				rc_sin = ((struct sockaddr_in *)rc->sp_dst)->sin_addr;
+				if (sin.s_addr != rc_sin.s_addr)
+					dodelete = 0;
+			break;
+			case AF_INET6:
+				sin6 = ((struct sockaddr_in6 *)sres->ai_addr)->sin6_addr;
+				rc_sin6 = ((struct sockaddr_in6 *)rc->sp_src)->sin6_addr;
+				if (!IN6_ARE_ADDR_EQUAL(&sin6, &rc_sin6))
+					dodelete = 0;
+				sin6 = ((struct sockaddr_in6 *)dres->ai_addr)->sin6_addr;
+				rc_sin6 = ((struct sockaddr_in6 *)rc->sp_dst)->sin6_addr;
+				if (!IN6_ARE_ADDR_EQUAL(&sin6, &rc_sin6))
+					dodelete = 0;
+			break;
+		}
+	}
+	if (dodelete && (rc->pref_src != src_plen || rc->pref_dst != dst_plen))
+		dodelete = 0;
+	if (dodelete && (samode == RCT_IPSM_TUNNEL)) {
+		switch (sa_sres->ai_family) {
+			case AF_INET:
+				sin = ((struct sockaddr_in *)sa_sres->ai_addr)->sin_addr;
+				rc_sin = ((struct sockaddr_in *)rc->sa_src)->sin_addr;
+				if (sin.s_addr != rc_sin.s_addr)
+					dodelete = 0;
+				sin = ((struct sockaddr_in *)sa_dres->ai_addr)->sin_addr;
+				rc_sin = ((struct sockaddr_in *)rc->sa_dst)->sin_addr;
+				if (sin.s_addr != rc_sin.s_addr)
+					dodelete = 0;
+			break;
+			case AF_INET6:
+				sin6 = ((struct sockaddr_in6 *)sa_sres->ai_addr)->sin6_addr;
+				rc_sin6 = ((struct sockaddr_in6 *)rc->sa_src)->sin6_addr;
+				if (!IN6_ARE_ADDR_EQUAL(&sin6, &rc_sin6))
+					dodelete = 0;
+				sin6 = ((struct sockaddr_in6 *)sa_dres->ai_addr)->sin6_addr;
+				rc_sin6 = ((struct sockaddr_in6 *)rc->sa_dst)->sin6_addr;
+				if (!IN6_ARE_ADDR_EQUAL(&sin6, &rc_sin6))
+					dodelete = 0;
+			break;
+		}
+	}
+	/* send delete message if everything matches */
+	if (dodelete) {
+		if (urgent) {
+			ret = rcpfk_send_spddelete2(rc);
+			if (ret<0) {
+				SPMD_PLOG(SPMD_L_INTERR, "Failed to send spddelete2 message for spid(%u)", spid);
+				goto err_fin;
+			}
+			ret = rcpfk_handler(rc);
+			if (ret<0) {
+				SPMD_PLOG(SPMD_L_INTERR, "Failed to receive spddelete2 response for spid(%u)", spid);
+			}
+			goto err_fin;
+		} else {
+			t = task_alloc(0);
+			t->fd = pfkey_sock;
+			t->msg = rc;
+			rc->ptr = t;
+			t->func = spmd_pfkey_send_spddelete;
+			task_list_add(t, &spmd_task_root->write);
+			goto fin;
+		}
 	}
 
 err_fin:
@@ -2100,6 +2272,48 @@ spmd_spd_delete_by_slid(const char *slid)
 		dlen = strlen(sd->slid);
 		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen)) 
 			 	    && (spmd_spd_delete(sd->spid, 0)<0) ) {
+			SPMD_PLOG(SPMD_L_INTERR, "Can't delete IPsec Security Policy: spid=%u", sd->spid);
+			ret = -1;
+		} 
+		sd = sd_next;
+	} while (sd);
+
+	return ret;
+}
+
+/*
+ * Delete elements involved to slid from SPID<->SLID list
+ */
+int
+spmd_spd_match_delete_by_slid(const char *slid, rc_type samode,
+			      struct addrinfo *sres, struct addrinfo *dres,
+			      int src_plen, int dst_plen,
+			      struct addrinfo *sa_sres, struct addrinfo *sa_dres)
+{
+	struct spid_data *sd = NULL, *sd_next = NULL;
+	size_t slen, dlen;
+	int ret = 0;
+
+	if (slid == NULL) {
+		return -1;
+	}
+	slen = strlen(slid);
+
+	if (sd_top==NULL) {
+		SPMD_PLOG(SPMD_L_DEBUG, "No Security Policy related to %s", slid);
+		return 0;
+	}
+
+	sd = sd_top;
+	do {
+		/* after calling spmd_spd_delete(urgent=1), sd will be free'd. 
+		 * so we have to store sd->next.*/
+		sd_next = sd->next; 
+		dlen = strlen(sd->slid);
+		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen)) 
+			 	    && (spmd_spd_match_delete(sd->spid, samode,
+					sres, dres, src_plen, dst_plen,
+					sa_sres, sa_dres, 0)<0) ) {
 			SPMD_PLOG(SPMD_L_INTERR, "Can't delete IPsec Security Policy: spid=%u", sd->spid);
 			ret = -1;
 		} 

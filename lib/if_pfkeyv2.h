@@ -133,6 +133,7 @@ extern int rcpfk_send_spdupdate (struct rcpfk_msg *);
 extern int rcpfk_send_spdadd (struct rcpfk_msg *);
 extern int rcpfk_send_spddelete (struct rcpfk_msg *);
 extern int rcpfk_send_spddelete2 (struct rcpfk_msg *);
+extern int rcpfk_send_spdget (struct rcpfk_msg *);
 extern int rcpfk_send_spddump (struct rcpfk_msg *rc);
 extern int rcpfk_send_migrate (struct rcpfk_msg *rc);
 extern int rcpfk_supported_auth (int);

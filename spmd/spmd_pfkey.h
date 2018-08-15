@@ -60,5 +60,9 @@ struct spid_data {
 int get_slid_by_spid(uint32_t spid, char **slidp);
 const struct spid_data *spid_data_top(void);
 int spmd_spd_delete_by_slid(const char *slid);
+int spmd_spd_match_delete_by_slid(const char *slid, rc_type samode,
+				  struct addrinfo *sres, struct addrinfo *dres,
+				  int src_plen, int dst_plen,
+				  struct addrinfo *sa_sres, struct addrinfo *sa_dres);
 
 #endif /* !__SPMD_PFKEY_H */
