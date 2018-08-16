@@ -1353,7 +1353,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			ret = -1;
 			goto fin;
 		}
-		
+
 		/* src */
 		src_addrstr = sh_argv[4]; 
 		if ((src_plenstr = strchr(src_addrstr, '/')) != NULL) {
@@ -1430,8 +1430,8 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			}
 		}
 
-		/* 
-		 * *** Do actual policy operations *** 
+		/*
+		 * *** Do actual policy operations ***
 		 */
 		/*** search selectors ***/
 		/* get src to dst selector */
@@ -1574,7 +1574,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			ret = -1;
 			goto fin;
 		}
-		
+
 		/* src */
 		src_addrstr = sh_argv[3];
 		if ((src_plenstr = strchr(src_addrstr, '/')) != NULL) {
@@ -1651,8 +1651,8 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			}
 		}
 
-		/* 
-		 * *** Do actual policy operations *** 
+		/*
+		 * *** Do actual policy operations ***
 		 */
 		/*** search selectors ***/
 		if (rcf_get_selector(selector_index, &sl1)<0) {

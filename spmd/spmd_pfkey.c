@@ -759,7 +759,7 @@ spmd_spd_delete(uint32_t spid, int urgent)
 		 len = strlen(rc_vmem2str(sl->sl_index));
 		if ( (len == strlen(rc_vmem2str(sl->sl_index))) && (!strncmp(rc_vmem2str(sl->sl_index), slid, len)) ) {
 			if (!sl->pl) {
-				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)", 
+				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)",
 					  (int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
@@ -855,7 +855,7 @@ spmd_spd_match_delete(uint32_t spid, rc_type samode,
 		 len = strlen(rc_vmem2str(sl->sl_index));
 		if ( (len == strlen(rc_vmem2str(sl->sl_index))) && (!strncmp(rc_vmem2str(sl->sl_index), slid, len)) ) {
 			if (!sl->pl) {
-				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)", 
+				SPMD_PLOG(SPMD_L_INTERR, "Can't get policy in your configuration file (selector=%.*s)",
 					  (int)sl->sl_index->l, sl->sl_index->s);
 				continue;
 			}
@@ -2266,15 +2266,15 @@ spmd_spd_delete_by_slid(const char *slid)
 
 	sd = sd_top;
 	do {
-		/* after calling spmd_spd_delete(urgent=1), sd will be free'd. 
+		/* after calling spmd_spd_delete(urgent=1), sd will be free'd.
 		 * so we have to store sd->next.*/
-		sd_next = sd->next; 
+		sd_next = sd->next;
 		dlen = strlen(sd->slid);
-		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen)) 
-			 	    && (spmd_spd_delete(sd->spid, 0)<0) ) {
+		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen))
+				    && (spmd_spd_delete(sd->spid, 0)<0) ) {
 			SPMD_PLOG(SPMD_L_INTERR, "Can't delete IPsec Security Policy: spid=%u", sd->spid);
 			ret = -1;
-		} 
+		}
 		sd = sd_next;
 	} while (sd);
 
@@ -2306,17 +2306,17 @@ spmd_spd_match_delete_by_slid(const char *slid, rc_type samode,
 
 	sd = sd_top;
 	do {
-		/* after calling spmd_spd_delete(urgent=1), sd will be free'd. 
+		/* after calling spmd_spd_delete(urgent=1), sd will be free'd.
 		 * so we have to store sd->next.*/
-		sd_next = sd->next; 
+		sd_next = sd->next;
 		dlen = strlen(sd->slid);
-		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen)) 
-			 	    && (spmd_spd_match_delete(sd->spid, samode,
+		if ( (slen == dlen) && (!strncmp(sd->slid, slid, slen))
+				    && (spmd_spd_match_delete(sd->spid, samode,
 					sres, dres, src_plen, dst_plen,
 					sa_sres, sa_dres, 0)<0) ) {
 			SPMD_PLOG(SPMD_L_INTERR, "Can't delete IPsec Security Policy: spid=%u", sd->spid);
 			ret = -1;
-		} 
+		}
 		sd = sd_next;
 	} while (sd);
 

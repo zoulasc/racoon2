@@ -248,157 +248,157 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 {
 
 	/* ikev2_remove_child() must be called before this */
-    if (!sa->rekey_inprogress) {
-	struct rcf_selector	*selector = 0, *rvrs_selector = 0;
-	struct rcf_policy	*policy;
+	if (!sa->rekey_inprogress) {
+		struct rcf_selector	*selector = 0, *rvrs_selector = 0;
+		struct rcf_policy	*policy;
 
-	selector = sa->selector;
-	if (selector && rcf_get_rvrs_selector(selector, &rvrs_selector)<0) {
-		isakmp_log(0, 0, 0, 0,
-			   PLOG_INTERR, PLOGLOC,
-			   "failed to get reverse selector\n");
-	}
-	policy = 0;
-	if (selector)
-		policy = selector->pl;
-	if (rvrs_selector)
-		rvrs_selector->next = 0;
-	if (selector->next && rvrs_selector) {
-		if (rcf_get_rvrs_selector(selector->next, &(rvrs_selector->next))<0) {
+		selector = sa->selector;
+		if (selector && rcf_get_rvrs_selector(selector, &rvrs_selector)<0) {
 			isakmp_log(0, 0, 0, 0,
 				   PLOG_INTERR, PLOGLOC,
 				   "failed to get reverse selector\n");
 		}
-	}
+		policy = 0;
+		if (selector)
+			policy = selector->pl;
+		if (rvrs_selector)
+			rvrs_selector->next = 0;
+		if (selector->next && rvrs_selector) {
+			if (rcf_get_rvrs_selector(selector->next, &(rvrs_selector->next))<0) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to get reverse selector\n");
+			}
+		}
 
-	if (!LIST_EMPTY(&sa->lease_list)) {
-		struct rcf_address	*a;
-		struct sockaddr_storage	ss;
-		int prefixlen;
-		struct rc_addrlist ra;
+		if (!LIST_EMPTY(&sa->lease_list)) {
+			struct rcf_address	*a;
+			struct sockaddr_storage	ss;
+			int prefixlen;
+			struct rc_addrlist ra;
 
-		/* lease list can have 2 addresses, one AF_INET, one AF_INET6 */
-		for (a = LIST_FIRST(&sa->lease_list);
-		     a != 0;
-		     a = LIST_NEXT(a, link_sa)) {
-			ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss, a,
-						&prefixlen);
-			ra.next = NULL;
-			ra.type = RCT_ADDR_INET;
-			ra.port = 0;
-			ra.prefixlen = prefixlen;
-			ra.a.ipaddr = (struct sockaddr *)&ss;
-			if (ra.a.ipaddr->sa_family == selector->src->a.ipaddr->sa_family) {
-				if (selector && spmif_post_policy_delete(ike_spmif_socket(),
-							     NULL, NULL,
-							     selector->sl_index,
-							     ike_ipsec_mode(policy),
-							     selector->src,
-							     &ra,
-							     sa->local,
-							     sa->remote)) {
-					isakmp_log(0, 0, 0, 0,
-						   PLOG_INTERR, PLOGLOC,
-						   "failed to send delete policy request to spmd\n");
+			/* lease list can have 2 addresses, one AF_INET, one AF_INET6 */
+			for (a = LIST_FIRST(&sa->lease_list);
+			     a != 0;
+			     a = LIST_NEXT(a, link_sa)) {
+				ikev2_cfg_addr2sockaddr((struct sockaddr *)&ss, a,
+							&prefixlen);
+				ra.next = NULL;
+				ra.type = RCT_ADDR_INET;
+				ra.port = 0;
+				ra.prefixlen = prefixlen;
+				ra.a.ipaddr = (struct sockaddr *)&ss;
+				if (ra.a.ipaddr->sa_family == selector->src->a.ipaddr->sa_family) {
+					if (selector && spmif_post_policy_delete(ike_spmif_socket(),
+								     NULL, NULL,
+								     selector->sl_index,
+								     ike_ipsec_mode(policy),
+								     selector->src,
+								     &ra,
+								     sa->local,
+								     sa->remote)) {
+						isakmp_log(0, 0, 0, 0,
+							   PLOG_INTERR, PLOGLOC,
+							   "failed to send delete policy request to spmd\n");
+					}
+					if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
+								     NULL, NULL,
+								     rvrs_selector->sl_index,
+								     ike_ipsec_mode(policy),
+								     &ra,
+								     rvrs_selector->dst,
+								     sa->remote,
+								     sa->local)) {
+						isakmp_log(0, 0, 0, 0,
+							   PLOG_INTERR, PLOGLOC,
+							   "failed to send delete policy request to spmd\n");
+					}
 				}
-				if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
-							     NULL, NULL,
-							     rvrs_selector->sl_index,
-							     ike_ipsec_mode(policy),
-							     &ra,
-							     rvrs_selector->dst,
-							     sa->remote,
-							     sa->local)) {
-					isakmp_log(0, 0, 0, 0,
-						   PLOG_INTERR, PLOGLOC,
-						   "failed to send delete policy request to spmd\n");
+				if (selector && selector->next &&
+				   (ra.a.ipaddr->sa_family == selector->next->src->a.ipaddr->sa_family)) {
+					if (spmif_post_policy_delete(ike_spmif_socket(),
+								     NULL, NULL,
+								     selector->next->sl_index,
+								     ike_ipsec_mode(policy),
+								     selector->next->src,
+								     &ra,
+								     sa->local,
+								     sa->remote)) {
+						isakmp_log(0, 0, 0, 0,
+							   PLOG_INTERR, PLOGLOC,
+							   "failed to send delete policy request to spmd\n");
+					}
+					if (rvrs_selector && rvrs_selector->next &&
+					    spmif_post_policy_delete(ike_spmif_socket(),
+								     NULL, NULL,
+								     rvrs_selector->next->sl_index,
+								     ike_ipsec_mode(policy),
+								     &ra,
+								     rvrs_selector->next->dst,
+								     sa->remote,
+								     sa->local)) {
+						isakmp_log(0, 0, 0, 0,
+							   PLOG_INTERR, PLOGLOC,
+							   "failed to send delete policy request to spmd\n");
+					}
 				}
 			}
-			if (selector && selector->next &&
-			   (ra.a.ipaddr->sa_family == selector->next->src->a.ipaddr->sa_family)) {
-				if (spmif_post_policy_delete(ike_spmif_socket(),
+		} else if (policy && policy->peers_sa_ipaddr &&
+			   rcs_is_addr_rw(policy->peers_sa_ipaddr)) {
+			if (selector && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     selector->sl_index,
+						     ike_ipsec_mode(policy),
+						     selector->src,
+						     selector->dst,
+						     sa->local,
+						     sa->remote)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+			if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     rvrs_selector->sl_index,
+						     ike_ipsec_mode(policy),
+						     rvrs_selector->src,
+						     rvrs_selector->dst,
+						     sa->remote,
+						     sa->local)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+			if (selector && selector->next && spmif_post_policy_delete(ike_spmif_socket(),
 							     NULL, NULL,
 							     selector->next->sl_index,
 							     ike_ipsec_mode(policy),
 							     selector->next->src,
-							     &ra,
+							     selector->next->dst,
 							     sa->local,
 							     sa->remote)) {
-					isakmp_log(0, 0, 0, 0,
-						   PLOG_INTERR, PLOGLOC,
-						   "failed to send delete policy request to spmd\n");
-				}
-				if (rvrs_selector && rvrs_selector->next &&
-				    spmif_post_policy_delete(ike_spmif_socket(),
-							     NULL, NULL,
-							     rvrs_selector->next->sl_index,
-							     ike_ipsec_mode(policy),
-							     &ra,
-							     rvrs_selector->next->dst,
-							     sa->remote,
-							     sa->local)) {
-					isakmp_log(0, 0, 0, 0,
-						   PLOG_INTERR, PLOGLOC,
-						   "failed to send delete policy request to spmd\n");
-				}
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
+			}
+			if (rvrs_selector && rvrs_selector->next && spmif_post_policy_delete(ike_spmif_socket(),
+						     NULL, NULL,
+						     rvrs_selector->next->sl_index,
+						     ike_ipsec_mode(policy),
+						     rvrs_selector->next->src,
+						     rvrs_selector->next->dst,
+						     sa->remote,
+						     sa->local)) {
+				isakmp_log(0, 0, 0, 0,
+					   PLOG_INTERR, PLOGLOC,
+					   "failed to send delete policy request to spmd\n");
 			}
 		}
-	} else if (policy && policy->peers_sa_ipaddr &&
-		   rcs_is_addr_rw(policy->peers_sa_ipaddr)) {
-		if (selector && spmif_post_policy_delete(ike_spmif_socket(),
-					     NULL, NULL,
-					     selector->sl_index,
-					     ike_ipsec_mode(policy),
-					     selector->src,
-					     selector->dst,
-					     sa->local,
-					     sa->remote)) {
-			isakmp_log(0, 0, 0, 0,
-				   PLOG_INTERR, PLOGLOC,
-				   "failed to send delete policy request to spmd\n");
-		}
-		if (rvrs_selector && spmif_post_policy_delete(ike_spmif_socket(),
-					     NULL, NULL,
-					     rvrs_selector->sl_index,
-					     ike_ipsec_mode(policy),
-					     rvrs_selector->src,
-					     rvrs_selector->dst,
-					     sa->remote,
-					     sa->local)) {
-			isakmp_log(0, 0, 0, 0,
-				   PLOG_INTERR, PLOGLOC,
-				   "failed to send delete policy request to spmd\n");
-		}
-		if (selector && selector->next && spmif_post_policy_delete(ike_spmif_socket(),
-						     NULL, NULL,
-						     selector->next->sl_index,
-						     ike_ipsec_mode(policy),
-						     selector->next->src,
-						     selector->next->dst,
-						     sa->local,
-						     sa->remote)) {
-			isakmp_log(0, 0, 0, 0,
-				   PLOG_INTERR, PLOGLOC,
-				   "failed to send delete policy request to spmd\n");
-		}
-		if (rvrs_selector && rvrs_selector->next && spmif_post_policy_delete(ike_spmif_socket(),
-					     NULL, NULL,
-					     rvrs_selector->next->sl_index,
-					     ike_ipsec_mode(policy),
-					     rvrs_selector->next->src,
-					     rvrs_selector->next->dst,
-					     sa->remote,
-					     sa->local)) {
-			isakmp_log(0, 0, 0, 0,
-				   PLOG_INTERR, PLOGLOC,
-				   "failed to send delete policy request to spmd\n");
-		}
+		if (rvrs_selector->next)
+			rcf_free_selector(rvrs_selector->next);
+		if (rvrs_selector)
+			rcf_free_selector(rvrs_selector);
 	}
-	if (rvrs_selector->next)
-		rcf_free_selector(rvrs_selector->next);
-	if (rvrs_selector)
-		rcf_free_selector(rvrs_selector);
-    }
 	sadb_request_finish(&sa->sadb_request);
 	rc_addrpool_release_all(&sa->lease_list);
 	if (sa->local)

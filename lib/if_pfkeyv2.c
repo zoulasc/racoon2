@@ -2475,14 +2475,14 @@ rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 	}
 	rc->dir = pfk2rct_dir(xpl->sadb_x_policy_dir);
 
-	xisr = (void *)(xpl + 1); 
+	xisr = (void *)(xpl + 1);
 	xisr_len = PFKEY_EXTLEN(xpl) - sizeof(*xpl);
-	while (xisr_len > 0) { 
-		/* 
+	while (xisr_len > 0) {
+		/*
 		 * racoon2 supports header orders below:
-		 *   |ip|(ah)|(esp)|ip|data| or |ip|(ah)|(esp)|data| 
+		 *   |ip|(ah)|(esp)|ip|data| or |ip|(ah)|(esp)|data|
 		 * we don't care about other orders.
-		 */ 
+		 */
 		switch (xisr->sadb_x_ipsecrequest_proto) {
 		case IPPROTO_AH:
 			ipsec_proto |= SPDMP_PRT_A;
@@ -2497,8 +2497,8 @@ rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 			rcpfk_seterror(rc, 0, "unknown IPsec proto");
 			return 0;
 		}
-		 /* 
-		  * all policies under racoon2 policy management, 
+		 /*
+		  * all policies under racoon2 policy management,
 		  * are always 'require' level.
 		  * this is just info.
 		  */
@@ -2517,7 +2517,7 @@ rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 			return 0;
 		}
 		/*
-		 * in kame pfkey, a tunnel mode policy is specfied 
+		 * in kame pfkey, a tunnel mode policy is specfied
 		 * as a combination of transport mode and tunnel mode.
 		 * e.g., ah/transport and esp/tunnel,
 		 * but we just want to know the actual mode.
@@ -2545,22 +2545,22 @@ rcpfk_recv_spdget(uint8_t **mhp, struct rcpfk_msg *rc)
 			rcpfk_seterror(rc, 0, "unknown IPsec mode");
 			return 0;
 		}
-				
+
 	}
 
-	if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_AH_ESP_IPCOMP;
 	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) ) {
 		rc->satype = RCT_SATYPE_AH_ESP;
-	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_AH_IPCOMP;
-	} else if ( (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	} else if ( (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_ESP_IPCOMP;
-	} else if (ipsec_proto&SPDMP_PRT_A) { 
+	} else if (ipsec_proto&SPDMP_PRT_A) {
 		rc->satype = RCT_SATYPE_AH;
-	} else if (ipsec_proto&SPDMP_PRT_E) { 
+	} else if (ipsec_proto&SPDMP_PRT_E) {
 		rc->satype = RCT_SATYPE_ESP;
-	} else if (ipsec_proto&SPDMP_PRT_C) { 
+	} else if (ipsec_proto&SPDMP_PRT_C) {
 		rc->satype = RCT_SATYPE_IPCOMP;
 	} else {
 		rcpfk_seterror(rc, 0, "unknown IPsec proto");
@@ -2660,14 +2660,14 @@ rcpfk_recv_spddump(uint8_t **mhp, struct rcpfk_msg *rc)
 	}
 	rc->dir = pfk2rct_dir(xpl->sadb_x_policy_dir);
 
-	xisr = (void *)(xpl + 1); 
+	xisr = (void *)(xpl + 1);
 	xisr_len = PFKEY_EXTLEN(xpl) - sizeof(*xpl);
-	while (xisr_len > 0) { 
-		/* 
+	while (xisr_len > 0) {
+		/*
 		 * racoon2 supports header orders below:
-		 *   |ip|(ah)|(esp)|ip|data| or |ip|(ah)|(esp)|data| 
+		 *   |ip|(ah)|(esp)|ip|data| or |ip|(ah)|(esp)|data|
 		 * we don't care about other orders.
-		 */ 
+		 */
 		switch (xisr->sadb_x_ipsecrequest_proto) {
 		case IPPROTO_AH:
 			ipsec_proto |= SPDMP_PRT_A;
@@ -2682,8 +2682,8 @@ rcpfk_recv_spddump(uint8_t **mhp, struct rcpfk_msg *rc)
 			rcpfk_seterror(rc, 0, "unknown IPsec proto");
 			return 0;
 		}
-		 /* 
-		  * all policies under racoon2 policy management, 
+		 /*
+		  * all policies under racoon2 policy management,
 		  * are always 'require' level.
 		  * this is just info.
 		  */
@@ -2702,7 +2702,7 @@ rcpfk_recv_spddump(uint8_t **mhp, struct rcpfk_msg *rc)
 			return 0;
 		}
 		/*
-		 * in kame pfkey, a tunnel mode policy is specfied 
+		 * in kame pfkey, a tunnel mode policy is specfied
 		 * as a combination of transport mode and tunnel mode.
 		 * e.g., ah/transport and esp/tunnel,
 		 * but we just want to know the actual mode.
@@ -2733,19 +2733,19 @@ rcpfk_recv_spddump(uint8_t **mhp, struct rcpfk_msg *rc)
 				
 	}
 
-	if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_AH_ESP_IPCOMP;
 	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_E) ) {
 		rc->satype = RCT_SATYPE_AH_ESP;
-	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	} else if ( (ipsec_proto&SPDMP_PRT_A) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_AH_IPCOMP;
-	} else if ( (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) { 
+	} else if ( (ipsec_proto&SPDMP_PRT_E) && (ipsec_proto&SPDMP_PRT_C) ) {
 		rc->satype = RCT_SATYPE_ESP_IPCOMP;
-	} else if (ipsec_proto&SPDMP_PRT_A) { 
+	} else if (ipsec_proto&SPDMP_PRT_A) {
 		rc->satype = RCT_SATYPE_AH;
-	} else if (ipsec_proto&SPDMP_PRT_E) { 
+	} else if (ipsec_proto&SPDMP_PRT_E) {
 		rc->satype = RCT_SATYPE_ESP;
-	} else if (ipsec_proto&SPDMP_PRT_C) { 
+	} else if (ipsec_proto&SPDMP_PRT_C) {
 		rc->satype = RCT_SATYPE_IPCOMP;
 	} else {
 		rcpfk_seterror(rc, 0, "unknown IPsec proto");
