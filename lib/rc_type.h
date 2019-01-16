@@ -340,6 +340,7 @@ struct rcf_sa {
 # define IPPROTO_IPCOMP IPPROTO_COMP
 #endif
 
+#ifndef __linux__
 /* FreeBSD */
 #ifndef IPPROTO_SCTP
 #define IPPROTO_SCTP 132
@@ -352,4 +353,4 @@ struct rcf_sa {
 #ifndef IPPROTO_MH
 #define IPPROTO_MH 135
 #endif
-
+#endif

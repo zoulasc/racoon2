@@ -42,12 +42,17 @@
 #include <string.h>
 #include <stddef.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <errno.h>
 
 #include "racoon.h"
 #include "cfsetup.h"
 #include "safefile.h"
+
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX ((size_t)~0ull)
+#endif
 
 #define RCF_CALL_TDF(cl, dd) \
 do { \

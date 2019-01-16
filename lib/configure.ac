@@ -2,6 +2,8 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
 AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
 AM_INIT_AUTOMAKE
+dnl AC_CONFIG_MACRO_DIRS([m4])
+LT_INIT
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)
 AC_CONFIG_HEADERS([config.h])
@@ -11,7 +13,6 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_LEX
 AC_PROG_YACC
-AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 RC_PROG_MKDEP
@@ -130,6 +131,7 @@ AC_FUNC_MEMCMP
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(gettimeofday mktime socket strdup strerror strtol getifaddrs)
+dnl AC_LIBSOURCES([strlcpy.c, strlcat.c, atoll.c, memcmp.c])
 AC_REPLACE_FUNCS(strlcpy strlcat atoll)
 
 # Check if printf accepts "%z" type modifier for size_t argument

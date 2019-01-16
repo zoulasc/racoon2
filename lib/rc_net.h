@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+#include <netinet/in.h>
+
 struct rc_addrlist;
 struct in6_addr;
 extern int rcs_is_addrmacro (const rc_vchar_t *);

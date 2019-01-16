@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

@@ -54,6 +54,7 @@
 
 #include "safefile.h"
 
+#if 0
 extern int yyget_lineno (void);
 extern FILE *yyget_in (void);
 extern FILE *yyget_out (void);
@@ -65,6 +66,7 @@ extern void yyset_out (FILE *);
 extern int yyget_debug (void);
 extern void yyset_debug (int);
 extern int yylex_destroy (void);
+#endif
 
 	/* avoid gcc error */
 #define YY_NO_INPUT 1

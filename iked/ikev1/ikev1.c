@@ -31,6 +31,7 @@
 
 #include <config.h>
 
+#include <sys/param.h>
 #include <assert.h>
 #include <string.h>
 #include <sys/types.h>
@@ -2650,7 +2651,9 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 				san->sin_port = sin->sin_port;
 
 			san->sin_addr = sin->sin_addr;
+#ifdef BSD4_4
 			san->sin_len = sin->sin_len;
+#endif
 			san->sin_family = sin->sin_family;
 			break;
 #ifdef INET6
@@ -2659,7 +2662,9 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 				san6->sin6_port = sin6->sin6_port;
 
 			san6->sin6_addr = sin6->sin6_addr;
+#ifdef BSD4_4
 			san6->sin6_len = sin6->sin6_len;
+#endif
 			san6->sin6_scope_id = sin6->sin6_scope_id;
 			break;
 #endif

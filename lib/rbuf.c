@@ -35,6 +35,7 @@
 #include <sys/param.h>
 
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "rc_malloc.h"
 #include "vmbuf.h"

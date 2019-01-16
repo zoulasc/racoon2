@@ -40,6 +40,9 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/route.h>
+#ifdef __linux__
+#include <linux/rtnetlink.h>
+#endif
 
 #include "racoon.h"
 #include "isakmp_impl.h"
@@ -99,10 +102,21 @@ rtsock_socket(void)
 void
 rtsock_process(void)
 {
+#ifndef __linux__
 	ssize_t len;
+#ifdef __linux__ 
+	char buf[4096];
+	struct sockaddr_nl dst_sa;
+	struct iovec iov = { buf, sizeof(buf) };
+	struct msghdr msg = { &dst_sa, sizeof(dst_sa), &iov, 1, NULL, 0, 0 }; 
+	struct nlmsghdr nlh = (struct nlmsghdr *)buf;
+#define rtm_type nlmsg_type
+	len = recv(rtsock, &msg, sizeof(msg), 0);
+#else
 	struct rt_msghdr rtm[10];
-
 	len = recv(rtsock, rtm, sizeof(rtm), 0);
+#endif
+
 	TRACE((PLOGLOC, "rtsock %d read len=%zd\n", rtsock, len));
 	if (len < 0) {
 		plog(PLOG_INTERR, PLOGLOC, 0,
@@ -110,6 +124,7 @@ rtsock_process(void)
 		return;
 	}
 
+#ifdef RTM_VERSION
 	if ((size_t)len < sizeof(int32_t)) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "PF_ROUTE message is too short (%zd)\n", len);
@@ -129,6 +144,7 @@ rtsock_process(void)
 		rtsock = -1;
 		return;
 	}
+#endif
 
 	TRACE((PLOGLOC, "rtm_type %d\n", rtm->rtm_type));
 	switch (rtm->rtm_type) {
@@ -154,4 +170,5 @@ rtsock_process(void)
 		TRACE((PLOGLOC, "ignoring\n"));
 		break;
 	}
+#endif
 }

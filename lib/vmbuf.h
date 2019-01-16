@@ -30,6 +30,7 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
 
 /*
  *	bp      v

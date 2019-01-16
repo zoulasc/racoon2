@@ -123,8 +123,8 @@ rc_pcap_push(struct sockaddr *src, struct sockaddr *dst, rc_vchar_t *data)
 	udp->source = htons(udp->source);
 	udp->dest = udp->source;
 #else
-	udp->source = rcs_getsaport(src);
-	udp->dest = rcs_getsaport(dst);
+	udp->source = *rcs_getsaport(src);
+	udp->dest = *rcs_getsaport(dst);
 #endif
 	udp->len = sizeof(*udp) + data->l;
 	udp->len = htons(udp->len);

@@ -4,6 +4,7 @@
 
 AC_PREREQ(2.13)
 AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+LT_INIT
 AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PREFIX_DEFAULT(/usr/local/racoon2)

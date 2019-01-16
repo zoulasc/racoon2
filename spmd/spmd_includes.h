@@ -81,7 +81,7 @@
 # include <getopt.h>
 #endif
 #if !defined(HAVE_STRLCPY) || !defined(HAVE_STRLCAT) || !defined(HAVE_ATOLL)
-# include "missing/missing.h"
+# include "missing.h"
 #endif
 #include <openssl/evp.h>
 #include "racoon.h"

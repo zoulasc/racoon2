@@ -1194,12 +1194,14 @@ rcs_getsaaddr(const struct sockaddr *sa)
 #ifdef INET6
 /* Useful IPv6 macros and definitions (derived from NetBSD kernel) */
 #define _IN6MASK0        {{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
-#define _s6_addr32 __u6_addr.__u6_addr32
+#ifndef s6_addr32
+#define s6_addr32 __u6_addr.__u6_addr32
+#endif
 #define _IN6_ARE_MASKED_ADDR_EQUAL(d, a, m)	(	\
-	(((d)->_s6_addr32[0] ^ (a)->_s6_addr32[0]) & (m)->_s6_addr32[0]) == 0 && \
-	(((d)->_s6_addr32[1] ^ (a)->_s6_addr32[1]) & (m)->_s6_addr32[1]) == 0 && \
-	(((d)->_s6_addr32[2] ^ (a)->_s6_addr32[2]) & (m)->_s6_addr32[2]) == 0 && \
-	(((d)->_s6_addr32[3] ^ (a)->_s6_addr32[3]) & (m)->_s6_addr32[3]) == 0 )
+	(((d)->s6_addr32[0] ^ (a)->s6_addr32[0]) & (m)->s6_addr32[0]) == 0 && \
+	(((d)->s6_addr32[1] ^ (a)->s6_addr32[1]) & (m)->s6_addr32[1]) == 0 && \
+	(((d)->s6_addr32[2] ^ (a)->s6_addr32[2]) & (m)->s6_addr32[2]) == 0 && \
+	(((d)->s6_addr32[3] ^ (a)->s6_addr32[3]) & (m)->s6_addr32[3]) == 0 )
 #endif
 int
 rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
@@ -1240,10 +1242,10 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 
 			/* If selector's address is any
 			 * address, match the peer's address */
-			if (san6->sin6_addr._s6_addr32[0] == 0 &&
-			    san6->sin6_addr._s6_addr32[1] == 0 &&
-			    san6->sin6_addr._s6_addr32[2] == 0 &&
-			    san6->sin6_addr._s6_addr32[3] == 0) {
+			if (san6->sin6_addr.s6_addr32[0] == 0 &&
+			    san6->sin6_addr.s6_addr32[1] == 0 &&
+			    san6->sin6_addr.s6_addr32[2] == 0 &&
+			    san6->sin6_addr.s6_addr32[3] == 0) {
 				return 1;
 			}
 
