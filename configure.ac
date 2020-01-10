@@ -2,6 +2,7 @@ dnl $Id: configure.in,v 1.24 2007/12/27 01:08:52 mk Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
+AM_MAINTAINER_MODE([disable])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
 AM_INIT_AUTOMAKE([subdir-objects])
