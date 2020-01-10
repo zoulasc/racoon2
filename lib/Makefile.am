@@ -4,6 +4,7 @@ AM_CPPFLAGS =-DSYSCONFDIR=\"${sysconfdir}\"
 AM_CPPFLAGS +=-DCF_DEBUG
 #AM_CPPFLAGS +=-DSADB_X_MIGRATE
 AM_YFLAGS = -d
+LEX_OUTPUT_ROOT = lex\.yy
 
 lib_LTLIBRARIES = libracoon.la
 #noinst_LIBRARIES =	libracoon.la
