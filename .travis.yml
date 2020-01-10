@@ -5,6 +5,7 @@ compiler:
 addons:
   apt:
     packages:
+    - automake
     - libtool
     - libssl-dev
     - libkrb5-dev
