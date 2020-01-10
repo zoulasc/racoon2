@@ -1,6 +1,6 @@
 # $Id: Makefile.in,v 1.28 2010/05/16 18:30:20 kamada Exp $
 
-ACLOCAL_AMFLAGS += -I m4
+ACLOCAL_AMFLAGS = -I m4
 
 install-exec-hook:
 	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
