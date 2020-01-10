@@ -1,5 +1,7 @@
 # $Id: Makefile.in,v 1.39 2010/05/07 18:42:30 kamada Exp $
 
+ACLOCAL_AMFLAGS = -I m4
+
 sbin_PROGRAMS = kinkd
 kinkd_SOURCES = main.c \
 	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_mit.c bbkk_heimdal.c \

@@ -36,6 +36,7 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_KRB5_HEIMDAL
 #include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -1105,3 +1106,4 @@ fail:
 	free_AP_REQ(&ap_req);
 	return ret;
 }
+#endif

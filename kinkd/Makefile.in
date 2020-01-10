@@ -93,8 +93,10 @@ host_triplet = @host@
 sbin_PROGRAMS = kinkd$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -109,12 +111,13 @@ am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)"
 PROGRAMS = $(sbin_PROGRAMS)
 am_kinkd_OBJECTS = main.$(OBJEXT) kink_fmt.$(OBJEXT) \
 	kink_crypto.$(OBJEXT) bbkk_common.$(OBJEXT) bbkk_mit.$(OBJEXT) \
-	session.$(OBJEXT) base.$(OBJEXT) dpd.$(OBJEXT) peer.$(OBJEXT) \
-	handle.$(OBJEXT) algorithm.$(OBJEXT) crypto_openssl.$(OBJEXT) \
-	oakley.$(OBJEXT) ipsec_doi.$(OBJEXT) isakmp.$(OBJEXT) \
-	isakmp_quick.$(OBJEXT) isakmp_inf.$(OBJEXT) proposal.$(OBJEXT) \
-	strnames.$(OBJEXT) sockmisc.$(OBJEXT) pfkey.$(OBJEXT) \
-	kink_conf.$(OBJEXT) rct_ipsecdoi.$(OBJEXT) etchosts.$(OBJEXT) \
+	bbkk_heimdal.$(OBJEXT) session.$(OBJEXT) base.$(OBJEXT) \
+	dpd.$(OBJEXT) peer.$(OBJEXT) handle.$(OBJEXT) \
+	algorithm.$(OBJEXT) crypto_openssl.$(OBJEXT) oakley.$(OBJEXT) \
+	ipsec_doi.$(OBJEXT) isakmp.$(OBJEXT) isakmp_quick.$(OBJEXT) \
+	isakmp_inf.$(OBJEXT) proposal.$(OBJEXT) strnames.$(OBJEXT) \
+	sockmisc.$(OBJEXT) pfkey.$(OBJEXT) kink_conf.$(OBJEXT) \
+	rct_ipsecdoi.$(OBJEXT) etchosts.$(OBJEXT) \
 	sched_select.$(OBJEXT) utils.$(OBJEXT)
 kinkd_OBJECTS = $(am_kinkd_OBJECTS)
 kinkd_LDADD = $(LDADD)
@@ -138,18 +141,18 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/algorithm.Po ./$(DEPDIR)/base.Po \
-	./$(DEPDIR)/bbkk_common.Po ./$(DEPDIR)/bbkk_mit.Po \
-	./$(DEPDIR)/crypto_openssl.Po ./$(DEPDIR)/dpd.Po \
-	./$(DEPDIR)/etchosts.Po ./$(DEPDIR)/handle.Po \
-	./$(DEPDIR)/ipsec_doi.Po ./$(DEPDIR)/isakmp.Po \
-	./$(DEPDIR)/isakmp_inf.Po ./$(DEPDIR)/isakmp_quick.Po \
-	./$(DEPDIR)/kink_conf.Po ./$(DEPDIR)/kink_crypto.Po \
-	./$(DEPDIR)/kink_fmt.Po ./$(DEPDIR)/main.Po \
-	./$(DEPDIR)/oakley.Po ./$(DEPDIR)/peer.Po ./$(DEPDIR)/pfkey.Po \
-	./$(DEPDIR)/proposal.Po ./$(DEPDIR)/rct_ipsecdoi.Po \
-	./$(DEPDIR)/sched_select.Po ./$(DEPDIR)/session.Po \
-	./$(DEPDIR)/sockmisc.Po ./$(DEPDIR)/strnames.Po \
-	./$(DEPDIR)/utils.Po
+	./$(DEPDIR)/bbkk_common.Po ./$(DEPDIR)/bbkk_heimdal.Po \
+	./$(DEPDIR)/bbkk_mit.Po ./$(DEPDIR)/crypto_openssl.Po \
+	./$(DEPDIR)/dpd.Po ./$(DEPDIR)/etchosts.Po \
+	./$(DEPDIR)/handle.Po ./$(DEPDIR)/ipsec_doi.Po \
+	./$(DEPDIR)/isakmp.Po ./$(DEPDIR)/isakmp_inf.Po \
+	./$(DEPDIR)/isakmp_quick.Po ./$(DEPDIR)/kink_conf.Po \
+	./$(DEPDIR)/kink_crypto.Po ./$(DEPDIR)/kink_fmt.Po \
+	./$(DEPDIR)/main.Po ./$(DEPDIR)/oakley.Po ./$(DEPDIR)/peer.Po \
+	./$(DEPDIR)/pfkey.Po ./$(DEPDIR)/proposal.Po \
+	./$(DEPDIR)/rct_ipsecdoi.Po ./$(DEPDIR)/sched_select.Po \
+	./$(DEPDIR)/session.Po ./$(DEPDIR)/sockmisc.Po \
+	./$(DEPDIR)/strnames.Po ./$(DEPDIR)/utils.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -366,7 +369,6 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -375,8 +377,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ACLOCAL_AMFLAGS = -I m4
 kinkd_SOURCES = main.c \
-	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_mit.c \
+	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_mit.c bbkk_heimdal.c \
 	session.c base.c dpd.c peer.c handle.c \
 	algorithm.c crypto_openssl.c oakley.c \
 	ipsec_doi.c isakmp.c isakmp_quick.c isakmp_inf.c proposal.c \
@@ -506,6 +509,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/algorithm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bbkk_common.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bbkk_heimdal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bbkk_mit.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_openssl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dpd.Po@am__quote@ # am--include-marker
@@ -881,6 +885,7 @@ distclean: distclean-am
 		-rm -f ./$(DEPDIR)/algorithm.Po
 	-rm -f ./$(DEPDIR)/base.Po
 	-rm -f ./$(DEPDIR)/bbkk_common.Po
+	-rm -f ./$(DEPDIR)/bbkk_heimdal.Po
 	-rm -f ./$(DEPDIR)/bbkk_mit.Po
 	-rm -f ./$(DEPDIR)/crypto_openssl.Po
 	-rm -f ./$(DEPDIR)/dpd.Po
@@ -954,6 +959,7 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/algorithm.Po
 	-rm -f ./$(DEPDIR)/base.Po
 	-rm -f ./$(DEPDIR)/bbkk_common.Po
+	-rm -f ./$(DEPDIR)/bbkk_heimdal.Po
 	-rm -f ./$(DEPDIR)/bbkk_mit.Po
 	-rm -f ./$(DEPDIR)/crypto_openssl.Po
 	-rm -f ./$(DEPDIR)/dpd.Po

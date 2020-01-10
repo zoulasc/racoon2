@@ -1,5 +1,7 @@
 # $Id: Makefile.in,v 1.51 2009/03/27 07:24:26 mk Exp $
 
+ACLOCAL_AMFLAGS += -I m4
+
 AM_CPPFLAGS =	-I. -I./extra
 AM_CPPFLAGS +=	@CPPFLAGS@
 AM_CPPFLAGS += -DSYSCONFDIR=\"${sysconfdir}\"

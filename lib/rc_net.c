@@ -628,7 +628,7 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 		return 0;	/* XXX fatal */
 
 	memset(&ifr6, 0, sizeof(ifr6));
-	strncpy(ifr6.ifr_name, ifname, strlen(ifname));
+	strlcpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
 
 	memcpy(&ifr6.ifr_addr, ifaddr, sizeof(struct sockaddr_in6));
 

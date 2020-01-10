@@ -36,6 +36,7 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_KRB5_MIT
 /*
  * XXX access private interfaces
  *  - krb5_get_time_offsets()
@@ -1091,3 +1092,4 @@ fail:
 	krb5_free_ap_req(context, ap_req);
 	return ret;
 }
+#endif

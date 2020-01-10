@@ -1,5 +1,7 @@
 # $Id: Makefile.in,v 1.28 2010/05/16 18:30:20 kamada Exp $
 
+ACLOCAL_AMFLAGS += -I m4
+
 SUBDIRS = child-down.d child-up.d ikesa-up.d
 
 install-exec-hook:

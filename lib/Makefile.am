@@ -1,5 +1,7 @@
 # $Id: Makefile.in,v 1.35 2007/05/16 11:05:10 fukumoto Exp $
 
+ACLOCAL_AMFLAGS += -I m4
+
 AM_CPPFLAGS =-DSYSCONFDIR=\"${sysconfdir}\"
 AM_CPPFLAGS +=-DCF_DEBUG
 #AM_CPPFLAGS +=-DSADB_X_MIGRATE

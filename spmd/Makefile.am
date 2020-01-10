@@ -1,4 +1,6 @@
 
+ACLOCAL_AMFLAGS += -I m4
+
 AM_CPPFLAGS =-DSYSCONFDIR=\"${sysconfdir}\" 
 #AM_CPPFLAGS += +=-DSADB_X_MIGRATE
 
