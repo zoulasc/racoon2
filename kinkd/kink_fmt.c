@@ -81,10 +81,10 @@
  */
 struct payload_setter {
 	rc_vchar_t *buf;
-	uint8_t *p;			/* next payload begins here */
-	uint16_t *length_loc;		/* length field of the base header */
-	uint8_t *nptype_loc;		/* nptype field of the last payload */
-	uint16_t *cksum_len_loc;	/* CksumLen field of the base header */
+	uint8_t *p;		/* next payload begins here */
+	void *length_loc;	/* length field of the base header */
+	uint8_t *nptype_loc;	/* nptype field of the last payload */
+	void *cksum_len_loc;	/* CksumLen field of the base header */
 	int need_cksum;
 
 	struct kink_pl_encrypt *encrypt;
@@ -113,6 +113,12 @@ static int setpl_do_encrypt(struct payload_setter *ps,
     struct kink_handle *kh);
 static rc_vchar_t *get_kink_payload(void *ptr);
 
+
+static void
+copy_uint16(void *p, uint16_t v)
+{
+	memcpy(p, &v, sizeof(v));
+}
 
 
 rc_vchar_t *
@@ -1222,7 +1228,7 @@ setpl_finalize(struct payload_setter *ps, struct kink_handle *kh)
 			*ps->p++ = '\0';
 
 		/* temporary set length-without-checksum */
-		*ps->length_loc = htons(ps->p - ps->buf->u);
+		copy_uint16(ps->length_loc, htons(ps->p - ps->buf->u));
 
 		/* set remaining buffer size */
 		cksum_len = ps->buf->u + ps->buf->l - ps->p;
@@ -1240,12 +1246,12 @@ setpl_finalize(struct payload_setter *ps, struct kink_handle *kh)
 		}
 
 		/* fill cksum_len */
-		*ps->cksum_len_loc = htons(cksum_len);
+		copy_uint16(ps->cksum_len_loc, htons(cksum_len));
 		ps->p += cksum_len;
 	}
 
 	msglen = ps->p - ps->buf->u;
-	*ps->length_loc = htons(msglen);
+	copy_uint16(ps->length_loc, htons(msglen));
 	ps->buf->l = msglen;
 
 	return ps->buf;

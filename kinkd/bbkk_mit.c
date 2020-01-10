@@ -62,6 +62,29 @@
 #include "bbkk.h"
 #include "crypto_openssl.h"
 
+/* XXX: exposed guts */
+extern krb5_error_code krb5_rc_recover(krb5_context, krb5_rcache); 
+extern krb5_error_code krb5_rc_close(krb5_context, krb5_rcache); 
+extern krb5_error_code krb5_rc_resolve_full(krb5_context, krb5_rcache *,
+    const char *); 
+extern krb5_error_code krb5_rc_initialize(krb5_context, krb5_rcache, int); 
+extern krb5_error_code krb5_set_time_offsets(krb5_context, krb5_timestamp,
+    krb5_int32);
+extern krb5_error_code krb5int_c_mandatory_cksumtype(krb5_context, krb5_enctype,
+    krb5_cksumtype *);
+#if defined(HAVE_KRB5_NFOLD)
+extern void krb5_nfold(unsigned int, const unsigned char *, unsigned int,
+    unsigned char *);
+#else
+extern void krb5int_nfold(unsigned int, const unsigned char *, unsigned int,
+    unsigned char *);
+#endif
+extern krb5_error_code decode_krb5_ap_req(const krb5_data *, krb5_ap_req **); 
+extern krb5_error_code decode_krb5_authenticator(const krb5_data *,
+    krb5_authenticator **); 
+extern krb5_error_code krb5_decrypt_tkt_part(krb5_context,
+    const krb5_keyblock *, krb5_ticket * );
+extern void krb5_free_ap_req(krb5_context, krb5_ap_req *);
 
 static krb5_error_code krb5e_force_get_key(krb5_context context,
     krb5_auth_context ac,
