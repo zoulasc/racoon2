@@ -42,6 +42,14 @@ netbsd*)
 	CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
 	LDFLAGS="$LDFLAGS `lib_flags /usr/pkg/lib`"
 	;;
+linux*)
+	for d in /usr/include/heimdal /usr/include/mit-krb5; do
+		if test -d $d; then
+			CPPFLAGS="$CPPFLAGS -I$d";
+			break;
+		fi
+	done
+	;;
 esac
 
 CPPFLAGS="-I../lib $CPPFLAGS"
