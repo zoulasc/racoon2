@@ -1570,8 +1570,8 @@ match_addr_ipv4(struct sockaddr *addr, int prefixlen,
 	if (sin->sin_family != AF_INET)
 		return FALSE;
 	a = ntohl(sin->sin_addr.s_addr);
-	s = get_uint32((uint32_t *)start_addr);
-	e = get_uint32((uint32_t *)end_addr);
+	s = get_uint32(start_addr);
+	e = get_uint32(end_addr);
 	if (prefixlen == 0)
 		bits = 0xFFFFFFFFu;
 	else
@@ -3250,7 +3250,7 @@ ikev2_ipsec_sa_to_proplist(struct ikev2_child_sa *child_sa,
 	prop->proto_id = proto_id;
 	prop->spi_size = ipsec_spi_size;
 	prop->num_t = 0;	/* will be set when packing the packet */
-	put_uint32((uint32_t *)(prop + 1), proto_info->spi);
+	put_uint32(prop + 1, proto_info->spi);
 
 	prop_head->prop = prop;
 

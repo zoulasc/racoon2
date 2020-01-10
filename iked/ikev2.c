@@ -4676,7 +4676,7 @@ ikev2_process_delete(struct ikev2_sa *ike_sa, struct ikev2_payload_header *p,
 		     ++i, spi_ptr += sizeof(uint32_t)) {
 			struct prop_pair *proposal;
 
-			spi = get_uint32((uint32_t *)spi_ptr);
+			spi = get_uint32(spi_ptr);
 			isakmp_log(ike_sa, 0, 0, 0,
 				   PLOG_INFO, PLOGLOC,
 				   "delete proto %s spi 0x%08x\n",
@@ -4755,12 +4755,12 @@ ikev2_process_delete(struct ikev2_sa *ike_sa, struct ikev2_payload_header *p,
 						uint32_t inbound_spi;
 
 						inbound_spi =
-							get_uint32((uint32_t *)(prop + 1));
+							get_uint32(prop + 1);
 						if (inbound_spi != 0) {
 							TRACE((PLOGLOC,
 							       "spi 0x%x\n",
 							       inbound_spi));
-							put_uint32((uint32_t *)response_spi,
+							put_uint32(response_spi,
 								   inbound_spi);
 							response_spi += sizeof(uint32_t);
 						} else {

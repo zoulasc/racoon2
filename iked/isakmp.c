@@ -127,33 +127,30 @@ static struct prop_pair *isakmp_get_transforms(struct isakmp_domain *, caddr_t,
  * Packet parsing utilities
  */
 uint32_t
-get_uint32(uint32_t *ptr)
+get_uint32(const void *ptr)
 {
-	uint8_t *p;
+	const uint8_t *p = ptr;
 
-	p = (uint8_t *)ptr;
 	return ((uint32_t)p[0] << 24)
 		+ ((uint32_t)p[1] << 16)
 		+ ((uint32_t)p[2] << 8)
 		+ ((uint32_t)p[3] << 0);
 }
 
-uint32_t
-get_uint16(uint16_t *ptr)
+uint16_t
+get_uint16(const void *ptr)
 {
-	uint8_t *p;
+	const uint8_t *p = ptr;
 
-	p = (uint8_t *)ptr;
-	return ((uint32_t)p[0] << 8)
-		+ ((uint32_t)p[1] << 0);
+	return ((uint16_t)p[0] << 8)
+		+ ((uint16_t)p[1] << 0);
 }
 
 void
-put_uint32(uint32_t *ptr, uint32_t value)
+put_uint32(void *ptr, uint32_t value)
 {
-	uint8_t *p;
+	uint8_t *p = ptr;
 
-	p = (uint8_t *)ptr;
 	p[0] = (value >> 24);
 	p[1] = (value >> 16);
 	p[2] = (value >> 8);
@@ -161,11 +158,10 @@ put_uint32(uint32_t *ptr, uint32_t value)
 }
 
 void
-put_uint16(uint16_t *ptr, uint32_t value)
+put_uint16(void *ptr, uint32_t value)
 {
-	uint8_t *p;
+	uint8_t *p = ptr;
 
-	p = (uint8_t *)ptr;
 	p[0] = (value >> 8);
 	p[1] = (value >> 0);
 }
