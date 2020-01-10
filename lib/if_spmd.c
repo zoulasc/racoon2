@@ -55,6 +55,7 @@
 
 #include "racoon.h"
 #include "safefile.h"
+#include "rc_openssl.h"
 
 
 #define CRLF_STR		"\r\n"

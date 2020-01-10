@@ -86,6 +86,7 @@
 #include <openssl/evp.h>
 #include "racoon.h"
 #include "version.h"
+#include "rc_openssl.h"
 
 #include "safefile.h"
 

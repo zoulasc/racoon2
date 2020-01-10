@@ -62,6 +62,7 @@ struct krb5_dh_moduli;
 #include "utils.h"
 #include "bbkk.h"
 #include "crypto_openssl.h"
+#include "rc_openssl.h"
 
 
 static krb5_error_code krb5e_force_get_key(krb5_context context,
