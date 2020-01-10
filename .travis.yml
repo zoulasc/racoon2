@@ -13,6 +13,11 @@ addons:
     - flex
     - bison
 
+script:
+ - autoreconf -f -i
+ - ./configure --disable-silent-rules
+ - make -j4
+
 jobs:
   exclude:
   - os: osx
