@@ -2,7 +2,7 @@
 
 sbin_PROGRAMS = kinkd
 kinkd_SOURCES = main.c \
-	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_mit.c \
+	kink_fmt.c kink_crypto.c bbkk_common.c bbkk_mit.c bbkk_heimdal.c \
 	session.c base.c dpd.c peer.c handle.c \
 	algorithm.c crypto_openssl.c oakley.c \
 	ipsec_doi.c isakmp.c isakmp_quick.c isakmp_inf.c proposal.c \
