@@ -1,5 +1,3 @@
-$Id: README,v 1.57 2009/03/26 18:03:04 sakane Exp $
-
 This document describes the Racoon2 and the distribution kit.
 You have to read doc/INSTALL and doc/USAGE to use the Racoon2
 after you read this document.  Enjoy !
@@ -206,3 +204,8 @@ We could not work without the great project.
 Thanks to Yutaka Yamashita.  He implemented the partial mobility support
 with SHISA (http://www.mobileip.jp/) in iked(8).
 
+[![Build Status][status]][travis]
+
+[BUILDING]: BUILDING
+[status]: https://travis-ci.org/zoulasc/racoon2.svg?branch=master
+[travis]: https://travis-ci.org/zoulasc/racoon2
