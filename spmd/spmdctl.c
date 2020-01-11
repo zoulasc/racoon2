@@ -190,7 +190,7 @@ sc_getline(int fd, char *buf, int len)
 		}
 
 		if (n == len -1) {
-			buf = '\0';
+			*buf = '\0';
 			goto fin;
 		}
 	}
@@ -201,8 +201,8 @@ fin:
 	}
 	return n;
 err:
-	/* error */
-	buf = '\0';
+	/* error **/
+	*buf = '\0';
 	return -1;
 }
 
@@ -1092,8 +1092,8 @@ connect_ok:
 	}
 
 	p = rbuf+strlen("220 ");
-	cid.challenge = malloc(strlen(p)+1);
-	strlcpy(cid.challenge, p, strlen(p)+1);
+	cid.challenge = malloc(i = strlen(p)+1);
+	strlcpy(cid.challenge, p, i);
 	if (rcf_get_spmd_if_passwd(&vpasswd)<0) {
 		fprintf(stderr, "can't get password for spmd interface\n");
 		exit(EXIT_FAILURE);
