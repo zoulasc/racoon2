@@ -18,10 +18,5 @@ script:
  - ./configure --disable-silent-rules
  - make -j4
 
-jobs:
-  exclude:
-  - os: osx
-    compiler: gcc
 os:
 - linux
-- osx
