@@ -54,4 +54,6 @@ List of work needed on the racoon2 package
    by implementing address substition on the traffic selectors, as described
    in RFC 7296.
 
+7. Deal with packet fragmentation. The code looks old/incomplete.
+
 [1] https://tools.ietf.org/html/rfc7296#section-2.23.1
