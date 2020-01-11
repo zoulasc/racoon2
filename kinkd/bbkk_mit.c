@@ -869,9 +869,11 @@ void
 bbkk_n_fold(char *dst, size_t dstlen, const char *src, size_t srclen)
 {
 #if defined(HAVE_KRB5_NFOLD)
-	krb5_nfold(srclen * 8, src, dstlen * 8, dst);
+	krb5_nfold(srclen * 8, (const unsigned char *)src, dstlen * 8, 
+		(unsigned char *)dst);
 #else
-	krb5int_nfold(srclen * 8, src, dstlen * 8, dst);
+	krb5int_nfold(srclen * 8, (const unsigned char *)src, dstlen * 8,
+		(unsigned char *)dst);
 #endif
 }
 
