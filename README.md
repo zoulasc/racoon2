@@ -19,18 +19,39 @@ o Files and Directories
 o What is the Racoon2 ?
 
 The Racoon2 is a system to exchange and to install security parameters
-for the IPsec.
+for IPsec.
 
-This is provided by the Racoon2 Project in the WIDE Project, Japan.
-The project aims to provide the IPsec system for FreeBSD, NetBSD and
-Linux.  There are some similar projects working in the Internet community.
-We do not have any thoughts to compete with these communities.
-We'd rather like to collaborate with them though there is a language barrier.
+This code was written by the Racoon2 Project in the WIDE Project,
+Japan.  The project aimed to provide the IPsec system for FreeBSD,
+NetBSD and Linux. There are some similar projects working in the
+Internet community (openswan/Linux, iked/OpenBSD).
 
-Main objective of the Racoon2 is for research rather than business.  We may not
-be able to provide satisfactory support for you.  We are continuously changing
-it in our research.  It does not have enough stability.  So, please take full
-responsibility for using the Racoon2.
+The main objective of Racoon2 is currently to evaluate it as a
+possible replacement iked key exchange service (IKE) for use in
+future releases of major software platforms such as *BSD and Linux.
+It has iked to implement IKEv1 and IKEv2, spmd to provide security
+policy management services, and kinkd to provide Kerberos based
+key exchange for IPsec. At present it is unstable and very difficult
+to configure. Most users will not be able to use it in its current
+form without a significant level of expertise and experience with
+the complexities of establishing IPsec connections. It only provides
+one small piece (IKE) of a complicated system of many parts that
+are needed to establish successful secured communications over the
+Internet.
+
+Racoon2 is also based on very old code and it is still very buggy.
+Although Racoon2 can be configured to establish working IPsec
+connections using both IKEv1 and IKEv2, in its current form, most
+users who do not have experience configuring IPsec connections will
+not be able to get a connection working without significant effort.
+The near-term goals are to reduce the number of bugs that make
+Racoon2 so difficult to configure, and to create a simpler system
+for configuring corrections correctly so that the level of expertise
+required to use Racoon2 to establish connections can be reduced to
+the point where most developers will be able to build, install,
+and use Racoon2 to get working IPsec connections with minimal
+effort.
+
 
 Currently, the system supports the following specifications:
 
