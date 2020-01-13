@@ -46,7 +46,7 @@ users who do not have experience configuring IPsec connections will
 not be able to get a connection working without significant effort.
 The near-term goals are to reduce the number of bugs that make
 Racoon2 so difficult to configure, and to create a simpler system
-for configuring corrections correctly so that the level of expertise
+for configuring connections correctly so that the level of expertise
 required to use Racoon2 to establish connections can be reduced to
 the point where most developers will be able to build, install,
 and use Racoon2 to get working IPsec connections with minimal
