@@ -50,7 +50,7 @@ for configuring connections correctly so that the level of expertise
 required to use Racoon2 to establish connections can be reduced to
 the point where most developers will be able to build, install,
 and use Racoon2 to get working IPsec connections with minimal
-effort.
+effort. Please refer to NEWS for updates on current developments.
 
 
 Currently, the system supports the following specifications:
