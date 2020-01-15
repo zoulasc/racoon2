@@ -56,4 +56,19 @@ List of work needed on the racoon2 package
 
 7. Deal with packet fragmentation. The code looks old/incomplete.
 
+Fixed issues:
+
+1. Relax the matching that racoon2 does at the beginning of the phase2 exchange
+   when we are acting as a passive responder. Previously the selectors need to
+   exactly match the traffic the client/peer is proposing to send to us and
+   receive from us. For example, if our selectors specify that we want to
+   require esp in transport mode for the udp upper layer protocol and any
+   port but the peer specifies only udp port 1701, the L2TP port, then
+   racoon2 failed to find a matching selector. Racoon is much more forgiving
+   at this stage of the negotiations with the peer. This behavior made it
+   virtually impossible to craft a flexible configuration that supports
+   multiple types of clients, such as both Windows and iPhone L2TP/IPSec
+   clients using racoon2. This problem was fixed at:
+   https://github.com/zoulasc/racoon2/commit/bbd6fb8e15a60dd439e19e0fa79aa4b4445d4ec9
+
 [1] https://tools.ietf.org/html/rfc7296#section-2.23.1
