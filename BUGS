@@ -13,7 +13,17 @@ common issues
      can exchange a parameter with its peer, and racoon2 can install a
      pair of SAs into the kernel, but the kernel seems not to find a
      suitable SA.  Currently, we are not thinking that this is a bug
-     of racoon2.
+     of racoon2. This is most likely fixed in NetBSD > 8.0.
+
+   + IKEv1 connections do not work after an IKEv2 connection has been
+     made without rebooting the system. It is not sufficient to restart
+     racoon2. The issue currently being investigated.
+
+spmd(8)
+
+   + In some configurations, spmd(8) does not install the desired
+     security policies into the kernel. The issue currently being
+     investigated.
 
 iked(8)
 
