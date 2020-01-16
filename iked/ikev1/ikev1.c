@@ -520,9 +520,8 @@ ikev1_main(rc_vchar_t *msg, struct sockaddr *remote, struct sockaddr *local)
 #ifdef notyet
 		isakmp_newgroup_r(iph1, msg);
 		break;
-#else
-		/*FALLTHROUGH*/
 #endif
+		/*FALLTHROUGH*/
 	case ISAKMP_ETYPE_NONE:
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, 0,

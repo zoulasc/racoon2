@@ -56,8 +56,8 @@
 static const char kinkd_version[] = "[spec=RFC4430, compat=7]";
 
 
-static void usage(void);
-static void version(void);
+static void usage(void) __attribute__((__noreturn__));
+static void version(void) __attribute__((__noreturn__));
 
 
 /* global options */
