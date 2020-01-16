@@ -315,13 +315,13 @@ shell_init(void)
 #ifdef SPMD_DEBUG
 		case RCT_ADDR_FQDN: /* allow only 127.0.0.1 or ::1 */
 			{
-				char *fqdn = NULL;
+				const char *fqdn = rcl->a.vstr->s;
 				char portstr[16];
 				struct addrinfo hints, *res0, *res;
 				int gai_err;
 				char host[NI_MAXHOST];
 
-				fqdn = (char *)rc_vmem2str(rcl->a.vstr);
+				fqdn = rc_vmem2str(rcl->a.vstr);
 				memset(portstr, 0, sizeof(portstr));
 				if (rcl->port == 0) {
 					snprintf(portstr, sizeof(portstr), "%d", SPMD_SHELL_PORT);
@@ -680,7 +680,7 @@ shell_gen_challenge(void)
 	{
 		char *buf, *bp, *sp;
 		size_t buf_len = seed_len*2+1;
-		int j;
+		size_t j;
 		buf = spmd_malloc(buf_len);
 		if (buf) {
 			bp = buf;

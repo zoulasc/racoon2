@@ -627,7 +627,7 @@ retry:
 		char dhost[NI_MAXHOST];
 		char sserv[NI_MAXSERV];
 		char dserv[NI_MAXSERV];
-		int ret = 0;
+		ret = 0;
 
 		memset(&src, 0, sizeof(src));
 		memset(&dst, 0, sizeof(dst));
