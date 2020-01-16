@@ -105,6 +105,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		case RESPONDER:
 			switch (s) {
 			case PHASE1ST_MSG1SENT:
@@ -112,6 +113,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		}
 		break;
 	case ISAKMP_ETYPE_BASE:
@@ -125,6 +127,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		case RESPONDER:
 			switch (s) {
 			case PHASE1ST_MSG1SENT:
@@ -134,6 +137,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		}
 		break;
 	case ISAKMP_ETYPE_IDENT:
@@ -149,6 +153,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		case RESPONDER:
 			switch (s) {
 			case PHASE1ST_MSG1SENT:
@@ -160,6 +165,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		}
 		break;
 	case ISAKMP_ETYPE_QUICK:
@@ -173,6 +179,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		case RESPONDER:
 			switch (s) {
 			case PHASE2ST_MSG1SENT:
@@ -182,6 +189,7 @@ s_isakmp_state(int t, int d, int s)
 			default:
 				break;
 			}
+			break;
 		}
 		break;
 	default:
