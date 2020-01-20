@@ -3824,16 +3824,21 @@ err:
 	return -1;
 }
 
-/* return first matched rcf_selector which src/dst are reversed in the list */
+/* return first matched rcf_selector which src/dst are reversed in the list
+   with the same remote index */
 int
 rcf_get_rvrs_selector(struct rcf_selector *sl, struct rcf_selector **rsl)
 {
 	struct rcf_selector *src = 0, *n;
+	const rc_vchar_t *rm_index1 = sl->pl->rm_index;
 
 	if (!sl)
 		return -1;
 
 	for (n = rcf_selector_head; n; n = n->next) {
+		const rc_vchar_t *rm_index2 = n->pl->rm_index;
+		if (rc_vmemcmp(rm_index1, rm_index2))
+			continue;
 		if (rcs_addrlist_cmp(sl->src, n->dst) == 0 &&
 		    rcs_addrlist_cmp(sl->dst, n->src) == 0) {
 			src = n;
