@@ -274,7 +274,7 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 		}
 
 		/* Check if passive is set correctly
-		   XXX This is a hack to help prevent triggering an assert in
+		   XXX This is a hack to help prevent an assertion in
 		       ikev2_child.c:ikev2_child_getspi_done() */
 
 		if (ikev2_passive(conf) == RCT_BOOL_OFF) {
@@ -289,7 +289,7 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 					   conf->rm_index ? rc_vmem2str(conf->rm_index) : "(default)");
 				isakmp_log(0, local, remote, packet,
 					   PLOG_PROTOWARN, PLOGLOC,
-					   "Please set passive to on for IKEv2 peer %s in your configuration to disable this warning.\n",
+					   "Please set passive to on in your ikev2 configuration for peer %s to disable this warning.\n",
 					   conf->rm_index ? rc_vmem2str(conf->rm_index) : "(default)");
 				conf->ikev2->passive = RCT_BOOL_ON;
 			}
