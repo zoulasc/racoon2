@@ -273,6 +273,28 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 			goto end;
 		}
 
+		/* Check if passive is set correctly
+		   XXX This is a hack to help prevent triggering an assert in
+		       ikev2_child.c:ikev2_child_getspi_done() */
+
+		if (ikev2_passive(conf) == RCT_BOOL_OFF) {
+			if (conf->ikev2->addresspool) { /* XXX more checks before triggering this warning ??? */
+				isakmp_log(0, local, remote, packet,
+					   PLOG_PROTOWARN, PLOGLOC,
+					   "IKEv2 peer appears to be a client but passive is not set to on for peer %s\n",
+					   conf->rm_index ? rc_vmem2str(conf->rm_index) : "(default)");
+				isakmp_log(0, local, remote, packet,
+					   PLOG_PROTOWARN, PLOGLOC,
+					   "Setting passive to on for IKEv2 peer %s ...\n",
+					   conf->rm_index ? rc_vmem2str(conf->rm_index) : "(default)");
+				isakmp_log(0, local, remote, packet,
+					   PLOG_PROTOWARN, PLOGLOC,
+					   "Please set passive to on for IKEv2 peer %s in your configuration to disable this warning.\n",
+					   conf->rm_index ? rc_vmem2str(conf->rm_index) : "(default)");
+				conf->ikev2->passive = RCT_BOOL_ON;
+			}
+		}
+
 		need_cookie = (ikev2_under_attack ||
 			(conf && conf->ikev2->cookie_required == RCT_BOOL_ON));
 		has_cookie = (ikehdr->next_payload == IKEV2_PAYLOAD_NOTIFY &&
