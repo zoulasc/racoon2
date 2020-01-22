@@ -282,6 +282,26 @@ spmd_pfkey_init(void)
 				spd_add_skip=1;
 		}
 
+		/* if the remote uses an addresspool don't add to spd now
+		   XXX IKEv1 address pool? */
+		struct rcf_remote *rm;
+		rcf_get_remotebyindex(sl->pl->rm_index, &rm);
+
+		if (rm) {
+			if (rm->ikev2->addresspool) {
+				spd_add_skip=1;
+			}
+		}
+
+		if (!rm) {
+			if (rcf_default_head &&
+				rcf_default_head->remote &&
+				rcf_default_head->remote->ikev2 &&
+				rcf_default_head->remote->ikev2->addresspool) {
+				spd_add_skip=1;
+			}
+		}
+
 		if (spd_add_skip) {
 			continue;
 		}
