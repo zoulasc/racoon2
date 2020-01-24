@@ -798,7 +798,7 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 			return EAI_MEMORY;
 		}
 		new->type = RCT_ADDR_INET;
-		new->prefixlen = rcs_getsaaddrlen(ap->ai_addr);
+		new->prefixlen = rcs_getsaaddrlen(ap->ai_addr) << 3;
 		if (new->prefixlen == 0) {
 			rcs_free_addrlist(new_head);
 			freeaddrinfo(ai);
