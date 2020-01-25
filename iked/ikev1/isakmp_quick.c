@@ -1677,8 +1677,35 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 	iph2->status = PHASE2ST_ADDSA;
 	iph2->flags ^= ISAKMP_FLAG_C;	/* reset bit */
 
+	/* Print some debugging information */
+	const struct rc_addrlist *cal_src = iph2->selector->src;
+	const struct rc_addrlist *cal_dst = iph2->selector->dst;
+	const struct rc_addrlist *cal_my_sa_ipaddr = iph2->selector->pl->my_sa_ipaddr;
+	const struct rc_addrlist *cal_peers_sa_ipaddr = iph2->selector->pl->peers_sa_ipaddr;
+	const char *src_str = rcs_addrlist2str(cal_src);
+	const char *dst_str = rcs_addrlist2str(cal_dst);
+	const char *my_sa_ipaddr_str = rcs_addrlist2str(cal_my_sa_ipaddr);
+	const char *peers_sa_ipaddr_str = rcs_addrlist2str(cal_peers_sa_ipaddr);
+	const struct sockaddr *my_ph1_ipaddr = iph2->ph1->local;
+	const struct sockaddr *peers_ph1_ipaddr = iph2->ph1->remote;
+	char *my_ph1_ipaddr_str = saddrwop2str(my_ph1_ipaddr);
+	char *peers_ph1_ipaddr_str = saddrwop2str(peers_ph1_ipaddr);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 selector src address: %s\n", src_str);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 selector dst address: %s\n", dst_str);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 policy my endpoint address: %s\n", my_sa_ipaddr_str);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 policy peers endpoint address: %s\n", peers_sa_ipaddr_str);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 phase 1 my endpoint address: %s\n", my_ph1_ipaddr_str);
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"IKEv1 phase 1 peers endpoint address: %s\n", peers_ph1_ipaddr_str);
+
 	/* generate policy */
-	if (rcs_is_addr_rw(iph2->selector->pl->peers_sa_ipaddr)) {
+	if (rcs_is_addr_rw(iph2->selector->pl->peers_sa_ipaddr) ||
+	    rcs_is_addr_rw(iph2->selector->dst)) {
 		IPSEC_CONF(lifetime, iph2->selector->pl->ips,
 			   ipsec_sa_lifetime_time, 0);
 		if (ike_spmif_post_policy_add(iph2->selector,
