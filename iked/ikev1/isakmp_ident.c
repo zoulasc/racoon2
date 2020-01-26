@@ -1104,7 +1104,8 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 				break;
 			}
 #endif
-			/*FALLTHROUGH*/
+			/* FALLTHROUGH */
+
 		default:
 			/* don't send information, see ident_r1recv() */
 			isakmp_log(0, 0, iph1->remote, 0,

@@ -1,0 +1,22 @@
+language: c
+compiler:
+- gcc
+- clang
+addons:
+  apt:
+    packages:
+    - automake
+    - libtool
+    - libssl-dev
+    - libkrb5-dev
+    - libpcap-dev
+    - flex
+    - bison
+
+script:
+ - autoreconf -f -i
+ - ./configure --disable-silent-rules
+ - make -j4
+
+os:
+- linux

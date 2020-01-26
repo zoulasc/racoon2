@@ -594,7 +594,7 @@ qr_str(uint8_t qr)
 static char *
 opcode_str(uint8_t opcode)
 {
-	static char msg[16];
+	static char msg[64];
 
 	switch (opcode) {
 		case 0:
@@ -616,7 +616,7 @@ opcode_str(uint8_t opcode)
 static char *
 rcode_str(uint8_t rcode)
 {
-	static char msg[32];
+	static char msg[64];
 
 	switch (rcode) {
 		case 1:

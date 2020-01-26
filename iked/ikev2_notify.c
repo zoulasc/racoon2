@@ -190,7 +190,7 @@ init_ike_sa_init_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 			++isakmpstat.packet_ignored;
 			return -1;
 		}
-		grp = get_uint16((uint16_t *)(notify + 1));
+		grp = get_uint16(notify + 1);
 		proposed_grpdef = ikev2_dhinfo(grp);
 		if (!proposed_grpdef) {
 			isakmp_log(ike_sa, local, remote, packet,
@@ -510,7 +510,7 @@ createchild_resp_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 			}
 
 			*rekey_proto = notify->nh.protocol_id;
-			*rekey_spi = get_uint32((uint32_t *)(notify + 1));
+			*rekey_spi = get_uint32(notify + 1);
 
 			TRACE((PLOGLOC,
 			       "rekey_proto %d rekey_spi 0x%x\n",

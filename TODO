@@ -54,4 +54,36 @@ List of work needed on the racoon2 package
    by implementing address substition on the traffic selectors, as described
    in RFC 7296.
 
+7. Deal with packet fragmentation. The code looks old/incomplete.
+
+8. Fix IP_ANY/IP_RW confusion. This is the cause of many configuration-related
+   bugs. We already have a patch which modifies a portion of the code to treat
+   IP_RW as IP_ANY at:
+   https://github.com/zoulasc/racoon2/commit/1623aefa49ed4f0e4e86418c61c62d736b306137
+
+   The way the code is structured, it is not clear that to treat IP_RW as IP_ANY is
+   the same thing as treating IP_ANY as IP_RW. Perhaps it is better to rewrite
+   so that IP_ANY is always treated as IP_RW, and then eliminate IP_RW as a
+   configuration option or as simply an alias for IP_ANY? No, it is more complicated
+   than that. In some cases, IP_ANY means that since we do not yet know the address
+   that an actual connection will be using, we need to wait until we are
+   establishing a connection and know the address for that connection before updating
+   the SPD in the kernel. In other cases, we can do the configuration correctly
+   without knowing the actual address that is used by a connection.
+
+Fixed issues:
+
+1. Relax the matching that racoon2 does at the beginning of the phase2 exchange
+   when we are acting as a passive responder. Previously the selectors need to
+   exactly match the traffic the client/peer is proposing to send to us and
+   receive from us. For example, if our selectors specify that we want to
+   require esp in transport mode for the udp upper layer protocol and any
+   port but the peer specifies only udp port 1701, the L2TP port, then
+   racoon2 failed to find a matching selector. Racoon is much more forgiving
+   at this stage of the negotiations with the peer. This behavior made it
+   virtually impossible to craft a flexible configuration that supports
+   multiple types of clients, such as both Windows and iPhone L2TP/IPSec
+   clients using racoon2. This problem was fixed at:
+   https://github.com/zoulasc/racoon2/commit/bbd6fb8e15a60dd439e19e0fa79aa4b4445d4ec9
+
 [1] https://tools.ietf.org/html/rfc7296#section-2.23.1

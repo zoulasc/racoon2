@@ -984,9 +984,9 @@ ikev2_find_child_sa_by_spi(struct ikev2_sa *ike_sa,
 		for (; proposal; proposal = proposal->next) {
 			struct isakmp_pl_p *prop;
 			prop = proposal->prop;
-			TRACE((PLOGLOC, "proto_id %d spi 0x%08x\n", prop->proto_id, get_uint32((uint32_t *)(prop + 1))));
+			TRACE((PLOGLOC, "proto_id %d spi 0x%08x\n", prop->proto_id, get_uint32(prop + 1)));
 			if (prop->proto_id == protocol_id
-			    && get_uint32((uint32_t *)(prop + 1)) == spi)
+			    && get_uint32(prop + 1) == spi)
 				return child_sa;
 		}
 	}
@@ -1131,10 +1131,9 @@ ikev2_child_getspi(struct ikev2_child_sa *child_sa)
 
 	/* for each proto in proposal */
 	for (proto = child_sa->my_proposal[1]; proto; proto = proto->next) {
-		if (get_uint32((uint32_t *)(proto->prop + 1)) != 0) {
+		if (get_uint32(proto->prop + 1) != 0) {
 			/* user specified spi? */
-			uint32_t spi =
-				get_uint32((uint32_t *)(proto->prop + 1));
+			uint32_t spi = get_uint32(proto->prop + 1);
 			isakmp_log(child_sa->parent, 0, 0, 0, PLOG_DEBUG,
 				   PLOGLOC, "using specified spi %d (0x%08x)\n",
 				   spi, spi);
@@ -1220,9 +1219,9 @@ ikev2_child_getspi_response(struct sadb_request *req,
 			assert(get_uint16(&prop->h.len) ==
 			       sizeof(struct isakmp_pl_p) + sizeof(uint32_t));
 			found = TRUE;
-			put_uint32((uint32_t *)(prop + 1), spi);
+			put_uint32(prop + 1, spi);
 		}
-		if (get_uint32((uint32_t *)(prop + 1)) == 0)
+		if (get_uint32(prop + 1) == 0)
 			not_completed = TRUE;
 	}
 
@@ -1853,7 +1852,7 @@ ikev2_expired(struct sadb_request *req, struct rcpfk_msg *param)
 			uint32_t		spi;
 
 			prop = proposal->prop;
-			spi = get_uint32((uint32_t *)(prop + 1));
+			spi = get_uint32(prop + 1);
 			if (prop->proto_id == satype && spi != 0) {
 				ikev2_expire_sa(child_sa, param->expired, param->satype, spi);
 				return TRUE;
@@ -1970,7 +1969,7 @@ ikev2_child_delete_outbound(struct ikev2_child_sa *child_sa)
 		uint32_t outbound_spi;
 
 		prop = proposal->prop;
-		outbound_spi = get_uint32((uint32_t *)(prop + 1));
+		outbound_spi = get_uint32(prop + 1);
 		ikev2_delete_sa(child_sa, prop->proto_id, local, remote,
 				outbound_spi);
 	}
@@ -2002,7 +2001,7 @@ ikev2_child_delete_inbound(struct ikev2_child_sa *child_sa)
 
 		assert(proposal->prop != 0);
 		prop = proposal->prop;
-		inbound_spi = get_uint32((uint32_t *)(prop + 1));
+		inbound_spi = get_uint32(prop + 1);
 		if (inbound_spi != 0)
 			ikev2_delete_sa(child_sa, prop->proto_id, remote, local,
 					inbound_spi);
@@ -2069,7 +2068,7 @@ ikev2_child_delete(struct ikev2_child_sa *child_sa)
 			if (!delete_esp)
 				goto fail_nomem;
 			TRACE((PLOGLOC, "delete esp spi=0x%08x\n",
-			       get_uint32((uint32_t *)(prop + 1))));
+			       get_uint32(prop + 1)));
 			break;
 		case IKEV2PROPOSAL_AH:
 			if (delete_ah)
@@ -2084,7 +2083,7 @@ ikev2_child_delete(struct ikev2_child_sa *child_sa)
 			if (!delete_ah)
 				goto fail_nomem;
 			TRACE((PLOGLOC, "delete ah spi=0x%08x\n",
-			       get_uint32((uint32_t *)(prop + 1))));
+			       get_uint32(prop + 1)));
 			break;
 		default:
 			isakmp_log(0, 0, 0, 0,

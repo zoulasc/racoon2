@@ -24,8 +24,14 @@
 /* Define to 1 if you have the <krb5.h> header file. */
 #undef HAVE_KRB5_H
 
+/* Have the Heimdal Kerberos libraries */
+#undef HAVE_KRB5_HEIMDAL
+
 /* Define to 1 if you have the <krb5/krb5.h> header file. */
 #undef HAVE_KRB5_KRB5_H
+
+/* Have the MIT Kerberos libraries */
+#undef HAVE_KRB5_MIT
 
 /* Define to 1 if you have the `krb5_nfold' function. */
 #undef HAVE_KRB5_NFOLD

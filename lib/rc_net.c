@@ -628,7 +628,7 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 		return 0;	/* XXX fatal */
 
 	memset(&ifr6, 0, sizeof(ifr6));
-	strncpy(ifr6.ifr_name, ifname, strlen(ifname));
+	strlcpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
 
 	memcpy(&ifr6.ifr_addr, ifaddr, sizeof(struct sockaddr_in6));
 
@@ -798,7 +798,7 @@ rcs_getaddrlist(const char *addrstr0, const char *portstr0, rc_type flag,
 			return EAI_MEMORY;
 		}
 		new->type = RCT_ADDR_INET;
-		new->prefixlen = rcs_getsaaddrlen(ap->ai_addr);
+		new->prefixlen = rcs_getsaaddrlen(ap->ai_addr) << 3;
 		if (new->prefixlen == 0) {
 			rcs_free_addrlist(new_head);
 			freeaddrinfo(ai);
@@ -1270,4 +1270,38 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 		}
 	}
 	return 0;
+}
+
+char *
+saddr2str(const struct sockaddr *saddr)
+{
+	static char buf[NI_MAXHOST + NI_MAXSERV + 10];
+	char addr[NI_MAXHOST], port[NI_MAXSERV];
+
+	if (saddr == NULL)
+		return NULL;
+
+	if (saddr->sa_family == AF_UNSPEC)
+		snprintf (buf, sizeof(buf), "%s", "anonymous");
+	else {
+		GETNAMEINFO(saddr, addr, port);
+		snprintf(buf, sizeof(buf), "%s[%s]", addr, port);
+	}
+
+	return buf;
+}
+
+char *
+saddrwop2str(const struct sockaddr *saddr)
+{
+	static char buf[NI_MAXHOST + NI_MAXSERV + 10];
+	char addr[NI_MAXHOST];
+
+	if (saddr == NULL)
+		return NULL;
+
+	GETNAMEINFO_NULL(saddr, addr);
+	snprintf(buf, sizeof(buf), "%s", addr);
+
+	return buf;
 }

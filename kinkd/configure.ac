@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
+AC_CONFIG_MACRO_DIRS([m4])
 AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
 LT_INIT
 AM_INIT_AUTOMAKE
@@ -41,6 +42,14 @@ freebsd*)
 netbsd*)
 	CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
 	LDFLAGS="$LDFLAGS `lib_flags /usr/pkg/lib`"
+	;;
+linux*)
+	for d in /usr/include/heimdal /usr/include/mit-krb5; do
+		if test -d $d; then
+			CPPFLAGS="$CPPFLAGS -I$d";
+			break;
+		fi
+	done
 	;;
 esac
 
@@ -203,8 +212,10 @@ heimdal)
 	AC_MSG_RESULT(may be no)
 	AC_DEFINE(HEIMDAL_BEFORE_0_7, 1, [Have < Heimdal-0.7]))
 	AC_CHECK_FUNCS(krb5_get_max_time_skew krb5_get_kdc_sec_offset)
+	AC_DEFINE(HAVE_KRB5_HEIMDAL, 1, [Have the Heimdal Kerberos libraries])
 	;;
 mit)
+	AC_DEFINE(HAVE_KRB5_MIT, 1, [Have the MIT Kerberos libraries])
 	AC_CHECK_LIB(com_err, main)
 	AC_CHECK_LIB(k5crypto, main)
 	AC_CHECK_LIB(krb5, main, , AC_MSG_ERROR(libkrb5 is not found/linkable.))

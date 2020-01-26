@@ -83,6 +83,8 @@
 #endif
 #endif
 
+#include "rc_openssl.h"
+
 #if HAVE_OPENSSL_SHA2
 typedef SHA512_CTX SHA384_CTX;
 #else

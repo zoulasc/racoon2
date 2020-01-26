@@ -83,7 +83,7 @@ static char rcf_linebuf[CF_LINEBUFSIZE];
 	if (cf_debug) { \
 		fprintf(CF_ERRDEV, "%s:%d:%d[%s] len=%zu\n", \
 		    rcf_istk[rcf_istkp].path, rcf_istk[rcf_istkp].lineno, \
-		    yy_start, yytext, yyleng); \
+		    yy_start, yytext, (size_t)yyleng); \
 	}
 #else
 #define DP

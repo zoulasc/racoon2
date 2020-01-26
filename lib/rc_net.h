@@ -65,3 +65,45 @@ extern int rcs_getsaaddrlen(const struct sockaddr *);
 extern uint32_t *rcs_getsascopeid(const struct sockaddr *);
 extern int rcs_matchaddr(const struct rc_addrlist *, const struct sockaddr *);
 
+/* Macros and utility functions - taken from racoon/ipsec-tools
+   for converting a struct *sockaddr to a string */
+
+static __inline u_int8_t
+sysdep_sa_len_c (const struct sockaddr *sa)
+{
+#ifdef __linux__
+  switch (sa->sa_family)
+    {
+    case AF_INET:
+      return sizeof (struct sockaddr_in);
+    case AF_INET6:
+      return sizeof (struct sockaddr_in6);
+    }
+  // log_print ("sysdep_sa_len: unknown sa family %d", sa->sa_family);
+  return sizeof (struct sockaddr_in);
+#else
+  return sa->sa_len;
+#endif
+}
+
+#define GETNAMEINFO(x, y, z) \
+do { \
+	if (getnameinfo((x), sysdep_sa_len_c(x), (y), sizeof(y), (z), sizeof(z), \
+			(NI_NUMERICHOST | NI_NUMERICSERV)) != 0) { \
+		if (y != NULL) \
+			strncpy((y), "(invalid)", sizeof(y)); \
+		if (z != NULL) \
+			strncpy((z), "(invalid)", sizeof(z)); \
+	} \
+} while (0);
+
+#define GETNAMEINFO_NULL(x, y) \
+do { \
+	if (getnameinfo((x), sysdep_sa_len_c(x), (y), sizeof(y), NULL, 0, \
+			(NI_NUMERICHOST | NI_NUMERICSERV)) != 0) { \
+		if (y != NULL) \
+			strncpy((y), "(invalid)", sizeof(y)); \
+	} \
+} while (0);
+extern char *saddr2str(const struct sockaddr *);
+extern char *saddrwop2str(const struct sockaddr *);

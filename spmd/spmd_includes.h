@@ -86,6 +86,7 @@
 #include <openssl/evp.h>
 #include "racoon.h"
 #include "version.h"
+#include "rc_openssl.h"
 
 #include "safefile.h"
 
@@ -96,6 +97,5 @@
 #include "utils.h"
 #include "cache.h"
 #include "spmd_pfkey.h"
-#include "rc_net.h"
 
 #endif /* __SPMD_INCLUDES_H */

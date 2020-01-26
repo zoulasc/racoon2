@@ -288,10 +288,10 @@ struct prop_list {		/* tree of proposals */
 
 struct ikev2_sa;		/* forward declaration */
 
-extern uint32_t get_uint32(uint32_t *);
-extern uint32_t get_uint16(uint16_t *);
-extern void put_uint32(uint32_t *, uint32_t);
-extern void put_uint16(uint16_t *, uint32_t);
+extern uint32_t get_uint32(const void *);
+extern uint16_t get_uint16(const void *);
+extern void put_uint32(void *, uint32_t);
+extern void put_uint16(void *, uint32_t);
 
 extern int isakmp_init(void);
 extern int isakmp_open(void);

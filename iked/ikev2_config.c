@@ -374,7 +374,7 @@ ikev2_process_cfg_request_attribs(struct ikev2_sa *ike_sa,
 			}
 
 			if (attr_len == 0 ||
-			    get_uint32((uint32_t *)addrbits) == INADDR_ANY)
+			    get_uint32(addrbits) == INADDR_ANY)
 				goto alloc_addr;
 
 		    try_assign:
@@ -874,7 +874,7 @@ ikev2_process_cfg_reply_attribs(struct ikev2_sa *ike_sa,
 			break;
 		case IKEV2_CFG_INTERNAL_ADDRESS_EXPIRY:
 			child_sa->internal_address_expiry =
-				get_uint32((uint32_t *)value);
+				get_uint32(value);
 			isakmp_log(ike_sa, 0, 0, 0,
 				   PLOG_INFO, PLOGLOC,
 				   "INTERNAL_ADDRESS_EXPIRY: %lu\n",
