@@ -56,8 +56,8 @@
 static const char kinkd_version[] = "[spec=RFC4430, compat=7]";
 
 
-static void usage(void);
-static void version(void);
+static void usage(void) __attribute__((__noreturn__));
+static void version(void) __attribute__((__noreturn__));
 
 
 /* global options */
@@ -120,7 +120,6 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
-			/* NOTREACHED */
 		case 'D':
 			f_loglevel = KLLV_DEBUG;
 			for (cp = debug_catdef; cp < debug_catend; cp++) {
@@ -139,16 +138,13 @@ main(int argc, char *argv[])
 				goto break_opt_switch;
 			}
 			usage();
-			/* NOTREACHED */
 		case 'F':
 			f_foreground = 1;
 			break;
 		case 'V':
 			version();
-			/* NOTREACHED */
 		default:
 			usage();
-			/* NOTREACHED */
 		}
 	break_opt_switch:;
 	}
@@ -238,7 +234,7 @@ main(int argc, char *argv[])
 	exit(0);
 }
 
-static void
+static void __attribute__((__noreturn__))
 usage(void)
 {
 	printf("usage: %s [-dhFV] [-f config] [-D level]\n"
@@ -252,7 +248,7 @@ usage(void)
 	exit(1);
 }
 
-static void
+static void __attribute__((__noreturn__))
 version(void)
 {
 	printf("kinkd racoon2-%s %s\n", rc_version(), kinkd_version);

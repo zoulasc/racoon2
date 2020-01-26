@@ -616,7 +616,7 @@ opcode_str(uint8_t opcode)
 static char *
 rcode_str(uint8_t rcode)
 {
-	static char msg[16];
+	static char msg[32];
 
 	switch (rcode) {
 		case 1:

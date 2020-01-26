@@ -106,8 +106,8 @@ resp_state0_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 			++isakmpstat.unexpected_payload;
 			return -1;
 		}
-		/* FALLTHROUGH */
 #endif
+		/* FALLTHROUGH */
 
 	default:
 		/* else, unexpected unauthenticated notify */
@@ -246,8 +246,8 @@ init_ike_sa_init_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 			/* should send notify? */
 			return -1;
 		}
-		/* FALLTHROUGH */
 #endif
+		/* FALLTHROUGH */
 
 	default:
 		/* else, unexpected unauthenticated notify */

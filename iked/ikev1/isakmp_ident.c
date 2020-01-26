@@ -449,8 +449,8 @@ ident_i3recv(struct ph1handle *iph1, rc_vchar_t *msg)
 				rc_vfree (natd_received);
 				break;
 			}
-			/* passthrough to default... */
 #endif
+			/*FALLTHROUGH*/
 
 		default:
 			/* don't send information, see ident_r1recv() */
@@ -1103,9 +1103,8 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 				rc_vfree (natd_received);
 				break;
 			}
-			/* passthrough to default... */
 #endif
-
+			/*FALLTHROUGH*/
 		default:
 			/* don't send information, see ident_r1recv() */
 			isakmp_log(0, 0, iph1->remote, 0,
