@@ -1271,37 +1271,3 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 	}
 	return 0;
 }
-
-char *
-saddr2str(const struct sockaddr *saddr)
-{
-	static char buf[NI_MAXHOST + NI_MAXSERV + 10];
-	char addr[NI_MAXHOST], port[NI_MAXSERV];
-
-	if (saddr == NULL)
-		return NULL;
-
-	if (saddr->sa_family == AF_UNSPEC)
-		snprintf (buf, sizeof(buf), "%s", "anonymous");
-	else {
-		GETNAMEINFO(saddr, addr, port);
-		snprintf(buf, sizeof(buf), "%s[%s]", addr, port);
-	}
-
-	return buf;
-}
-
-char *
-saddrwop2str(const struct sockaddr *saddr)
-{
-	static char buf[NI_MAXHOST + NI_MAXSERV + 10];
-	char addr[NI_MAXHOST];
-
-	if (saddr == NULL)
-		return NULL;
-
-	GETNAMEINFO_NULL(saddr, addr);
-	snprintf(buf, sizeof(buf), "%s", addr);
-
-	return buf;
-}

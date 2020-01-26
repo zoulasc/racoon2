@@ -65,27 +65,3 @@ extern int rcs_getsaaddrlen(const struct sockaddr *);
 extern uint32_t *rcs_getsascopeid(const struct sockaddr *);
 extern int rcs_matchaddr(const struct rc_addrlist *, const struct sockaddr *);
 
-/* Macros and utility functions - taken from racoon/ipsec-tools
-   for converting a struct *sockaddr to a string */
-
-#define GETNAMEINFO(x, y, z) \
-do { \
-	if (getnameinfo((x), SA_LEN(x), (y), sizeof(y), (z), sizeof(z), \
-			(NI_NUMERICHOST | NI_NUMERICSERV)) != 0) { \
-		if (y != NULL) \
-			strncpy((y), "(invalid)", sizeof(y)); \
-		if (z != NULL) \
-			strncpy((z), "(invalid)", sizeof(z)); \
-	} \
-} while (/*CONSTCOND*/0);
-
-#define GETNAMEINFO_NULL(x, y) \
-do { \
-	if (getnameinfo((x), SA_LEN(x), (y), sizeof(y), NULL, 0, \
-			(NI_NUMERICHOST | NI_NUMERICSERV)) != 0) { \
-		if (y != NULL) \
-			strncpy((y), "(invalid)", sizeof(y)); \
-	} \
-} while (/*CONSTCOND*/0);
-extern char *saddr2str(const struct sockaddr *);
-extern char *saddrwop2str(const struct sockaddr *);

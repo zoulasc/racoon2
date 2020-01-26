@@ -1686,22 +1686,20 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 	const char *dst_str = rcs_addrlist2str(cal_dst);
 	const char *my_sa_ipaddr_str = rcs_addrlist2str(cal_my_sa_ipaddr);
 	const char *peers_sa_ipaddr_str = rcs_addrlist2str(cal_peers_sa_ipaddr);
-	const struct sockaddr *my_ph1_ipaddr = iph2->ph1->local;
-	const struct sockaddr *peers_ph1_ipaddr = iph2->ph1->remote;
-	char *my_ph1_ipaddr_str = saddrwop2str(my_ph1_ipaddr);
-	char *peers_ph1_ipaddr_str = saddrwop2str(peers_ph1_ipaddr);
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 selector src address: %s\n", src_str);
+		"IKEv1 selector src address: %s port: %u\n", src_str, cal_src->port);
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 selector dst address: %s\n", dst_str);
+		"IKEv1 selector dst address: %s port: %u\n", dst_str, cal_dst->port);
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 policy my endpoint address: %s\n", my_sa_ipaddr_str);
+		"IKEv1 policy my endpoint address: %s port: %u\n", my_sa_ipaddr_str, cal_my_sa_ipaddr->port);
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 policy peers endpoint address: %s\n", peers_sa_ipaddr_str);
+		"IKEv1 policy peers endpoint address: %s port: %u\n", peers_sa_ipaddr_str, cal_peers_sa_ipaddr->port);
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 phase 1 my endpoint address: %s\n", my_ph1_ipaddr_str);
+	     "IKEv1 phase 1 endpoints local<=>remote: %s<=>%s\n",
+	     rcs_sa2str(iph2->ph1->local), rcs_sa2str(iph2->ph1->remote));
 	plog(PLOG_INFO, PLOGLOC, NULL,
-		"IKEv1 phase 1 peers endpoint address: %s\n", peers_ph1_ipaddr_str);
+	     "IKEv1 phase 1 endpoints src<=>dst: %s<=>%s\n",
+	     rcs_sa2str(iph2->src), rcs_sa2str(iph2->dst));
 
 	/* generate policy */
 	if (rcs_is_addr_rw(iph2->selector->pl->peers_sa_ipaddr) ||
