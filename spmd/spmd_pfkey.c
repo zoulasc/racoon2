@@ -359,6 +359,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 	int ret;
 	int urgent = 1;
 	sa_family_t af = AF_UNSPEC;
+	in_port_t src_port = RC_PORT_ANY, dst_port = RC_PORT_ANY;
 
 	if (!sl->pl) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't get Selector list");
@@ -515,6 +516,21 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 			if (af==ipal_tmp->a.ipaddr->sa_family)
 				break;
 		}
+		/* Set the port */
+		switch (af) {
+		case AF_INET:
+			src_port = htons(al->port);
+			((struct sockaddr_in *)ipal_tmp->a.ipaddr)->sin_port = src_port;
+			break;
+		case AF_INET6:
+			src_port = htons(al->port);
+			((struct sockaddr_in6 *)ipal_tmp->a.ipaddr)->sin6_port = src_port;
+			break;
+		default:
+		SPMD_PLOG(SPMD_L_INTERR, "Unknown address family, check your configuration file (selector=%.*s)",
+			  (int)sl->sl_index->l, sl->sl_index->s);
+			goto err;
+		}
 		rc->sp_src = rcs_sadup(ipal_tmp->a.ipaddr);
 		rcs_free_addrlist(ipal);
 		ipal = NULL;
@@ -552,6 +568,21 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		for (ipal_tmp=ipal;ipal_tmp;ipal_tmp=ipal_tmp->next) {
 			if (af==ipal_tmp->a.ipaddr->sa_family)
 				break;
+		}
+		/* Set the port */
+		switch (af) {
+		case AF_INET:
+			dst_port = htons(al->port);
+			((struct sockaddr_in *)ipal_tmp->a.ipaddr)->sin_port = dst_port;
+			break;
+		case AF_INET6:
+			dst_port = htons(al->port);
+			((struct sockaddr_in6 *)ipal_tmp->a.ipaddr)->sin6_port = dst_port;
+			break;
+		default:
+		SPMD_PLOG(SPMD_L_INTERR, "Unknown address family, check your configuration file (selector=%.*s)",
+			  (int)sl->sl_index->l, sl->sl_index->s);
+			goto err;
 		}
 		rc->sp_dst = rcs_sadup(ipal_tmp->a.ipaddr);
 		rcs_free_addrlist(ipal);
