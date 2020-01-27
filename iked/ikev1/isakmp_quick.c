@@ -1660,7 +1660,6 @@ int
 quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 {
 	rc_vchar_t *msg = NULL;
-	int lifetime;
 	int error = ISAKMP_INTERNAL_ERROR;
 
 	/* validity check */
@@ -1686,36 +1685,109 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 	const char *dst_str = rcs_addrlist2str(cal_dst);
 	const char *my_sa_ipaddr_str = rcs_addrlist2str(cal_my_sa_ipaddr);
 	const char *peers_sa_ipaddr_str = rcs_addrlist2str(cal_peers_sa_ipaddr);
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 		"IKEv1 selector src address: %s port: %u\n", src_str, cal_src->port);
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 		"IKEv1 selector dst address: %s port: %u\n", dst_str, cal_dst->port);
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 		"IKEv1 policy my endpoint address: %s port: %u\n", my_sa_ipaddr_str, cal_my_sa_ipaddr->port);
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 		"IKEv1 policy peers endpoint address: %s port: %u\n", peers_sa_ipaddr_str, cal_peers_sa_ipaddr->port);
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 	     "IKEv1 phase 1 endpoints local<=>remote: %s<=>%s\n",
 	     rcs_sa2str(iph2->ph1->local), rcs_sa2str(iph2->ph1->remote));
-	plog(PLOG_INFO, PLOGLOC, NULL,
+	plog(PLOG_DEBUG, PLOGLOC, NULL,
 	     "IKEv1 phase 1 endpoints src<=>dst: %s<=>%s\n",
 	     rcs_sa2str(iph2->src), rcs_sa2str(iph2->dst));
-
+#if 0
 	/* generate policy */
-	if (rcs_is_addr_rw(iph2->selector->pl->peers_sa_ipaddr) ||
-	    rcs_is_addr_rw(iph2->selector->dst)) {
-		IPSEC_CONF(lifetime, iph2->selector->pl->ips,
-			   ipsec_sa_lifetime_time, 0);
-		if (ike_spmif_post_policy_add(iph2->selector,
-					      ike_ipsec_mode(iph2->selector->pl),
-					      lifetime, iph2->src, iph2->dst,
-					      iph2->ph1->rmconf) < 0) {
-			plog(PLOG_INTERR, PLOGLOC, NULL,
-			     "generate policy failed.\n");
-			goto end;
+	int lifetime;
+	struct rcf_selector *s;
+	struct rcf_selector *s_next;
+	if (rcf_get_selectorlist(&s)) {
+		TRACE((PLOGLOC, "rcf_get_selectorlist() failed\n"));
+		return 0;
+        }
+	for (; s; s_next = s->next, rcf_free_selector(s), s = s_next) {
+		if (s->direction != RCT_DIR_OUTBOUND)
+			continue;
+		const rc_vchar_t *rm_index1 = iph2->ph1->rmconf->rm_index;
+		const rc_vchar_t *rm_index2 = s->pl->rm_index;
+		if (rc_vmemcmp(rm_index1, rm_index2))
+			continue;
+		/* In transport mode, the dst address is the same as the phase 1 endpoint address
+		   This will usually be the case when we are a VPN server responder */
+		if (rcs_is_addr_rw(s->dst) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+			IPSEC_CONF(lifetime, s->pl->ips,
+				   ipsec_sa_lifetime_time, 0);
+			s->dst->type = RCT_ADDR_INET;
+			const struct sockaddr *iph2_dst = iph2->dst;
+			rc_vfree(s->dst->a.vstr);
+			s->dst->a.ipaddr = rcs_sadup(iph2_dst);
+			if (s->dst->a.ipaddr->sa_family == AF_INET) {
+				s->dst->prefixlen = 32;
+				((struct sockaddr_in *)s->dst->a.ipaddr)->sin_port = htons(s->dst->port);
+			}
+			if (s->dst->a.ipaddr->sa_family == AF_INET6) {
+				s->dst->prefixlen = 128;
+				((struct sockaddr_in6 *)s->dst->a.ipaddr)->sin6_port = htons(s->dst->port);
+			}
+			const struct rc_addrlist *al_src = s->src;
+			const struct rc_addrlist *al_dst = s->dst;
+			plog(PLOG_INFO, PLOGLOC, NULL,
+				"Generating policy for src=%s, dst=%s\n",
+					rcs_addrlist2str(al_src), rcs_addrlist2str(al_dst));
+			if (ike_spmif_post_policy_add(s, ike_ipsec_mode(s->pl),
+						      lifetime, NULL, NULL,
+						      iph2->ph1->rmconf) < 0) {
+				plog(PLOG_INTERR, PLOGLOC, NULL,
+				     "generate policy failed.\n");
+				struct rcf_selector *n, *next;
+				for (n = s; n; n = next) {
+					next = n->next;
+					rcf_free_selector(n);
+				}
+				goto end;
+			}
 		}
+		/* In transport mode, the src address is the same as the phase 1 endpoint address
+		   This will usually be the case when we are a VPN client initiator */
+		if (rcs_is_addr_rw(s->src) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+			IPSEC_CONF(lifetime, s->pl->ips,
+				   ipsec_sa_lifetime_time, 0);
+			s->src->type = RCT_ADDR_INET;
+			const struct sockaddr *iph2_src = iph2->src;
+			rc_vfree(s->src->a.vstr);
+			s->src->a.ipaddr = rcs_sadup(iph2_src);
+			if (s->src->a.ipaddr->sa_family == AF_INET) {
+				s->src->prefixlen = 32;
+				((struct sockaddr_in *)s->src->a.ipaddr)->sin_port = htons(s->src->port);
+			}
+			if (s->src->a.ipaddr->sa_family == AF_INET6) {
+				s->src->prefixlen = 128;
+				((struct sockaddr_in6 *)s->src->a.ipaddr)->sin6_port = htons(s->src->port);
+			}
+			const struct rc_addrlist *al_src = s->src;
+			const struct rc_addrlist *al_dst = s->dst;
+			plog(PLOG_INFO, PLOGLOC, NULL,
+				"Generating policy for src=%s, dst=%s\n",
+					rcs_addrlist2str(al_src), rcs_addrlist2str(al_dst));
+			if (ike_spmif_post_policy_add(s, ike_ipsec_mode(s->pl),
+						      lifetime, NULL, NULL,
+						      iph2->ph1->rmconf) < 0) {
+				plog(PLOG_INTERR, PLOGLOC, NULL,
+				     "generate policy failed.\n");
+				struct rcf_selector *n, *next;
+				for (n = s; n; n = next) {
+					next = n->next;
+					rcf_free_selector(n);
+				}
+				goto end;
+			}
+		}
+		/* XXX Handle IP_RW in tunnel mode here */
 	}
-
+#endif
 	/* Do UPDATE as responder */
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "call pk_sendupdate\n");
 	if (pk_sendupdate(iph2) < 0) {
