@@ -6,7 +6,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-AC_PREFIX_DEFAULT(/usr/local/racoon2)
+AC_PREFIX_DEFAULT(/usr/local)
 AC_CANONICAL_HOST
 
 dnl Checks for programs.
