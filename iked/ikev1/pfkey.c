@@ -310,9 +310,9 @@ ipsecdoi2rc_ealg(unsigned int t_id, unsigned int *e_keylen)
 		if (*e_keylen == 128)
 			return RCT_ALG_AES128_CBC;
 		plog(PLOG_INTWARN, PLOGLOC, 0,
-		     "ESP_AES key length not set to an unexpected value: %u,"
-		     " setting it to 128.\n", *e_keylen);
-		return RCT_ALG_AES128_CBC;
+		     "ESP_AES key length (%u) not set to a supported value\n",
+		     *e_keylen);
+		return 0;
 	case IPSECDOI_ESP_TWOFISH:
 		return RCT_ALG_TWOFISH_CBC;
 
