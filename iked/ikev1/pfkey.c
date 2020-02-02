@@ -119,7 +119,7 @@
 
 /* prototype */
 static unsigned int ipsecdoi2rc_aalg (unsigned int);
-static unsigned int ipsecdoi2rc_ealg (unsigned int);
+static unsigned int ipsecdoi2rc_ealg (unsigned int, unsigned int *);
 static unsigned int ipsecdoi2rc_calg (unsigned int);
 static unsigned int keylen_aalg (unsigned int);
 static unsigned int keylen_ealg (unsigned int, int);
@@ -278,7 +278,7 @@ ipsecdoi2rc_aalg(unsigned int hashtype)
 
 /* IPSECDOI_ESP -> SADB_EALG */
 static uint
-ipsecdoi2rc_ealg(unsigned int t_id)
+ipsecdoi2rc_ealg(unsigned int t_id, unsigned int *e_keylen)
 {
 	switch (t_id) {
 #ifdef notyet
@@ -302,8 +302,17 @@ ipsecdoi2rc_ealg(unsigned int t_id)
 #endif
 	case IPSECDOI_ESP_NULL:
 		return RCT_ALG_NULL_ENC;
-	case IPSECDOI_ESP_AES:	/* need keylen */
-		return RCT_ALG_AES256_CBC;
+	case IPSECDOI_ESP_AES:
+		if (*e_keylen == 256)
+			return RCT_ALG_AES256_CBC;
+		if (*e_keylen == 192)
+			return RCT_ALG_AES192_CBC;
+		if (*e_keylen == 128)
+			return RCT_ALG_AES128_CBC;
+		plog(PLOG_INTWARN, PLOGLOC, 0,
+		     "ESP_AES key length not set to an unexpected value: %u,"
+		     " setting it to 128.\n", *e_keylen);
+		return RCT_ALG_AES128_CBC;
 	case IPSECDOI_ESP_TWOFISH:
 		return RCT_ALG_TWOFISH_CBC;
 
@@ -468,7 +477,7 @@ rc_convertfromipsecdoi(unsigned int proto_id, unsigned int t_id, unsigned int ha
 	*flags = 0;
 	switch (proto_id) {
 	case IPSECDOI_PROTO_IPSEC_ESP:
-		if ((*e_type = ipsecdoi2rc_ealg(t_id)) == 0)
+		if ((*e_type = ipsecdoi2rc_ealg(t_id, e_keylen)) == 0)
 			goto bad;
 		if ((*e_keylen = keylen_ealg(t_id, *e_keylen)) == ~0u)
 			goto bad;
