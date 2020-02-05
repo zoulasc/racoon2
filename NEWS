@@ -1,5 +1,28 @@
 $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
+2020-02-05 Christos Zoulas, Chuck Zmudzinski
+
+	* begin testing racoon2 as L2TP/IPsec or IKEv2 VPN server on
+	  Linux for compatability with built-in Windows, iOS, and Android
+	  VPN clients
+	* IKEv1 L2TP/IPsec VPN connections from built-in Windows 10 and
+	  iOS 13 VPN clients to racoon2 VPN server on Linux successfully
+	  tested
+	* successfully tested multiple simultaneous L2TP/IPsec or IKEv2
+	  connections from built-in Windows or Apple VPN clients to racoon2
+	  on NetBSD and multiple simultaneous L2TP/IPsec connections from
+	  built-in Windows or Apple VPN clients to racoon2 on Linux
+	* limited support for IKEv2 VPN connections from Windows 10 to
+	  racoon2 VPN server on Linux successfully tested - due to
+	  limitations of the pfkeyv2 interface to the Linux kernel that
+	  racoon2 uses, only IKEv2 IPv4 in IPv4 tunnels have been
+	  successfully tested usign racoon2 on Linux. It is likely IPv6 in
+	  IPv6 tunnels will also work on Linux, but this has not been tested
+	  yet. IPv6 in IPv4 tunnels are not compatable with the current
+	  version of racoon2 on Linux
+	* begin evaluating approaches to extend the capabilities of racoon2
+	  on Linux
+
 2018-07-08 Christos Zoulas, Chuck Zmudzinski
 
 	* iked: IKEv2 connections to Mac OS X and ios successfully tested
