@@ -3,5 +3,5 @@
 ACLOCAL_AMFLAGS = -I m4
 
 install-exec-hook:
-	$(INSTALL) -d $(sysconfdir)/hook/ikesa-up.d
-	$(INSTALL_DATA) 00ikesaup_sample $(sysconfdir)/hook/ikesa-up.d
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/ikesa-up.d
+	$(INSTALL_DATA) 00ikesaup_sample $(DESTDIR)$(sysconfdir)/hook/ikesa-up.d

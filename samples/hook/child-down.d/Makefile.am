@@ -3,7 +3,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 install-exec-hook:
-	$(INSTALL) -d $(sysconfdir)/hook/child-down.d
-	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-down.d
-	$(INSTALL_DATA) 02ifconfig-gif $(sysconfdir)/hook/child-down.d
-	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-down.d
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-down.d
+	$(INSTALL_DATA) 01setkey $(DESTDIR)$(sysconfdir)/hook/child-down.d
+	$(INSTALL_DATA) 02ifconfig-gif $(DESTDIR)$(sysconfdir)/hook/child-down.d
+	$(INSTALL_DATA) 03arp $(DESTDIR)$(sysconfdir)/hook/child-down.d

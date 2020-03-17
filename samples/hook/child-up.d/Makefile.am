@@ -3,8 +3,8 @@
 ACLOCAL_AMFLAGS = -I m4
 
 install-exec-hook:
-	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
-	$(INSTALL_DATA) 00childup_sample $(sysconfdir)/hook/child-up.d
-	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-up.d
-	$(INSTALL_DATA) 02ifconfig-gif $(sysconfdir)/hook/child-up.d
-	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-up.d
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 00childup_sample $(DESTDIR)$(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 01setkey $(DESTDIR)$(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 02ifconfig-gif $(DESTDIR)$(sysconfdir)/hook/child-up.d
+	$(INSTALL_DATA) 03arp $(DESTDIR)$(sysconfdir)/hook/child-up.d

@@ -6,5 +6,5 @@ sbin_SCRIPTS=pskgen
 man_MANS=pskgen.8
 
 install-exec-hook:
-	$(INSTALL) -d $(sysconfdir)
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
 	sh ./autogen.spmd.pwd
