@@ -3,7 +3,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 install-exec-hook:
-	$(INSTALL) -d $(sysconfdir)/init.d
-	$(INSTALL_SCRIPT) iked $(sysconfdir)/init.d/iked
-	$(INSTALL_SCRIPT) kinkd $(sysconfdir)/init.d/kinkd
-	$(INSTALL_SCRIPT) spmd $(sysconfdir)/init.d/spmd
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/init.d
+	$(INSTALL_SCRIPT) iked $(DESTDIR)$(sysconfdir)/init.d/iked
+	$(INSTALL_SCRIPT) kinkd $(DESTDIR)$(sysconfdir)/init.d/kinkd
+	$(INSTALL_SCRIPT) spmd $(DESTDIR)$(sysconfdir)/init.d/spmd
