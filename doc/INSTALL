@@ -208,8 +208,12 @@ o NetBSD 3.0
 
 3. Build and install the Racoon2.
 
-First you have to run the configure script at the top directory
-of the racoon2 kit that you expanded to your system.  Just type:
+Regenerate the configure scripts at the top of the racoon kit that
+yoy expanded in your systems. Just type:
+
+	% autoreconf -f -i
+
+In the same directory, ru the configure script you just created.  Just type:
 
 	% ./configure
 
