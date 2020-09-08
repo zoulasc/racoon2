@@ -289,9 +289,10 @@ rc_addrpool_move(struct rcf_address_list_head *dest,
 	      struct rcf_address_list_head *src)
 {
 	struct rcf_address	*a;
+	struct rcf_address	*a_next;
 	struct rcf_address	*new_a;
 
-	for (a = LIST_FIRST(src); a; a = LIST_NEXT(a, link_sa)) {
+	for (a = LIST_FIRST(src); a; a = a_next) {
 		new_a = rc_address_new(a->af, a->address, a->prefixlen,
 				       &a->expiry, a->pool_head);
 		if (!new_a) {
@@ -300,7 +301,8 @@ rc_addrpool_move(struct rcf_address_list_head *dest,
 		} else {
 			LIST_INSERT_HEAD(dest, new_a, link_sa);
 		}
-
+		
+		a_next = LIST_NEXT(a, link_sa);
 		rc_addrpool_release_addr(a);
 	}
 }
