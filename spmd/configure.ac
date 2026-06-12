@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.13)
+AC_PREREQ([2.72])
 AC_CONFIG_MACRO_DIRS([m4])
-AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AC_INIT([racoon2],[2018-07-09],[racoon2@mailmain.astron.com])
 LT_INIT
 AM_INIT_AUTOMAKE
 
@@ -44,7 +44,9 @@ AC_ARG_ENABLE(debug,
 		  esac
 
 dnl Checks for header files.
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h sys/time.h syslog.h unistd.h stdarg.h getopt.h stdint.h inttypes.h)
 
@@ -53,7 +55,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+
 AC_STRUCT_TM
 
 AC_CHECK_SIZEOF(long long)
@@ -66,14 +68,13 @@ dnl AC_REPLACE_FUNCS(strlcpy strlcat atoll)
 
 dnl Check for sa_len
 AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
-], [    struct sockaddr sa;
+]], [[    struct sockaddr sa;
         sa.sa_len = 0;
 
-],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
-        AC_MSG_RESULT(yes),
-        AC_MSG_RESULT(no))
+]])],[AC_DEFINE(HAVE_SA_LEN, 1, define if struct sockaddr has sa_len field)
+        AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
         
 echo $ac_n "checking for architecture""... $ac_c" 1>&6
 case "$target" in

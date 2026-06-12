@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.13)
+AC_PREREQ([2.72])
 AC_CONFIG_MACRO_DIRS([m4])
-AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AC_INIT([racoon2],[2018-07-09],[racoon2@mailmain.astron.com])
 LT_INIT
 AM_INIT_AUTOMAKE
 
@@ -10,7 +10,7 @@ AC_PREFIX_DEFAULT(/usr/local/racoon2)
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
-AC_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 RC_PROG_MKDEP
@@ -21,7 +21,7 @@ lib_flags() {
 	dnl All currently supported platforms are using ELF.
 	case "$1" in
 	/*)
-		if test x"$ac_cv_prog_gcc" = xyes; then
+		if test x"$ac_cv_c_compiler_gnu" = xyes; then
 			echo "-L$1 -Wl,-R$1"
 		else
 			echo "-L$1 -R $1"
@@ -120,7 +120,11 @@ fi
 
 
 dnl Checks for header files.
-AC_HEADER_STDC
+# Autoupdate added the next two lines to ensure that your configure
+# script's behavior did not change.  They are probably safe to remove.
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 unset ac_cv_header_linux_pfkeyv2_h
 unset ac_cv_header_linux_ipsec_h
 AC_CHECK_HEADERS(sys/time.h stdarg.h unistd.h krb5/krb5.h krb5.h net/pfkeyv2.h netinet6/ipsec.h netipsec/ipsec.h linux/pfkeyv2.h linux/ipsec.h)
@@ -131,7 +135,7 @@ linux*)
 	case "$ac_cv_header_net_pfkeyv2_h$ac_cv_header_linux_pfkeyv2_h" in
 	*yes*) ;;
 	*)
-		AC_CHECKING(for linux kernel include paths)
+		AS_MESSAGE([checking for linux kernel include paths...])
 		for d in "/lib/modules/`uname -r`/build/include"; do
 			if test -f "$d/linux/pfkeyv2.h"; then
 				CPPFLAGS="$CPPFLAGS -I$d"
@@ -149,11 +153,10 @@ esac
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+
 
 dnl Checks for library functions.
 AC_FUNC_MEMCMP
-AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(getprogname gettimeofday select socket strdup strerror strstr)
 
 dnl Checks for libraries.
@@ -162,15 +165,11 @@ AC_CHECK_LIB(crypto, main)
 
 AC_MSG_CHECKING(for the type of krb5 library)
 if test x"$ac_cv_header_krb5_krb5_h$ac_cv_header_krb5_h" != x"nono"; then
-	AC_TRY_COMPILE(
-[#ifdef HAVE_KRB5_KRB5_H
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_KRB5_KRB5_H
 #include <krb5/krb5.h>
 #else
 #include <krb5.h>
-#endif],
-	[int i = ERROR_TABLE_BASE_heim;],
-	KRB5_TYPE=heimdal,
-	KRB5_TYPE=mit)
+#endif]], [[int i = ERROR_TABLE_BASE_heim;]])],[KRB5_TYPE=heimdal],[KRB5_TYPE=mit])
 else
 	KRB5_TYPE=NONE
 fi
@@ -200,17 +199,13 @@ heimdal)
 	dnl XXX   has HEIM_PKINIT_NO_CERTIFICATE --> Heimdal 0.7 or later
 	dnl XXX   Heimdal 0.7 or later --> frees ticket itself
 	AC_MSG_CHECKING([if Heimdal >= 0.7])
-	AC_TRY_COMPILE(
-[#ifdef HAVE_KRB5_KRB5_H
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_KRB5_KRB5_H
 #include <krb5/krb5.h>
 #else
 #include <krb5.h>
-#endif],
-	[int i = HEIM_PKINIT_NO_CERTIFICATE;],
-	AC_MSG_RESULT(may be yes)
-	AC_DEFINE(HAVE_MIT_COMPAT_KRB5_FREE_TICKET, 1, [Have krb5_free_ticket]),
-	AC_MSG_RESULT(may be no)
-	AC_DEFINE(HEIMDAL_BEFORE_0_7, 1, [Have < Heimdal-0.7]))
+#endif]], [[int i = HEIM_PKINIT_NO_CERTIFICATE;]])],[AC_MSG_RESULT(may be yes)
+	AC_DEFINE(HAVE_MIT_COMPAT_KRB5_FREE_TICKET, 1, Have krb5_free_ticket)],[AC_MSG_RESULT(may be no)
+	AC_DEFINE(HEIMDAL_BEFORE_0_7, 1, Have < Heimdal-0.7)])
 	AC_CHECK_FUNCS(krb5_get_max_time_skew krb5_get_kdc_sec_offset)
 	AC_DEFINE(HAVE_KRB5_HEIMDAL, 1, [Have the Heimdal Kerberos libraries])
 	;;
@@ -229,15 +224,12 @@ dnl Autoconf complains about ENCTYPE_...  It seems that the substring
 dnl "AC_" has something to do with the issue, but I'm not sure.
 dnl The ## operator is used to workaround this problem.
 AC_MSG_CHECKING(if libkrb5 supports aes128-cts-hmac-sha1-96)
-AC_TRY_COMPILE(
-[#ifdef HAVE_KRB5_KRB5_H
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef HAVE_KRB5_KRB5_H
 #include <krb5/krb5.h>
 #else
 #include <krb5.h>
 #endif
-#define concat(a, b) a ## b],
-	[int i = concat(ENCTYPE_AES128_CTS_HMA, C_SHA1_96);],
-	HAVE_RFC3962_AES=yes, HAVE_RFC3962_AES=no)
+#define concat(a, b) a ## b]], [[int i = concat(ENCTYPE_AES128_CTS_HMA, C_SHA1_96);]])],[HAVE_RFC3962_AES=yes],[HAVE_RFC3962_AES=no])
 AC_MSG_RESULT(${HAVE_RFC3962_AES})
 if test "${HAVE_RFC3962_AES}" = yes; then
 	AC_DEFINE(HAVE_RFC3962_AES, 1, [Have RFC3962 compliant AES support])
@@ -245,14 +237,13 @@ fi
 
 dnl Check for sa_len
 AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
-], [    struct sockaddr sa;
+]], [[    struct sockaddr sa;
         sa.sa_len = 0;
 
-],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
-        AC_MSG_RESULT(yes),
-        AC_MSG_RESULT(no))
+]])],[AC_DEFINE(HAVE_SA_LEN, 1, define if struct sockaddr has sa_len field)
+        AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 
 
 dnl --------

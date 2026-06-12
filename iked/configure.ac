@@ -2,9 +2,9 @@
 # $Id: configure.in,v 1.66 2009/03/19 05:38:31 fukumoto Exp $
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.13)
+AC_PREREQ([2.72])
 AC_CONFIG_MACRO_DIRS([m4])
-AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AC_INIT([racoon2],[2018-07-09],[racoon2@mailmain.astron.com])
 LT_INIT
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -123,7 +123,9 @@ fi
 RC_IF_INSTALL_OPTS
 
 # Checks for header files.
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS([limits.h netdb.h netinet/in.h netinet6/ipsec.h netipsec/ipsec.h stdarg.h stddef.h stdlib.h string.h sys/param.h sys/socket.h sys/time.h unistd.h inttypes.h stdint.h])
 
 dnl the directory built the kernel should be defined, in particular linux.
@@ -146,53 +148,20 @@ fi
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
 
 AC_CHECK_SIZEOF(long long)
 
 # Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
-
-dnl #AC_FUNC_MALLOC
-AC_MSG_CHECKING([whether malloc() is usable])
-AC_TRY_RUN([
-#if STDC_HEADERS
-#  include <stdlib.h>
-#else
-extern char *malloc();
-#endif
-int
-main()
-{
-    if (malloc(0) == 0)
-	exit(1);
-    else exit(0);
-}
-], [
-    AC_MSG_RESULT(yes)
-], [
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR([malloc(0) returns NULL])
-], [
-    AC_MSG_WARN([assuming malloc(0) returns non-NULL])
-])
 
 AC_FUNC_MEMCMP
-dnl #AC_FUNC_REALLOC
-dnl # AC_FUNC_SELECT_ARGTYPES
-AC_TYPE_SIGNAL
-dnl #AC_FUNC_STAT
-dnl ##AC_CHECK_FUNCS([gettimeofday memset select socket strchr strdup strerror strrchr strtol])
 AC_CHECK_FUNCS([getaddrinfo getnameinfo getopt_long setprogname daemon timegm])
 
 AC_MSG_CHECKING([__func__ macro])
-AC_TRY_COMPILE([],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
     char *s = __func__;
-],
-	[AC_MSG_RESULT(yes)
+]])],[AC_MSG_RESULT(yes)
 	 AC_DEFINE(HAVE_FUNC_MACRO, 1, [define if __func__ macro is available])
-	], [AC_MSG_RESULT(no)])
+	],[AC_MSG_RESULT(no)])
 
 # check for struct sockaddr
 RC_IF_SA_LEN
@@ -202,31 +171,27 @@ RC_IF_IPV6_ENABLE
 if test "$ipv6" = "yes"; then
     AC_MSG_CHECKING(for advanced API support)
     AC_CACHE_VAL(racoon_cv_advapi, [dnl
-	AC_TRY_COMPILE([
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifndef INET6
 #define INET6
 #endif
 #include <sys/types.h>
 #include <netinet/in.h>
-],
-		       [struct in6_pktinfo a;],
-		       [racoon_cv_advapi="yes"], [racoon_cv_advapi="no"])])
+]], [[struct in6_pktinfo a;]])],[racoon_cv_advapi="yes"],[racoon_cv_advapi="no"])])
     AC_MSG_RESULT($racoon_cv_advapi)
     if test "$racoon_cv_advapi" = yes; then
 	AC_DEFINE(ADVAPI, 1, [define if IPv6 advanced API is available])
     else
 	# Linux (glibc) needs _GNU_SOURCE to use ADVAPI
 	AC_MSG_CHECKING(if _GNU_SOURCE is required)
-	AC_TRY_COMPILE([
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #ifndef INET6
 #define INET6
 #endif
 #include <sys/types.h>
 #include <netinet/in.h>
-],
-		       [struct in6_pktinfo a;],
-		       [racoon_cv_advapi="yes"], [racoon_cv_advapi="no"])
+]], [[struct in6_pktinfo a;]])],[racoon_cv_advapi="yes"],[racoon_cv_advapi="no"])
 	AC_MSG_RESULT($racoon_cv_advapi)
 	AC_DEFINE(ADVAPI, 1, [define if IPv6 advanced API is available])
 	AC_DEFINE(_GNU_SOURCE, 1, [define for glibc to use ADVAPI])
@@ -284,15 +249,13 @@ AC_CHECK_HEADERS([openssl/rsa.h openssl/pem.h openssl/evp.h openssl/x509.h],
 if test x$signing != x"no"; then
         AC_DEFINE(HAVE_SIGNING_C, 1, [define if public key encryption is available])
 	AC_MSG_CHECKING([whether d2i_PublicKey argument requires const])
-	AC_TRY_COMPILE([
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include "openssl/evp.h"
-], [
+]], [[
 extern EVP_PKEY *	d2i_PublicKey(int type,EVP_PKEY **a, const unsigned char **pp,
 			long length);
-],
-		[AC_MSG_RESULT(yes)
-		 BPP_const=const],
-		[AC_MSG_RESULT(no)
+]])],[AC_MSG_RESULT(yes)
+		 BPP_const=const],[AC_MSG_RESULT(no)
 		BPP_const=''])
 	AC_DEFINE_UNQUOTED(BPP_const, $BPP_const, [recent versions of openssl declares argument with 'const'])
 fi

@@ -82,7 +82,7 @@ void
 ikev2_payloads_init(struct ikev2_payloads *p)
 {
 	p->num = 0;
-	p->payloads = racoon_malloc(0);
+	p->payloads = racoon_malloc(1);	/* so that if malloc(0) returns NULL */
 }
 
 void

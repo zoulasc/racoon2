@@ -4,41 +4,55 @@ dnl check if ipv6 is available.
 dnl
 AC_DEFUN([RC_IF_IPV6_ENABLE],
 [
-AC_MSG_CHECKING(if ipv6 is available)
-AC_ARG_ENABLE(ipv6,
-	[  --enable-ipv6           enable ipv6 (with ipv4) support
-  --disable-ipv6          disable ipv6 support],
-	[ case "$enableval" in
-	  no)
-	       AC_MSG_RESULT(no)
-	       ipv6=no
-	       ;;
-	  *)   AC_MSG_RESULT(yes)
-	       ipv6=yes
-	       ;;
-	  esac ],
-  AC_TRY_RUN([ /* AF_INET6 avalable check */
+  AC_MSG_CHECKING([if ipv6 is available])
+
+  AC_ARG_ENABLE([ipv6],
+    [AS_HELP_STRING([--enable-ipv6], [enable ipv6 (with ipv4) support])],
+    [
+      case "$enableval" in
+        no)
+          AC_MSG_RESULT([no])
+          ipv6=no
+          ;;
+        *)
+          AC_MSG_RESULT([yes])
+          ipv6=yes
+          ;;
+      esac
+    ],
+    [
+      AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM(
+          [[
 #include <sys/types.h>
 #include <sys/socket.h>
-main()
-{
-  exit(0);
- if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
-   exit(1);
- else
-   exit(0);
-}
-],
-  AC_MSG_RESULT(yes)
-  ipv6=yes,
-  AC_MSG_RESULT(no)
-  ipv6=no,
-  AC_MSG_RESULT(no)
-  ipv6=no
-))
-if test x"$ipv6" = x"yes"; then
-	AC_DEFINE(INET6, 1, [define if IPv6 is enabled])
-fi
+          ]],
+          [[
+            if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
+              return 1;
+            else
+              return 0;
+          ]]
+        )],
+        [
+          AC_MSG_RESULT([yes])
+          ipv6=yes
+        ],
+        [
+          AC_MSG_RESULT([no])
+          ipv6=no
+        ],
+        [
+          AC_MSG_RESULT([no (cross-compiling)])
+          ipv6=no
+        ]
+      )
+    ]
+  )
+
+  if test x"$ipv6" = x"yes"; then
+    AC_DEFINE([INET6], [1], [define if IPv6 is enabled])
+  fi
 ])
 
 dnl
@@ -123,17 +137,29 @@ dnl sa_len
 dnl
 AC_DEFUN([RC_IF_SA_LEN],
 [
-AC_MSG_CHECKING(if sa_len is available)
-AC_TRY_COMPILE([
+  AC_MSG_CHECKING([if sa_len is available])
+
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(
+      [[
 #include <sys/types.h>
 #include <sys/socket.h>
-], [
-	struct sockaddr s;
-	s.sa_len = 0;
-], [sa_len=yes
-    AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
-], [sa_len=no])
-AC_MSG_RESULT($sa_len)
+      ]],
+      [[
+        struct sockaddr s;
+        s.sa_len = 0;
+      ]]
+    )],
+    [
+      sa_len=yes
+      AC_DEFINE([HAVE_SA_LEN], [1], [define if struct sockaddr has sa_len field])
+    ],
+    [
+      sa_len=no
+    ]
+  )
+
+  AC_MSG_RESULT([$sa_len])
 ])
 
 dnl
@@ -187,13 +213,21 @@ dnl check if there is UINT8_MAX (c99)
 dnl
 AC_DEFUN([RC_CHECK_UINT8_MAX],
 [
-AC_MSG_CHECKING(if there is UINT8_MAX)
-AC_TRY_COMPILE([
-#include <inttypes.h>
-],[ return UINT8_MAX; ],
-[AC_DEFINE(HAVE_UINT8_MAX, 1, [define if inttypes.h defines UINT8_MAX])
-AC_MSG_RESULT(yes)],
-[AC_MSG_RESULT(no)])
+  AC_MSG_CHECKING([if there is UINT8_MAX])
+
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(
+      [[#include <inttypes.h>]],
+      [[return UINT8_MAX;]]
+    )],
+    [
+      AC_DEFINE([HAVE_UINT8_MAX], [1], [define if inttypes.h defines UINT8_MAX])
+      AC_MSG_RESULT([yes])
+    ],
+    [
+      AC_MSG_RESULT([no])
+    ]
+  )
 ])
 
 dnl

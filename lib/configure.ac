@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.13)
+AC_PREREQ([2.72])
 AC_CONFIG_MACRO_DIRS([m4])
-AC_INIT([racoon2], [2018-07-09], [racoon2@mailmain.astron.com])
+AC_INIT([racoon2],[2018-07-09],[racoon2@mailmain.astron.com])
 AM_INIT_AUTOMAKE
 dnl AC_CONFIG_MACRO_DIRS([m4])
 LT_INIT
@@ -50,7 +50,7 @@ AC_ARG_ENABLE(ipv6,
 	       ipv6=yes
 	       ;;
 	  esac ],
-  AC_TRY_RUN([ /* AF_INET6 avalable check */
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 avalable check */
 #include <sys/types.h>
 #include <sys/socket.h>
 main()
@@ -61,15 +61,12 @@ main()
  else
    exit(0);
 }
-],
-  AC_MSG_RESULT(yes)
+]])],[AC_MSG_RESULT(yes)
   AC_DEFINE(INET6)
-  ipv6=yes,
-  AC_MSG_RESULT(no)
-  ipv6=no,
-  AC_MSG_RESULT(no)
+  ipv6=yes],[AC_MSG_RESULT(no)
+  ipv6=no],[AC_MSG_RESULT(no)
   ipv6=no
-))
+]))
 
 AC_MSG_CHECKING(if --enable-debug option is specified)
 AC_ARG_ENABLE(debug, [  --enable-debug          build a debug version],
@@ -114,7 +111,9 @@ AC_MSG_RESULT($enable_secure)
 dnl Checks for libraries.
 
 dnl Checks for header files.
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(sys/time.h net/if_var.h net/ethernet.h limits.h unistd.h stdarg.h varargs.h netinet6/ipsec.h netipsec/ipsec.h)
 
@@ -125,7 +124,7 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+
 AC_STRUCT_TM
 
 dnl Checks for library functions.
@@ -141,13 +140,11 @@ if test x"$GCC" = x"yes" ; then
   AC_MSG_CHECKING(if printf accepts %z)
   saved_CFLAGS=$CFLAGS
   CFLAGS="$CFLAGS -Wall -Werror"
-  AC_TRY_COMPILE([
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-], [
+]], [[
 printf("%zu\n", (size_t)-1);
-],
-	[AC_MSG_RESULT(yes)],
-	[AC_MSG_RESULT(no);
+]])],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);
 	 CFLAGS_ADD="$CFLAGS_ADD -Wno-format";
 	 AC_DEFINE(BROKEN_PRINTF, [], [If printf doesn't support %zu.])
 	])
@@ -197,14 +194,13 @@ fi
 
 dnl Check for sa_len
 AC_MSG_CHECKING(whether struct sockaddr has sa_len field)
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
-], [    struct sockaddr sa;
+]], [[    struct sockaddr sa;
         sa.sa_len = 0;
 
-],      AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
-        AC_MSG_RESULT(yes),
-        AC_MSG_RESULT(no))
+]])],[AC_DEFINE(HAVE_SA_LEN, 1, define if struct sockaddr has sa_len field)
+        AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 
 dnl --with-openssl-libdir
 RC_WITH_OPENSSL_LIB

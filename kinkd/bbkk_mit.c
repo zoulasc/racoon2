@@ -64,11 +64,9 @@
 #include "crypto_openssl.h"
 
 /* XXX: exposed guts */
-extern krb5_error_code krb5_rc_recover(krb5_context, krb5_rcache); 
-extern krb5_error_code krb5_rc_close(krb5_context, krb5_rcache); 
-extern krb5_error_code krb5_rc_resolve_full(krb5_context, krb5_rcache *,
-    const char *); 
-extern krb5_error_code krb5_rc_initialize(krb5_context, krb5_rcache, int); 
+extern krb5_error_code k5_rc_resolve(krb5_context, const char *, krb5_rcache *);
+extern krb5_error_code k5_rc_close(krb5_context, krb5_rcache);
+extern krb5_error_code krb5_rc_initialize(krb5_context, krb5_rcache, int);
 extern krb5_error_code krb5_set_time_offsets(krb5_context, krb5_timestamp,
     krb5_int32);
 extern krb5_error_code krb5int_c_mandatory_cksumtype(krb5_context, krb5_enctype,
@@ -163,15 +161,13 @@ bbkk_init(bbkk_context *conp, const char *princ_str)
 	}
 
 	setenv("KRB5RCACHEDIR", CACHE_DIR, 1);
-	ret = krb5_rc_resolve_full(con->context, &con->rcache,
-	    "dfl:kinkd.rc");
+	ret = k5_rc_resolve(con->context, "dfl:kinkd.rc", &con->rcache);
 	if (ret != 0) {
-		cause = "krb5_rc_resolve_full";
+		cause = "k5_rc_resolve";
 		goto fail;
 	}
 	/* lifespan==0 means max allowable skew to "dfl:" rcache. */
-	if ((ret = krb5_rc_recover(con->context, con->rcache)) != 0)
-		ret = krb5_rc_initialize(con->context, con->rcache, 0);
+	ret = krb5_rc_initialize(con->context, con->rcache, 0);
 	if (ret != 0) {
 		cause = "krb5_rc_initialize";
 		goto fail;
@@ -185,7 +181,7 @@ fail:
 		kinkd_log(KLLV_DEBUG,
 		    "bbkk: %s: %s\n", cause, error_message(ret));
 	if (con->rcache != NULL)
-		krb5_rc_close(con->context, con->rcache);
+		k5_rc_close(con->context, con->rcache);
 	if (con->ccache != NULL)
 		krb5_cc_destroy(con->context, con->ccache);
 	if (con->principal != NULL)
@@ -202,7 +198,7 @@ bbkk_fini(bbkk_context con)
 	if (DEBUG_KRB5())
 		kinkd_log(KLLV_DEBUG, "bbkk: finalizing\n");
 
-	krb5_rc_close(con->context, con->rcache);
+	k5_rc_close(con->context, con->rcache);
 	krb5_cc_destroy(con->context, con->ccache);
 	krb5_free_principal(con->context, con->principal);
 	krb5_free_context(con->context);

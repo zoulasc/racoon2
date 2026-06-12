@@ -234,6 +234,7 @@ struct rcf_kmp {
 	rc_type verify_pubkey;
 	rc_type send_cert;
 	rc_type send_cert_req;
+	int ike_frag;
 	int nonce_size;
 	rc_type initial_contact;
 	rc_type support_proxy;

@@ -350,6 +350,9 @@ delph1(struct ph1handle *iph1)
 	VPTRINIT(iph1->sa);
 	VPTRINIT(iph1->sa_ret);
 
+#ifdef ENABLE_FRAG
+	isakmp_frag_purge(iph1);
+#endif
 #ifdef HAVE_GSSAPI
 	VPTRINIT(iph1->gi_i);
 	VPTRINIT(iph1->gi_r);
@@ -883,6 +886,12 @@ add_recvdpkt(struct sockaddr *remote, struct sockaddr *local,
 {
 	struct recvdpkt *new = NULL;
 	int lifetime;
+
+	if (rbuf == NULL) {
+		plog(PLOG_INTERR, PLOGLOC, NULL,
+			"add_recvdpkt: rbuf must not be NULL.\n");
+		return -1;
+	}
 
 	lifetime = ikev1_max_retry_to_send(conf) * ikev1_interval_to_send(conf);
 	if (lifetime == 0) {
@@ -1540,23 +1549,33 @@ purge_remote(struct ph1handle *iph1)
 	for (iph2 = LIST_FIRST(&ph2tree); iph2; iph2 = next_ph2) {
 		next_ph2 = LIST_NEXT(iph2, chain);
 
-		if (iph2->ph1 != iph1)
-			continue;
+		/*
+		 * Handle PH2 entries that were unbound from PH1 before PH1
+		 * cleanup. Match by peer addresses so orphaned Phase 2 SAs
+		 * are not left behind when the corresponding Phase 1 SA is
+		 * purged.
+		 */
+
+		if (iph2->ph1 != iph1 &&
+			(iph2->ph1 != NULL ||
+			 rcs_cmpsa_wop(iph2->src, iph1->local) != 0 ||
+			 rcs_cmpsa_wop(iph2->dst, iph1->remote) != 0))
+		    continue;
 
 		pp = iph2->approval;
 		if (pp != NULL) {
 			for (pr = pp->head; pr != NULL; pr = pr->next) {
 				TRACE((PLOGLOC, "proto %d spi 0x%08" PRIx32 "\n",
-				       pr->proto_id, 
+				       pr->proto_id,
 				       ntohl(pr->spi)));
-				(void) delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->src,
-						       iph2->dst,
-						       pr->proto_id, pr->spi_p);
-				(void) delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->dst,
-						       iph2->src,
-						       pr->proto_id, pr->spi);
+				delete_ipsec_sa(&iph2->sadb_request,
+					       iph2->src,
+					       iph2->dst,
+					       pr->proto_id, pr->spi_p);
+				delete_ipsec_sa(&iph2->sadb_request,
+					       iph2->dst,
+					       iph2->src,
+					       pr->proto_id, pr->spi);
 			}
 		}
 

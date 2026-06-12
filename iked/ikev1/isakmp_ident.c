@@ -140,14 +140,25 @@ ident_i1send(struct ph1handle *iph1, rc_vchar_t *msg /* must be null */)
 	if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF) 
 		plist = isakmp_plist_append_natt_vids(plist, vid_natt);
 #endif
+#ifdef ENABLE_FRAG
+	if (iph1->rmconf->ikev1->ike_frag) {
+		rc_vchar_t *vid_frag = set_vendorid(VENDORID_FRAG);
+		if (vid_frag != NULL)
+			plist = isakmp_plist_append(plist, vid_frag,
+						    ISAKMP_NPTYPE_VID);
+		if (vid_frag != NULL)
+			rc_vfree(vid_frag);
+	}
+#endif
 	if(ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON){
 		vid_dpd = set_vendorid(VENDORID_DPD);
 		if (vid_dpd != NULL)
 			plist = isakmp_plist_append(plist, vid_dpd,
 						    ISAKMP_NPTYPE_VID);
 	}
-
-	iph1->sendbuf = isakmp_plist_set_all (&plist, iph1);
+	iph1->sendbuf = isakmp_plist_set_all(&plist, iph1);
+	if (iph1->sendbuf == NULL)
+		goto end;
 
 #ifdef HAVE_PRINT_ISAKMP_C
 	isakmp_printpacket(iph1->sendbuf, iph1->local, iph1->remote, 0);
@@ -235,6 +246,10 @@ ident_i2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 			if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF &&
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
+#endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
 #endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
@@ -404,6 +419,10 @@ ident_i3recv(struct ph1handle *iph1, rc_vchar_t *msg)
 			if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF &&
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
+#endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
 #endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
@@ -688,6 +707,10 @@ ident_i4recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
 #endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
+#endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
@@ -863,6 +886,10 @@ ident_r1recv(struct ph1handle *iph1, rc_vchar_t *msg)
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
 #endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
+#endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
@@ -930,6 +957,9 @@ ident_r1send(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_NATT
 	rc_vchar_t *vid_natt = NULL;
 #endif
+#ifdef ENABLE_FRAG
+	rc_vchar_t *vid_frag = NULL;
+#endif
 	rc_vchar_t *vid_dpd = NULL;
 
 	/* validity check */
@@ -960,6 +990,13 @@ ident_r1send(struct ph1handle *iph1, rc_vchar_t *msg)
 
 	if (vid_natt)
 		plist = isakmp_plist_append(plist, vid_natt, ISAKMP_NPTYPE_VID);
+#endif
+#ifdef ENABLE_FRAG
+	if (iph1->rmconf->ikev1->ike_frag) {
+		vid_frag = set_vendorid(VENDORID_FRAG);
+		if (vid_frag != NULL)
+			plist = isakmp_plist_append(plist, vid_frag, ISAKMP_NPTYPE_VID);
+	}
 #endif
 	/* XXX only send DPD VID if remote sent it ? */
 	if(ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON){
@@ -998,6 +1035,10 @@ end:
 #ifdef ENABLE_NATT
 	if (vid_natt)
 		rc_vfree(vid_natt);
+#endif
+#ifdef ENABLE_FRAG
+	if (vid_frag != NULL)
+		rc_vfree(vid_frag);
 #endif
 	if (vid_dpd != NULL)
 		rc_vfree(vid_dpd);
@@ -1059,6 +1100,10 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 			if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF &&
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
+#endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
 #endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
@@ -1320,6 +1365,10 @@ ident_r3recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 			if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF &&
 			    natt_vendorid(vid_numeric))
 				ikev1_natt_handle_vendorid(iph1, vid_numeric);
+#endif
+#ifdef ENABLE_FRAG
+			if (vid_numeric == VENDORID_FRAG)
+				iph1->rmconf->ikev1->ike_frag = 1;
 #endif
 			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
@@ -1635,6 +1684,10 @@ ident_ir2mx(struct ph1handle *iph1)
 		plist = isakmp_plist_append(plist, gsstoken, ISAKMP_NPTYPE_GSS);
 #endif
 
+#ifdef ENABLE_FRAG
+	if (iph1->rmconf->ikev1->ike_frag)
+		vid = set_vendorid(VENDORID_FRAG);
+#endif
 	/* append vendor id, if needed */
 	if (vid)
 		plist = isakmp_plist_append(plist, vid, ISAKMP_NPTYPE_VID);

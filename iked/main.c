@@ -102,11 +102,11 @@ static void iked_help(void);
 static void iked_ipv4_only(void);
 static void iked_ipv6_only(void);
 
-static RETSIGTYPE handle_sigusr1(int);
-static RETSIGTYPE handle_sigusr2(int);
-static RETSIGTYPE handle_sigint(int);
-static RETSIGTYPE handle_sigterm(int);
-static RETSIGTYPE handle_sighup(int);
+static void handle_sigusr1(int);
+static void handle_sigusr2(int);
+static void handle_sigint(int);
+static void handle_sigterm(int);
+static void handle_sighup(int);
 
 static void terminate_iked(void);
 static void iked_pidfile_create(void);
@@ -652,7 +652,7 @@ iked_ipv6_only(void)
 }
 
 /*ARGSUSED*/
-static RETSIGTYPE
+static void
 handle_sigusr1(int sig)
 {
 	debug_trace = 1;
@@ -663,14 +663,14 @@ handle_sigusr1(int sig)
 }
 
 /*ARGSUSED*/
-static RETSIGTYPE
+static void
 handle_sigusr2(int sig)
 {
 	debug_trace = 0;
 }
 
 /*ARGSUSED*/
-static RETSIGTYPE
+static void
 handle_sigint(int sig)
 {
 	INFO((PLOGLOC, "received SIGINT\n"));
@@ -678,7 +678,7 @@ handle_sigint(int sig)
 }
 
 /*ARGSUSED*/
-static RETSIGTYPE
+static void
 handle_sigterm(int sig)
 {
 	INFO((PLOGLOC, "received SIGTERM\n"));
@@ -686,7 +686,7 @@ handle_sigterm(int sig)
 }
 
 /*ARGSUSED*/
-static RETSIGTYPE
+static void
 handle_sighup(int sig)
 {
 	TRACE((PLOGLOC, "received SIGHUP\n"));

@@ -289,12 +289,10 @@ spmd_pfkey_init(void)
 		rcf_get_remotebyindex(sl->pl->rm_index, &rm);
 
 		if (rm) {
-			if (rm->ikev2->addresspool) {
+			if (rm->ikev2 && rm->ikev2->addresspool) {
 				spd_add_skip=1;
 			}
-		}
-
-		if (!rm) {
+		} else {
 			if (rcf_default_head &&
 				rcf_default_head->remote &&
 				rcf_default_head->remote->ikev2 &&

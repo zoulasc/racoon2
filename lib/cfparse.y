@@ -141,6 +141,7 @@ static struct cf_list *rcf_concat (struct cf_list *, struct cf_list *);
 %token KMP_ENC_ALG KMP_HASH_ALG KMP_PRF_ALG KMP_AUTH_METHOD KMP_DH_GROUP
 %token EXCHANGE_MODE MAIN AGGRESSIVE BASE
 %token DPD DPD_DELAY DPD_RETRY DPD_MAXFAIL
+%token IKE_FRAG
 %token MY_GSSAPI_ID COOKIE_REQUIRED SEND_PEERS_ID
 %token MY_PRINCIPAL PEERS_PRINCIPAL NEED_PFS NAT_TRAVERSAL
 %token MY_PUBLIC_KEY PEERS_PUBLIC_KEY X509PEM PKCS12 ASCII
@@ -173,7 +174,7 @@ static struct cf_list *rcf_concat (struct cf_list *, struct cf_list *);
 %token ESP_ENC_ALG ESP_AUTH_ALG AH_AUTH_ALG IPCOMP_ALG
 %token SA_PROTOCOL ESP AH IPCOMP
 	/* common */
-%token BOOL_ON BOOL_OFF STRING
+%token BOOL_ON BOOL_OFF
 %token UNIT_INFINITE UNIT_SEC UNIT_MIN UNIT_HOUR UNIT_DAY
 %token UNIT_BYTE UNIT_KBYTES UNIT_MBYTES UNIT_GBYTES
 %token COMMA EOS BOC EOC
@@ -200,7 +201,7 @@ static struct cf_list *rcf_concat (struct cf_list *, struct cf_list *);
 	struct cf_list *list;
 };
 
-%type <str> STRING
+%token <str> STRING
 %type <list> number string
 %type <list> string_list_spec string_list
 %type <list> id_list_spec id_list id_spec id_qualval id_qual
@@ -744,6 +745,11 @@ kmp_common_spec
 	|	INITIAL_CONTACT boolean
 		{
 			MKRCFDIR($$, CFD_INITIAL_CONTACT);
+			$$->nextp = $2;
+		}
+	|	IKE_FRAG boolean
+		{
+			MKRCFDIR($$, CFD_IKE_FRAG);
 			$$->nextp = $2;
 		}
 	|	NAT_TRAVERSAL boolean

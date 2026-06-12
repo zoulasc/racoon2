@@ -621,6 +621,222 @@ isakmp_find_socket(struct sockaddr *sa)
 		return -1;
 	return a->sock;
 }
+#ifdef ENABLE_FRAG
+/*
+ * Free a fragment context and all of the per-fragment buffers that it
+ * owns.  Safe to call with a NULL pointer.
+ */
+static void
+isakmp_frag_ctx_free(struct isakmp_frag_item *ctx)
+{
+	int i;
+	if (ctx == NULL)
+		return;
+	for (i = 1; i < ISAKMP_MAX_FRAGS; i++) {
+		if (ctx->parts[i] != NULL) {
+			rc_vfree(ctx->parts[i]);
+			ctx->parts[i] = NULL;
+		}
+	}
+	free(ctx);
+}
+
+/*
+ * Reassemble the previously received fragments into a single buffer.
+ */
+static rc_vchar_t *
+isakmp_frags_reassemble(struct isakmp_frag_item *ctx)
+{
+	rc_vchar_t *buf;
+	size_t total = 0;
+	size_t offset = 0;
+	int i;
+
+	if (ctx == NULL || ctx->last_frag <= 0)
+		return NULL;
+
+	for (i = 1; i <= ctx->last_frag; i++) {
+		if (ctx->parts[i] == NULL)
+			return NULL;
+		total += ctx->parts[i]->l;
+	}
+	if (total == 0)
+		return NULL;
+
+	buf = rc_vmalloc(total);
+	if (buf == NULL)
+		return NULL;
+
+	for (i = 1; i <= ctx->last_frag; i++) {
+		memcpy(buf->v + offset, ctx->parts[i]->v, ctx->parts[i]->l);
+		offset += ctx->parts[i]->l;
+	}
+	buf->l = total;
+	return buf;
+}
+
+/*
+ * Detach a fragment context from its anchor list.
+ */
+static struct isakmp_frag_item *
+isakmp_frag_detach(struct isakmp_frag_item *head,
+    struct isakmp_frag_item *ctx)
+{
+	struct isakmp_frag_item **pp;
+
+	for (pp = &head; *pp != NULL; pp = &(*pp)->next) {
+		if (*pp == ctx) {
+			*pp = ctx->next;
+			ctx->next = NULL;
+			break;
+		}
+	}
+	return head;
+}
+
+/*
+ * Receive a single IKEv1 fragment.
+ */
+static rc_vchar_t *
+isakmp_frag_recv(struct ph1handle *iph1, rc_vchar_t *packet)
+{
+	struct isakmp *ih;
+	struct isakmp_frag_hdr *frag;
+	struct isakmp_frag_item *ctx = NULL;
+	rc_vchar_t *assembled = NULL;
+	int frag_no, i;
+	size_t data_len;
+	uint8_t *data_buf;
+	uint32_t msgid;
+
+	if (iph1 == NULL)
+		return NULL;
+	if (packet == NULL ||
+	    packet->l < sizeof(struct isakmp) +
+	    sizeof(struct isakmp_frag_hdr)) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "IKE fragment too short (%zu)\n",
+		    packet ? packet->l : 0);
+		return NULL;
+	}
+
+	ih = (struct isakmp *)packet->v;
+	frag = (struct isakmp_frag_hdr *)((char *)packet->v +
+	    sizeof(struct isakmp));
+	msgid = ntohl(ih->msgid);
+
+	frag_no = ntohs(frag->frag_no);
+	if (frag_no <= 0 || frag_no >= ISAKMP_MAX_FRAGS) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "invalid IKE fragment number %d\n", frag_no);
+		return NULL;
+	}
+
+	if (packet->l < ntohl(ih->len)) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "IKE fragment truncated (packet %zu, header %u)\n",
+		    packet->l, (unsigned)ntohl(ih->len));
+		return NULL;
+	}
+
+	data_len = ntohs(frag->h.len);
+	if (data_len < sizeof(struct isakmp_frag_hdr)) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "IKE fragment header length too small (%zu)\n", data_len);
+		return NULL;
+	}
+	data_len -= sizeof(struct isakmp_frag_hdr);
+
+	if (packet->l < sizeof(struct isakmp) +
+	    sizeof(struct isakmp_frag_hdr) + data_len) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		    "IKE fragment data truncated\n");
+		return NULL;
+	}
+	data_buf = (uint8_t *)frag + sizeof(struct isakmp_frag_hdr);
+
+	for (ctx = iph1->frag_chain; ctx != NULL; ctx = ctx->next) {
+		if (ctx->frag_id == frag->frag_id && ctx->msgid == msgid)
+			break;
+	}
+
+	if (ctx == NULL) {
+		ctx = calloc(1, sizeof(*ctx));
+		if (ctx == NULL) {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+			    "failed to allocate IKE fragment context\n");
+			return NULL;
+		}
+		ctx->frag_id = frag->frag_id;
+		ctx->msgid = msgid;
+		ctx->last_frag = 0;
+		ctx->nfrags = 0;
+		ctx->next = iph1->frag_chain;
+		iph1->frag_chain = ctx;
+	}
+
+	if (ctx->parts[frag_no] != NULL) {
+		plog(PLOG_PROTOWARN, PLOGLOC, NULL,
+		    "duplicate IKE fragment %d (frag_id=%u msgid=%u)\n",
+		    frag_no, frag->frag_id, (unsigned)msgid);
+		return NULL;
+	}
+
+	ctx->parts[frag_no] = rc_vmalloc(data_len);
+	if (ctx->parts[frag_no] == NULL) {
+		plog(PLOG_INTERR, PLOGLOC, NULL,
+		    "failed to allocate IKE fragment buffer\n");
+		iph1->frag_chain = isakmp_frag_detach(iph1->frag_chain, ctx);
+		isakmp_frag_ctx_free(ctx);
+		return NULL;
+	}
+	memcpy(ctx->parts[frag_no]->v, data_buf, data_len);
+	ctx->parts[frag_no]->l = data_len;
+	ctx->nfrags++;
+
+	if (!(frag->flags & ISAKMP_FRAG_MORE)) {
+		if (ctx->last_frag == 0)
+			ctx->last_frag = frag_no;
+		else if (ctx->last_frag != frag_no) {
+			plog(PLOG_PROTOWARN, PLOGLOC, NULL,
+			    "inconsistent IKE last-fragment marker "
+			    "(was %d, now %d)\n",
+			    ctx->last_frag, frag_no);
+		}
+	}
+
+	if (ctx->last_frag == 0)
+		return NULL;
+
+	for (i = 1; i <= ctx->last_frag; i++) {
+		if (ctx->parts[i] == NULL)
+			return NULL;
+	}
+
+	assembled = isakmp_frags_reassemble(ctx);
+
+	iph1->frag_chain = isakmp_frag_detach(iph1->frag_chain, ctx);
+	isakmp_frag_ctx_free(ctx);
+
+	return assembled;
+}
+
+/*
+ * Free all fragment contexts attached to a phase 1 handler.
+ */
+void
+isakmp_frag_purge(struct ph1handle *iph1)
+{
+	struct isakmp_frag_item *ctx, *next;
+	if (iph1 == NULL)
+		return;
+	for (ctx = iph1->frag_chain; ctx != NULL; ctx = next) {
+		next = ctx->next;
+		isakmp_frag_ctx_free(ctx);
+	}
+	iph1->frag_chain = NULL;
+}
+#endif /* ENABLE_FRAG */
 
 /*
  * isakmp packet handler
@@ -795,6 +1011,35 @@ isakmp_handler(int so_isakmp)
 	}
 
 	/* Dispatch the packet to protocol handler by ISAKMP version */
+#ifdef ENABLE_FRAG
+	if (ISAKMP_GETMAJORV(isakmp.v) == ISAKMP_MAJOR_VERSION &&
+	    buf->l >= sizeof(struct isakmp) &&
+	    ((struct isakmp *)buf->v)->np == ISAKMP_NPTYPE_FRAG) {
+		isakmp_index_t *index = (isakmp_index_t *)&isakmp;
+		struct ph1handle *frag_iph1 = getph1byindex(index);
+		rc_vchar_t *reassembled;
+
+		if (frag_iph1 == NULL) {
+			plog(PLOG_PROTOERR, PLOGLOC, 0,
+			     "received IKE fragment for unknown ISAKMP SA\n");
+			++isakmpstat.malformed_message;
+			error = -1;
+			goto end;
+		}
+
+		reassembled = isakmp_frag_recv(frag_iph1, buf);
+		if (reassembled == NULL) {
+			error = 0;
+			goto end;
+		}
+
+		plog(PLOG_DEBUG, PLOGLOC, 0,
+		     "IKEv1 message reassembled from fragments\n");
+		rc_vfree(buf);
+		buf = reassembled;
+		memcpy(&isakmp, buf->v, sizeof(isakmp));
+	}
+#endif
 	switch (ISAKMP_GETMAJORV(isakmp.v)) {
 #ifdef IKEV1
 	case ISAKMP_MAJOR_VERSION:

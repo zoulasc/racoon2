@@ -180,6 +180,7 @@ static int rcf_fix_send_cert (struct cf_list *, void *);
 static int rcf_fix_send_cert_req (struct cf_list *, void *);
 static int rcf_fix_nonce_size (struct cf_list *, void *);
 static int rcf_fix_initial_contact (struct cf_list *, void *);
+static int rcf_fix_ike_frag (struct cf_list *, void *);
 static int rcf_fix_support_proxy (struct cf_list *, void *);
 static int rcf_fix_my_id (struct cf_list *, void *);
 static int rcf_fix_peers_id (struct cf_list *, void *);
@@ -337,6 +338,7 @@ struct rcf_tdf_t {
 	{ CFD_SEND_CERT_REQ,		rcf_fix_send_cert_req, },
 	{ CFD_NONCE_SIZE,		rcf_fix_nonce_size, },
 	{ CFD_INITIAL_CONTACT,		rcf_fix_initial_contact, },
+	{ CFD_IKE_FRAG,			rcf_fix_ike_frag, },
 	{ CFD_SUPPORT_PROXY,		rcf_fix_support_proxy, },
 	{ CFD_MY_ID,			rcf_fix_my_id, },
 	{ CFD_PEERS_ID,			rcf_fix_peers_id, },
@@ -1211,6 +1213,21 @@ rcf_fix_initial_contact(struct cf_list *head, void *dst0)
 		return -1;
 	if (rcf_fix_boolean(head->nextp, &dst->initial_contact))
 		return -1;
+
+	return 0;
+}
+
+static int
+rcf_fix_ike_frag(struct cf_list *head, void *dst0)
+{
+	struct rcf_kmp *dst = (struct rcf_kmp *)dst0;
+	rc_type val;
+
+	if (rcf_check_cfd(head, CFD_IKE_FRAG))
+		return -1;
+	if (rcf_fix_value(head->nextp, &val))
+		return -1;
+	dst->ike_frag = (val == RCT_BOOL_ON);
 
 	return 0;
 }

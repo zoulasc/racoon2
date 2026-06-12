@@ -349,7 +349,7 @@ AC_PATH_PROGS(MKDEP, mkdep)
 AC_MSG_CHECKING([which program to make .depend])
 if test -n "$MKDEP"; then
 	MKDEP="$MKDEP --"
-elif test x"$ac_cv_prog_gcc" = xyes; then
+elif test "$ac_cv_c_compiler_gnu" = yes; then
 	MKDEP='shmkdep(){ $(CC) -MM "$$[@]" > .depend; }; shmkdep'
 else
 	MKDEP=":"
