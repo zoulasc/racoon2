@@ -2984,6 +2984,7 @@ rcf_deepcopy_kmp(struct rcf_kmp *src)
 	new->nonce_size = src->nonce_size;
 	new->initial_contact = src->initial_contact;
 	new->support_proxy = src->support_proxy;
+	new->ike_frag = src->ike_frag;
 	new->selector_check = src->selector_check;
 	new->proposal_check = src->proposal_check;
 	new->random_pad_content = src->random_pad_content;

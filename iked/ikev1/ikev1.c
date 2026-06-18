@@ -1377,10 +1377,14 @@ isakmp_ph1delete(struct ph1handle *iph1)
 	racoon_free(src);
 	racoon_free(dst);
 
-	remph1(iph1);
-	delph1(iph1);
-
-	return;
+	/*
+	 * Use purge_remote() to clean up any orphaned ph2 handles
+	 * in the global ph2tree that match this ph1 (iph2->ph1 == NULL
+	 * but addresses match). This ensures kernel IPsec SAs are
+	 * properly deleted before the ph1 is freed.
+	 */
+	purge_remote(iph1);
+	/* purge_remote() calls remph1() + delph1() internally */
 }
 
 void
@@ -2206,8 +2210,7 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	 * be fragmented. The non ESP marker should appear in
 	 * all fragment's packets, but not in the fragmented packet
 	 */
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN)
-		extralen = 0;
+	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN)		extralen = 0;
 #endif
 	if (extralen)
 		plog (PLOG_DEBUG, PLOGLOC, NULL, "Adding NON-ESP marker\n");
@@ -2239,8 +2242,7 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	     sbuf->l, rcs_sa2str(iph1->local), rcs_sa2str(iph1->remote));
 
 #ifdef ENABLE_FRAG
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN) {
-		if (isakmp_sendfrags(iph1, sbuf) == -1) {
+	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN) {		if (isakmp_sendfrags(iph1, sbuf) == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "isakmp_sendfrags failed\n");
 			if (vbuf != NULL)
@@ -2255,14 +2257,13 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 
 		if (len == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL, "sendfromto failed\n");
-			if ( vbuf != NULL )
+			if (vbuf != NULL)
 				rc_vfree(vbuf);
 			return -1;
 		}
 	}
 
-	if ( vbuf != NULL )
-		rc_vfree(vbuf);
+	if ( vbuf != NULL )		rc_vfree(vbuf);
 
 	return 0;
 }
@@ -2345,8 +2346,7 @@ int isakmp_sendfrags(struct ph1handle *iph1, rc_vchar_t *buf)
 		frag_no++;
 	}
 
-	return 0;
-}
+	return 0;}
 #endif
 
 void

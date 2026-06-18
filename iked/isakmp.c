@@ -90,6 +90,9 @@
 # ifdef ENABLE_NATT
 #  include "ikev1/ikev1_natt.h"
 # endif
+# ifdef ENABLE_FRAG
+   extern struct rcf_remote *getrmconf(struct sockaddr *);
+# endif
 #endif
 #include "crypto_impl.h"
 
@@ -668,8 +671,8 @@ isakmp_frags_reassemble(struct isakmp_frag_item *ctx)
 		return NULL;
 
 	for (i = 1; i <= ctx->last_frag; i++) {
-		memcpy(buf->v + offset, ctx->parts[i]->v, ctx->parts[i]->l);
-		offset += ctx->parts[i]->l;
+		memcpy(buf->v + offset, ctx->parts[i]->v,
+		    ctx->parts[i]->l);		offset += ctx->parts[i]->l;
 	}
 	buf->l = total;
 	return buf;
@@ -818,8 +821,38 @@ isakmp_frag_recv(struct ph1handle *iph1, rc_vchar_t *packet)
 	iph1->frag_chain = isakmp_frag_detach(iph1->frag_chain, ctx);
 	isakmp_frag_ctx_free(ctx);
 
-	return assembled;
-}
+	if (assembled == NULL)
+		return NULL;
+
+	{
+		rc_vchar_t *full;
+		struct isakmp *rih;
+
+		full = rc_vmalloc(sizeof(struct isakmp) + assembled->l);
+		if (full == NULL) {
+			rc_vfree(assembled);
+			return NULL;
+		}
+
+		rih = (struct isakmp *)full->v;
+
+		/*
+		 * Reconstruct the ISAKMP header from the original
+		 * fragment.  All fragments share the same cookies,
+		 * version, exchange type, flags and message ID.
+		 */
+
+		memcpy(rih, ih, sizeof(struct isakmp));
+		rih->np = frag->h.np;	/* restore original np */
+		put_uint32(&rih->len,
+		    sizeof(struct isakmp) + assembled->l);
+
+		memcpy(full->u + sizeof(struct isakmp),
+		    assembled->v, assembled->l);
+		rc_vfree(assembled);
+
+		return full;
+	}}
 
 /*
  * Free all fragment contexts attached to a phase 1 handler.
@@ -1020,12 +1053,76 @@ isakmp_handler(int so_isakmp)
 		rc_vchar_t *reassembled;
 
 		if (frag_iph1 == NULL) {
-			plog(PLOG_PROTOERR, PLOGLOC, 0,
-			     "received IKE fragment for unknown ISAKMP SA\n");
-			++isakmpstat.malformed_message;
-			error = -1;
-			goto end;
-		}
+
+		struct isakmp_frag_hdr *frag =
+			    (struct isakmp_frag_hdr *)
+			    ((char *)buf->v + sizeof(struct isakmp));
+			uint16_t frag_no = ntohs(frag->frag_no);
+
+			if (frag_no != 1) {
+				plog(PLOG_PROTOERR, PLOGLOC, 0,
+				     "received IKE fragment %d for "
+				     "unknown ISAKMP SA\n", frag_no);
+				++isakmpstat.malformed_message;
+				error = -1;
+				goto end;
+			}
+
+			frag_iph1 = newph1();
+			if (frag_iph1 == NULL) {
+				plog(PLOG_INTERR, PLOGLOC, NULL,
+				     "failed to allocate temporary "
+				     "IKE fragment context\n");
+				error = -1;
+				goto end;
+			}
+
+			frag_iph1->side = RESPONDER;
+			frag_iph1->etype = isakmp.etype;
+			frag_iph1->flags = isakmp.flags;
+			frag_iph1->status = PHASE1ST_START;
+			frag_iph1->rmconf = getrmconf((struct sockaddr *)&remote);
+			if (frag_iph1->rmconf != NULL)
+				frag_iph1->proposal =
+				    ikev1_conf_to_isakmpsa(frag_iph1->rmconf);
+
+			memcpy(&frag_iph1->index, &isakmp,
+			    sizeof(isakmp_index_t));
+
+			frag_iph1->remote =
+			    racoon_malloc(remote_len);
+			if (frag_iph1->remote == NULL) {
+				delph1(frag_iph1);
+				error = -1;
+				goto end;
+			}
+			memcpy(frag_iph1->remote, &remote,
+			    remote_len);
+
+			frag_iph1->local =
+			    racoon_malloc(local_len);
+			if (frag_iph1->local == NULL) {
+				delph1(frag_iph1);
+				error = -1;
+				goto end;
+			}
+			memcpy(frag_iph1->local, &local,
+			    local_len);
+
+			if (insph1(frag_iph1) < 0) {
+				plog(PLOG_INTERR, PLOGLOC, NULL,
+				     "failed to insert temporary "
+				     "IKE fragment SA\n");
+				delph1(frag_iph1);
+				error = -1;
+				goto end;
+			}
+
+			plog(PLOG_DEBUG, PLOGLOC, 0,
+			     "created temporary IKE fragment "
+			     "context for SPI %s\n",
+			     rcs_sa2str((struct sockaddr *)
+			         &remote));		}
 
 		reassembled = isakmp_frag_recv(frag_iph1, buf);
 		if (reassembled == NULL) {
@@ -1038,7 +1135,10 @@ isakmp_handler(int so_isakmp)
 		rc_vfree(buf);
 		buf = reassembled;
 		memcpy(&isakmp, buf->v, sizeof(isakmp));
-	}
+
+		remph1(frag_iph1);
+		delph1(frag_iph1);
+		frag_iph1 = NULL;	}
 #endif
 	switch (ISAKMP_GETMAJORV(isakmp.v)) {
 #ifdef IKEV1
