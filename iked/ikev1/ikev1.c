@@ -2210,7 +2210,8 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	 * be fragmented. The non ESP marker should appear in
 	 * all fragment's packets, but not in the fragmented packet
 	 */
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN)		extralen = 0;
+	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN)
+		extralen = 0;
 #endif
 	if (extralen)
 		plog (PLOG_DEBUG, PLOGLOC, NULL, "Adding NON-ESP marker\n");
@@ -2233,7 +2234,7 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	/* select the socket to be sent */
 	s = getsockmyaddr(iph1->local);
 	if (s == -1){
-		if ( vbuf != NULL )
+		if (vbuf != NULL)
 			rc_vfree(vbuf);
 		return -1;
 	}
@@ -2242,7 +2243,8 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	     sbuf->l, rcs_sa2str(iph1->local), rcs_sa2str(iph1->remote));
 
 #ifdef ENABLE_FRAG
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN) {		if (isakmp_sendfrags(iph1, sbuf) == -1) {
+	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN) {
+		if (isakmp_sendfrags(iph1, sbuf) == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "isakmp_sendfrags failed\n");
 			if (vbuf != NULL)
@@ -2252,8 +2254,8 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	} else
 #endif
 	{
-		len = sendfromto(s, sbuf->v, sbuf->l,
-				 iph1->local, iph1->remote, ikev1_times_per_send(iph1->rmconf));
+		len = sendfromto(s, sbuf->v, sbuf->l, iph1->local,
+		    iph1->remote, ikev1_times_per_send(iph1->rmconf));
 
 		if (len == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL, "sendfromto failed\n");
@@ -2263,7 +2265,8 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 		}
 	}
 
-	if ( vbuf != NULL )		rc_vfree(vbuf);
+	if (vbuf != NULL)
+		rc_vfree(vbuf);
 
 	return 0;
 }
@@ -2346,7 +2349,8 @@ int isakmp_sendfrags(struct ph1handle *iph1, rc_vchar_t *buf)
 		frag_no++;
 	}
 
-	return 0;}
+	return 0;
+}
 #endif
 
 void

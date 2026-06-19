@@ -159,8 +159,9 @@ ident_i1send(struct ph1handle *iph1, rc_vchar_t *msg /* must be null */)
 	iph1->sendbuf = isakmp_plist_set_all(&plist, iph1);
 	if (iph1->sendbuf == NULL)
 		goto end;
+
 #ifdef HAVE_PRINT_ISAKMP_C
-	 isakmp_printpacket(iph1->sendbuf, iph1->local, iph1->remote, 0);
+	isakmp_printpacket(iph1->sendbuf, iph1->local, iph1->remote, 0);
 #endif
 
 	/* send the packet, add to the schedule to resend */
@@ -709,7 +710,8 @@ ident_i4recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 #ifdef ENABLE_FRAG
 			if (vid_numeric == VENDORID_FRAG)
 				iph1->rmconf->ikev1->ike_frag = 1;
-#endif			if (vid_numeric == VENDORID_DPD
+#endif
+			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
 			break;
@@ -887,7 +889,8 @@ ident_r1recv(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_FRAG
 			if (vid_numeric == VENDORID_FRAG)
 				iph1->rmconf->ikev1->ike_frag = 1;
-#endif			if (vid_numeric == VENDORID_DPD
+#endif
+			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
 			break;
@@ -1101,7 +1104,8 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_FRAG
 			if (vid_numeric == VENDORID_FRAG)
 				iph1->rmconf->ikev1->ike_frag = 1;
-#endif			if (vid_numeric == VENDORID_DPD
+#endif
+			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
 			break;
@@ -1365,7 +1369,8 @@ ident_r3recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 #ifdef ENABLE_FRAG
 			if (vid_numeric == VENDORID_FRAG)
 				iph1->rmconf->ikev1->ike_frag = 1;
-#endif			if (vid_numeric == VENDORID_DPD
+#endif
+			if (vid_numeric == VENDORID_DPD
 			    && ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON)
 				iph1->dpd_support=1;
 			break;

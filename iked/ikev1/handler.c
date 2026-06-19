@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -67,7 +67,7 @@
 #include "ipsec_doi.h"
 #include "evt.h"
 #ifdef ENABLE_HYBRID
-#include "isakmp_xauth.h"  
+#include "isakmp_xauth.h"
 #include "isakmp_cfg.h"
 #endif
 #include "isakmp_inf.h"
@@ -398,7 +398,7 @@ flushph1(void)
 		next = LIST_NEXT(p, chain);
 
 		/* send delete information */
-		if (p->status == PHASE1ST_ESTABLISHED) 
+		if (p->status == PHASE1ST_ESTABLISHED)
 			isakmp_info_send_d1(p);
 
 		remph1(p);
@@ -686,7 +686,7 @@ flushph2(void)
 		next = LIST_NEXT(p, chain);
 
 		/* send delete information */
-		if (p->status == PHASE2ST_ESTABLISHED) 
+		if (p->status == PHASE2ST_ESTABLISHED)
 			isakmp_info_send_d2(p);
 
 		destroy_ph2(p);
@@ -881,7 +881,7 @@ check_recvdpkt(struct sockaddr *remote, struct sockaddr *local, rc_vchar_t *rbuf
  * adding a hash of received packet into the received list.
  */
 int
-add_recvdpkt(struct sockaddr *remote, struct sockaddr *local, 
+add_recvdpkt(struct sockaddr *remote, struct sockaddr *local,
 	     rc_vchar_t *sbuf, rc_vchar_t *rbuf, struct rcf_remote *conf)
 {
 	struct recvdpkt *new = NULL;
@@ -996,7 +996,7 @@ init_recvdpkt(void)
 }
 
 #ifdef ENABLE_HYBRID
-/* 
+/*
  * Retruns 0 if the address was obtained by ISAKMP mode config, 1 otherwise
  * This should be in isakmp_cfg.c but ph1tree being private, it must be there
  */
@@ -1023,7 +1023,7 @@ exclude_cfg_addr(const struct sockaddr *addr)
 
 
 #if 0
-/* 
+/*
  * Reload conf code
  */
 static int revalidate_ph2(struct ph2handle *iph2){
@@ -1032,16 +1032,16 @@ static int revalidate_ph2(struct ph2handle *iph2){
 	struct sainfo *sainfo;
 	struct saprop *approval;
 
-	/* 
+	/*
 	 * Get the new sainfo using values of the old one
 	 */
-	iph2->sainfo = getsainfo(iph2->sainfo->idsrc, 
+	iph2->sainfo = getsainfo(iph2->sainfo->idsrc,
 	    iph2->sainfo->iddst, iph2->sainfo->id_i);
 	approval = iph2->approval;
 	sainfo = iph2->sainfo;
 
 	if (sainfo == NULL) {
-		/* 
+		/*
 		 * Sainfo has been removed
 		 */
 		plog(PLOG_DEBUG, PLOGLOC, NULL,
@@ -1056,7 +1056,7 @@ static int revalidate_ph2(struct ph2handle *iph2){
 		plog(PLOG_DEBUG, PLOGLOC, NULL,
 			 "No approval found !\n");
 		return 0;
-	}	
+	}
 
 	/*
 	 * Don't care about proposals, should we do something ?
@@ -1140,7 +1140,7 @@ static int revalidate_ph2(struct ph2handle *iph2){
 	}
 
 	found = 0;
-	for (alg = sainfo->algs[algclass_ipsec_enc]; 
+	for (alg = sainfo->algs[algclass_ipsec_enc];
 	    (found == 0 && alg != NULL); alg = alg->next) {
 		plog(PLOG_DEBUG, PLOGLOC, NULL,
 			 "Reload: next ph2 enc alg...\n");
@@ -1173,7 +1173,7 @@ static int revalidate_ph2(struct ph2handle *iph2){
 			break;
 
 		default:
-			plog(PLOG_INTERR, PLOGLOC, NULL, 
+			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "unexpected check_level\n");
 			continue;
 			break;
@@ -1199,7 +1199,7 @@ static int revalidate_ph2(struct ph2handle *iph2){
 
 
 #ifdef notyet
-static void 
+static void
 remove_ph2(struct ph2handle *iph2)
 {
 	uint32_t spis[2];
@@ -1231,7 +1231,7 @@ remove_ph2(struct ph2handle *iph2)
 	}
 }
 
-static void 
+static void
 remove_ph1(struct ph1handle *iph1)
 {
 	struct ph2handle *iph2, *iph2_next;
@@ -1254,7 +1254,7 @@ remove_ph1(struct ph1handle *iph1)
 }
 
 
-static int 
+static int
 revalidate_ph1tree_rmconf(void)
 {
 	struct ph1handle *p, *next;
@@ -1293,7 +1293,7 @@ revalidate_ph1tree_rmconf(void)
 
 /* rmconf is already updated here
  */
-static int 
+static int
 revalidate_ph1(struct ph1handle *iph1)
 {
 	rc_type exchange_mode;
@@ -1372,7 +1372,7 @@ revalidate_ph1(struct ph1handle *iph1)
 			break;
 
 		default:
-			plog(PLOG_INTERR, PLOGLOC, NULL, 
+			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "unexpected check_level\n");
 			continue;
 			break;
@@ -1400,7 +1400,7 @@ revalidate_ph1(struct ph1handle *iph1)
 }
 
 
-static int 
+static int
 revalidate_ph1tree(void)
 {
 	struct ph1handle *p, *next;
@@ -1418,7 +1418,7 @@ revalidate_ph1tree(void)
 	return 1;
 }
 
-static int 
+static int
 revalidate_ph2tree(void)
 {
 	struct ph2handle *p, *next;
@@ -1439,7 +1439,7 @@ revalidate_ph2tree(void)
 	return 1;
 }
 
-int 
+int
 revalidate_ph12(void)
 {
 
@@ -1491,8 +1491,8 @@ purgeph1bylogin(char *login)
 
 
 static int
-delete_ipsec_sa(struct sadb_request *r, 
-	        struct sockaddr *src, struct sockaddr *dst, int proto, 
+delete_ipsec_sa(struct sadb_request *r,
+	        struct sockaddr *src, struct sockaddr *dst, int proto,
 		uint32_t spi/* network order */)
 {
 	struct rcpfk_msg param;
@@ -1550,10 +1550,11 @@ purge_remote(struct ph1handle *iph1)
 		next_ph2 = LIST_NEXT(iph2, chain);
 
 		/*
-		 * Handle PH2 entries that were unbound from PH1 before PH1 cleanup.
-		 * Match by peer addresses so orphaned Phase 2 SAs are not left behind
-		 * when the corresponding Phase 1 SA is purged.		 */
-
+		 * Handle PH2 entries that were unbound from PH1 before PH1
+		 * cleanup. Match by peer addresses so orphaned Phase 2 SAs
+		 * are not left behind when the corresponding Phase 1 SA is
+		 * purged.
+		 */
 		if (iph2->ph1 != iph1 &&
 			(iph2->ph1 != NULL ||
 			 rcs_cmpsa_wop(iph2->src, iph1->local) != 0 ||
@@ -1585,10 +1586,10 @@ purge_remote(struct ph1handle *iph1)
 
 
 void
-purge_ipsec_spi(struct ph1handle *ph1, 
-	        struct sockaddr *dst0, 
-		int proto_id, 
-		uint32_t *spi_ptr/*network byteorder*/, 
+purge_ipsec_spi(struct ph1handle *ph1,
+	        struct sockaddr *dst0,
+		int proto_id,
+		uint32_t *spi_ptr/*network byteorder*/,
 		int n)
 {
 	struct ph2handle *iph2;
@@ -1601,52 +1602,48 @@ purge_ipsec_spi(struct ph1handle *ph1,
 	for (i = 0; i < n; ++i) {
 		spi = htonl(get_uint32(&spi_ptr[i]));
 		iph2 = getph2bysaidx(ph1->local, ph1->remote, proto_id, spi);
-		if (iph2 != NULL) {
-			pp = iph2->approval;
-			all_done = TRUE;
-			for (pr = pp->head; pr != NULL; pr = pr->next) {
-				if (pr->proto_id == proto_id && pr->spi_p == spi) {
-					TRACE((PLOGLOC, "proto %d spi 0x%08" PRIx32 "\n",
-					       pr->proto_id, 
-					       ntohl(pr->spi_p)));
-					/*
-					 * Received SPI matches our outbound SPI.
-					 * Delete both outbound and inbound SAs.
-					 */
-					delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->src,
-						       iph2->dst,
-						       proto_id, pr->spi_p);
-					delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->dst,
-						       iph2->src,
-						       proto_id, pr->spi);
-					pr->spi_p = 0;
-				} else if (pr->proto_id == proto_id && pr->spi == spi) {
-					TRACE((PLOGLOC, "proto %d spi 0x%08" PRIx32 "\n",
-					       pr->proto_id, 
-					       ntohl(pr->spi)));
-					/*
-					 * Received SPI matches our inbound SPI.
-					 * Delete both inbound and outbound SAs.
-					 */
-					delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->dst,
-						       iph2->src,
-						       proto_id, pr->spi);
-					delete_ipsec_sa(&iph2->sadb_request,
-						       iph2->src,
-						       iph2->dst,
-						       proto_id, pr->spi_p);
-					pr->spi = 0;
-				} else if (pr->spi_p != 0) {
-					all_done = FALSE;
-				}
+		if (iph2 == NULL)
+			continue;
+		pp = iph2->approval;
+		all_done = TRUE;
+		for (pr = pp->head; pr != NULL; pr = pr->next) {
+			TRACE((PLOGLOC, "proto %d spi 0x%08" PRIx32 "\n",
+			      pr->proto_id,
+			      ntohl(pr->spi_p)));
+			if (pr->proto_id == proto_id && pr->spi_p == spi) {
+				/*
+				 * Received SPI matches our outbound SPI.
+				 * Delete both outbound and inbound SAs.
+				 */
+				delete_ipsec_sa(&iph2->sadb_request,
+					        iph2->src,
+					        iph2->dst,
+					        proto_id, pr->spi_p);
+				delete_ipsec_sa(&iph2->sadb_request,
+					        iph2->dst,
+					        iph2->src,
+					        proto_id, pr->spi);
+				pr->spi_p = 0;
+			} else if (pr->proto_id == proto_id && pr->spi == spi) {
+				/*
+				 * Received SPI matches our inbound SPI.
+				 * Delete both inbound and outbound SAs.
+				 */
+				delete_ipsec_sa(&iph2->sadb_request,
+					        iph2->dst,
+					        iph2->src,
+					        proto_id, pr->spi);
+				delete_ipsec_sa(&iph2->sadb_request,
+					        iph2->src,
+					        iph2->dst,
+					        proto_id, pr->spi_p);
+				pr->spi = 0;
+			} else if (pr->spi_p != 0) {
+				all_done = FALSE;
 			}
-
-			if (all_done)
-				destroy_ph2(iph2);
 		}
+
+		if (all_done)
+			destroy_ph2(iph2);
 	}
 }
-
