@@ -834,6 +834,10 @@ ikev2_dispose_sa(struct ikev2_sa *sa)
 {
 	TRACE((PLOGLOC, "ikev2_dispose_sa(%p)\n", sa));
 
+#ifdef ENABLE_FRAG
+	ikev2_frag_purge(sa);
+#endif
+
 	/* remove from sa list in advance */
 	/* ikev2_sa_remove(sa); */
 
