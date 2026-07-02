@@ -224,6 +224,8 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 	TRACE((PLOGLOC, "processing message version %d.%03d\n",
 	       ISAKMP_GETMAJORV(ikehdr->version), ISAKMP_GETMINORV(ikehdr->version)));
 
+	ike_sa = ikev2_find_sa(packet);
+
 	if (ikev2_check_payloads(packet, TRUE) != 0) {
 		isakmp_log(0, local, remote, packet, PLOG_PROTOERR, PLOGLOC,
 			   "malformed payload format\n");
@@ -235,7 +237,6 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 	message_id = get_uint32(&ikehdr->message_id);
 	first_payload = (struct ikev2_payload_header *)(ikehdr + 1);
 
-	ike_sa = ikev2_find_sa(packet);
 	if (!ike_sa) {
 		int need_cookie, has_cookie, invalid_cookie;
 
@@ -591,6 +592,15 @@ ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 {
 	TRACE((PLOGLOC, "ikev2_transmit(%p, %p) len %d\n",
 	       ike_sa, packet, (int)packet->l));
+
+#ifdef ENABLE_FRAG
+	if (ike_sa->frag_supported) {
+		if (ikev2_frag_send(ike_sa, &packet) == 0)
+			return 0;	/* packet was fragmented and sent */
+		/* fragmentation not needed or failed, send original */
+	}
+#endif
+
 	if (packet->l > IKEV2_SHOULD_SUPPORT_PACKET_SIZE) {
 		isakmp_log(ike_sa, 0, 0, 0,
 			   PLOG_INFO, PLOGLOC,
@@ -610,6 +620,15 @@ ikev2_transmit_response(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 
 	TRACE((PLOGLOC, "ikev2_transmit_response(%p, %p) len %d\n",
 	       ike_sa, packet, (int)packet->l));
+
+#ifdef ENABLE_FRAG
+	if (ike_sa->frag_supported) {
+		if (ikev2_frag_send(ike_sa, &packet) == 0)
+			return 0;	/* packet was fragmented and sent */
+		/* fragmentation not needed or failed, send original */
+	}
+#endif
+
 	if (packet->l > IKEV2_SHOULD_SUPPORT_PACKET_SIZE) {
 		INFO((PLOGLOC,
 		      "packet size (%zu) larger than recommended implementation minimum (%d)\n",
