@@ -209,6 +209,10 @@ struct ikev2_sa {
 
 	int behind_nat;
 	int peer_behind_nat;
+#ifdef ENABLE_FRAG
+	int frag_supported;		/* IKEv2 fragmentation (RFC7383) */
+	struct ikev2_frag_item *frag_chain;	/* Received fragments */
+#endif
 	struct sched *natk_timer;
 #if 0	/* XXX for transport mode */
 	struct sockaddr *privaddr_p;
@@ -397,6 +401,24 @@ extern void ikev2_informational_initiator_delete(struct ikev2_sa *,
 						 struct ikev2_payloads *);
 
 extern int ikev2_send_initial_contact(struct ikev2_sa *);
+#ifdef ENABLE_FRAG
+#define IKEV2_MAX_FRAGS	64
+
+struct ikev2_frag_item {
+	uint32_t msgid;
+	uint16_t total_fragments;
+	int num_received;
+	time_t timeout;
+	struct ikev2_frag_item *next;
+	rc_vchar_t *parts[IKEV2_MAX_FRAGS]; /* 1-indexed */
+	size_t total_data_len;
+};
+
+extern int ikev2_frag_send(struct ikev2_sa *, rc_vchar_t **);
+extern rc_vchar_t *ikev2_frag_recv(struct ikev2_sa *, rc_vchar_t *,
+				    struct sockaddr *, struct sockaddr *);
+extern void ikev2_frag_purge(struct ikev2_sa *);
+#endif
 
 extern void ikev2_sa_init(void);
 #ifdef DEBUG

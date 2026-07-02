@@ -80,6 +80,7 @@ struct ikev2_payload_types ikev2_payload_types[] = {
 	{"ENCRYPTED", sizeof(struct ikev2_payload_header)},
 	{"CONFIG", sizeof(struct ikev2payl_config)},
 	{"EAP", sizeof(struct ikev2_payload_header)},
+	{"SKF", sizeof(struct ikev2payl_encrypted_fragment)},
 };
 
 /*
@@ -224,6 +225,14 @@ ikev2_check_payloads(rc_vchar_t *packet, int before_decrypt)
 				}
 			}
 			break;
+		case IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT:
+			{
+			    struct ikev2payl_encrypted_fragment *skf = 
+				(struct ikev2payl_encrypted_fragment*)p;
+
+			    if (payload_length < sizeof(struct ikev2payl_encrypted_fragment))
+				TRACE((PLOGLOC, "payload length (%d) is shorter than expected", payload_length));
+			}
 		default:
 			break;
 		}
