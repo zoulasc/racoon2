@@ -77,7 +77,7 @@ extern struct ikev2_payload_types {
 	size_t minimum_length;
 } ikev2_payload_types[];
 
-#define	IKEV2_PAYLOAD_TYPE_DEFINED(type_)	((type_) >= IKEV2_PAYLOAD_SA && (type_) <= IKEV2_PAYLOAD_EAP)
+#define	IKEV2_PAYLOAD_TYPE_DEFINED(type_)	((type_) >= IKEV2_PAYLOAD_SA && (type_) <= IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT)
 #define	IKEV2_PAYLOAD_TYPES(type_)	(ikev2_payload_types[(type_) - IKEV2_PAYLOAD_SA])
 #define	IKEV2_PAYLOAD_NAME(type_)	(IKEV2_PAYLOAD_TYPE_DEFINED(type_) ? IKEV2_PAYLOAD_TYPES(type_).name : "unknown")
 

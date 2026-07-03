@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #else
