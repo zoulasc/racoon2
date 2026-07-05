@@ -38,11 +38,7 @@
 
 #define IKEV1_DEFAULT_NONCE_SIZE	16
 #define ISAKMP_FRAG_MAXLEN 1300
-
-/* Max number of fragments we can reassemble */
 #define ISAKMP_MAX_FRAGS		64
-
-#define ISAKMP_FRAG_MAXLEN 552
 
 /* typedef unsigned char cookie_t[8]; */
 typedef unsigned char msgid_t[4];
