@@ -410,7 +410,7 @@ struct ikev2_frag_item {
 	int num_received;
 	time_t timeout;
 	struct ikev2_frag_item *next;
-	rc_vchar_t *parts[IKEV2_MAX_FRAGS]; /* 1-indexed */
+	rc_vchar_t *parts[IKEV2_MAX_FRAGS + 1]; /* 1-indexed */
 	size_t total_data_len;
 };
 

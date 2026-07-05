@@ -587,6 +587,11 @@ ikev2_update_message_id(struct ikev2_sa *ike_sa, uint32_t message_id,
 /*
  * Transmit a message
  */
+
+#define IPV4_MAX_FRAGMENT_SIZE 576
+#define IPV6_MAX_FRAGMENT_SIZE 1280
+
+
 int
 ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 {
@@ -594,9 +599,19 @@ ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 	       ike_sa, packet, (int)packet->l));
 
 #ifdef ENABLE_FRAG
-	if (ike_sa->frag_supported) {
-		if (ikev2_frag_send(ike_sa, &packet) == 0)
+	if (ike_sa != NULL && ike_sa->frag_supported) {
+	    if (SOCKADDR_FAMILY(ike_sa->remote) == AF_INET)
+	    {
+		if (packet->l >= IPV4_MAX_FRAGMENT_SIZE)
+		    if (ikev2_frag_send(ike_sa, &packet) == 0)
 			return 0;	/* packet was fragmented and sent */
+	    }
+	    else
+	    {
+		if (packet->l >= IPV6_MAX_FRAGMENT_SIZE)
+		    if (ikev2_frag_send(ike_sa, &packet) == 0)
+			return 0;
+	    }
 		/* fragmentation not needed or failed, send original */
 	}
 #endif
@@ -987,7 +1002,6 @@ ikev2_initiator_start(struct ikev2_sa *ike_sa)
 						 0, 0),
 			    TRUE);
 #endif
-
 	pkt = ikev2_packet_construct(IKEV2EXCH_IKE_SA_INIT, IKEV2FLAG_INITIATOR,
 				     0, ike_sa, &payl);
 	if (!pkt)
