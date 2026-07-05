@@ -32,6 +32,9 @@
 #include <string.h>
 #include <inttypes.h>
 
+#ifndef VMBUF_H
+#define VMBUF_H
+
 /*
  *	bp      v
  *	v       v
@@ -86,3 +89,6 @@ extern rc_vchar_t *rc_vconcat(rc_vchar_t *, const void *, size_t);
     memcpy((p_), (s_)->v, (s_)->l);					\
     (p_) += (s_)->l;							\
 } while (/*CONSTCOND*/0)
+
+
+#endif
