@@ -226,6 +226,31 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 
 	ike_sa = ikev2_find_sa(packet);
 
+#ifdef ENABLE_FRAG
+
+	/*
+	 * Handle IKEv2 fragment (SKF) reassembly BEFORE payload checking.
+	 */
+
+	if (ikehdr->next_payload ==
+	    IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT) {
+		rc_vchar_t *reassembled;
+
+		if (!ike_sa) {
+			TRACE((PLOGLOC, "received fragment but no ike_sa\n"));
+			goto end;
+		}
+		reassembled = ikev2_frag_recv(ike_sa, packet, remote, local);
+		if (!reassembled)
+			goto end;
+
+		rc_vfree(packet);
+		packet = reassembled;
+		ikehdr = (struct ikev2_header *)packet->v;
+		ike_sa = ikev2_find_sa(packet);
+	}
+#endif
+
 	if (ikev2_check_payloads(packet, TRUE) != 0) {
 		isakmp_log(0, local, remote, packet, PLOG_PROTOERR, PLOGLOC,
 			   "malformed payload format\n");
@@ -369,20 +394,6 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 			goto end;
 		}
 	} else {
-#ifdef ENABLE_FRAG
-		if (ike_sa != NULL &&
-		    ikehdr->next_payload == IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT) {
-			rc_vchar_t *reassembled;
-
-			reassembled = ikev2_frag_recv(ike_sa, packet, remote, local);
-			if (!reassembled)
-				goto end;
-
-			rc_vfree(packet);
-			packet = reassembled;
-			ikehdr = (struct ikev2_header *)packet->v;
-		}
-#endif
 		if (ikehdr->next_payload != IKEV2_PAYLOAD_ENCRYPTED) {
 			isakmp_log(ike_sa, local, remote, packet,
 				   PLOG_PROTOERR, PLOGLOC,
@@ -599,7 +610,8 @@ ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 	       ike_sa, packet, (int)packet->l));
 
 #ifdef ENABLE_FRAG
-	if (ike_sa != NULL && ike_sa->frag_supported) {
+	if (ike_sa != NULL && ike_sa->frag_supported) 
+	{
 	    if (SOCKADDR_FAMILY(ike_sa->remote) == AF_INET)
 	    {
 		if (packet->l >= IPV4_MAX_FRAGMENT_SIZE)
@@ -638,8 +650,18 @@ ikev2_transmit_response(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 
 #ifdef ENABLE_FRAG
 	if (ike_sa->frag_supported) {
-		if (ikev2_frag_send(ike_sa, &packet) == 0)
+	    if (SOCKADDR_FAMILY(ike_sa->remote) == AF_INET)
+	    {
+		if (packet->l >= IPV4_MAX_FRAGMENT_SIZE)
+		    if (ikev2_frag_send(ike_sa, &packet) == 0)
 			return 0;	/* packet was fragmented and sent */
+	    }
+	    else
+	    {
+		if (packet->l >= IPV6_MAX_FRAGMENT_SIZE)
+		    if (ikev2_frag_send(ike_sa, &packet) == 0)
+			return 0;
+	    }
 		/* fragmentation not needed or failed, send original */
 	}
 #endif
