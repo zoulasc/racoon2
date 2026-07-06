@@ -80,6 +80,10 @@ struct ikev2_payload_types ikev2_payload_types[] = {
 	{"ENCRYPTED", sizeof(struct ikev2_payload_header)},
 	{"CONFIG", sizeof(struct ikev2payl_config)},
 	{"EAP", sizeof(struct ikev2_payload_header)},
+	{"RESERVED", 0},	/* 49 */
+	{"RESERVED", 0},	/* 50 */
+	{"RESERVED", 0},	/* 51 */
+	{"RESERVED", 0},	/* 52 */
 	{"SKF", sizeof(struct ikev2payl_encrypted_fragment)},
 };
 
