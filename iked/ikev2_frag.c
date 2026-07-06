@@ -55,6 +55,7 @@
 #include <netinet/in.h>
 
 #include "racoon.h"
+#include <time.h>
 
 #include "isakmp.h"
 #include "ikev2.h"
