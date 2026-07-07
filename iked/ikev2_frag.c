@@ -161,7 +161,7 @@ ikev2_frag_send(struct ikev2_sa *ike_sa, rc_vchar_t **packet)
 	decrypted = encryptor_decrypt(ike_sa->encryptor,
 				      orig,
 				      ike_sa->is_initiator ?
-					ike_sa->sk_e_r : ike_sa->sk_e_i,
+					ike_sa->sk_e_i : ike_sa->sk_e_r,
 				      ivbuf);
 	if (!decrypted)
 		goto fail;
@@ -518,7 +518,7 @@ ikev2_frag_recv(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 
 	/* Decrypt the fragment */
 	ciphertext_len = payload_len -
-	    sizeof(struct ikev2payl_encrypted_fragment) - iv_len - icv_len;
+	    sizeof(struct ikev2payl_encrypted_fragment) - iv_len;
 	iv_ptr = (uint8_t *)(skf + 1);
 	ciphertext = iv_ptr + iv_len;
 
@@ -526,6 +526,14 @@ ikev2_frag_recv(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 		     "ikev2_frag_recv: empty ciphertext (frag %u/%u)\n",
 		     frag_no, total_frags);
+		goto fail;
+	}
+
+	if (ciphertext_len % iv_len != 0) {
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
+		     "ikev2_frag_recv: ciphertext length %zu not aligned "
+		     "to block size %zu (frag %u/%u)\n",
+		     ciphertext_len, iv_len, frag_no, total_frags);
 		goto fail;
 	}
 

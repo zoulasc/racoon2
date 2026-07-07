@@ -1147,6 +1147,7 @@ isakmp_handler(int so_isakmp)
 	case IKEV2_MAJOR_VERSION:
 		error = ikev2_input(buf, (struct sockaddr *)&remote,
 				    (struct sockaddr *)&local);
+		buf = NULL;	/* ikev2_input frees the packet */
 		break;
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, 0,
