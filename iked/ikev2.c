@@ -212,6 +212,7 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 	struct ikev2_payload_header *first_payload;
 	struct ikev2_sa *ike_sa;
 	struct rcf_remote *conf = 0;
+	int reassembled = 0;
 
 	++isakmpstat.v2input;
 
@@ -234,20 +235,21 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 
 	if (ikehdr->next_payload ==
 	    IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT) {
-		rc_vchar_t *reassembled;
+		rc_vchar_t *reassembled_pkt;
 
 		if (!ike_sa) {
 			TRACE((PLOGLOC, "received fragment but no ike_sa\n"));
 			goto end;
 		}
-		reassembled = ikev2_frag_recv(ike_sa, packet, remote, local);
-		if (!reassembled)
+		reassembled_pkt = ikev2_frag_recv(ike_sa, packet, remote, local);
+		if (!reassembled_pkt)
 			goto end;
 
 		rc_vfree(packet);
-		packet = reassembled;
+		packet = reassembled_pkt;
 		ikehdr = (struct ikev2_header *)packet->v;
 		ike_sa = ikev2_find_sa(packet);
+		reassembled = 1;
 	}
 #endif
 
@@ -394,48 +396,51 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 			goto end;
 		}
 	} else {
-		if (ikehdr->next_payload != IKEV2_PAYLOAD_ENCRYPTED) {
-			isakmp_log(ike_sa, local, remote, packet,
-				   PLOG_PROTOERR, PLOGLOC,
-				   "unsupported message format: first payload is not ENCRYPTED payload\n");
-			++isakmpstat.malformed_message;
-			goto end;
-		}
-		if (ikev2_check_icv(ike_sa, packet) != 0) {
-			isakmp_log(ike_sa, local, remote, packet,
-				   PLOG_PROTOERR, PLOGLOC,
-				   "ICV check failure\n");
-			++isakmpstat.fail_integrity_check;
-			goto end;
-		}
-		if (ikev2_retransmit_forced(ike_sa, message_id, is_response) != 0) {
-			goto end;
-		}
-		if (ikev2_check_message_ordering(ike_sa, message_id, is_response, local, remote) != 0) {
-			isakmp_log(ike_sa, local, remote, packet,
-				   PLOG_DEBUG, PLOGLOC,
-				   "dropping unordered message (id %d)\n",
-				   message_id);
-			++isakmpstat.unordered;
-			goto end;
-		}
-		if (ikev2_decrypt(ike_sa, packet) != 0) {
-			isakmp_log(ike_sa, local, remote, packet,
-				   PLOG_PROTOERR, PLOGLOC,
-				   "failed to decrypt message\n");
-			++isakmpstat.fail_decrypt;
-			goto end;
-		}
+		if (!reassembled) {
+			if (ikehdr->next_payload != IKEV2_PAYLOAD_ENCRYPTED 
+				&& ikehdr->next_payload != IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT) {
+				isakmp_log(ike_sa, local, remote, packet,
+					   PLOG_PROTOERR, PLOGLOC,
+					   "unsupported message format: first payload is not ENCRYPTED payload\n");
+				++isakmpstat.malformed_message;
+				goto end;
+			}
+			if (ikev2_check_icv(ike_sa, packet) != 0) {
+				isakmp_log(ike_sa, local, remote, packet,
+					   PLOG_PROTOERR, PLOGLOC,
+					   "ICV check failure\n");
+				++isakmpstat.fail_integrity_check;
+				goto end;
+			}
+			if (ikev2_retransmit_forced(ike_sa, message_id, is_response) != 0) {
+				goto end;
+			}
+			if (ikev2_check_message_ordering(ike_sa, message_id, is_response, local, remote) != 0) {
+				isakmp_log(ike_sa, local, remote, packet,
+					   PLOG_DEBUG, PLOGLOC,
+					   "dropping unordered message (id %d)\n",
+					   message_id);
+				++isakmpstat.unordered;
+				goto end;
+			}
+			if (ikev2_decrypt(ike_sa, packet) != 0) {
+				isakmp_log(ike_sa, local, remote, packet,
+					   PLOG_PROTOERR, PLOGLOC,
+					   "failed to decrypt message\n");
+				++isakmpstat.fail_decrypt;
+				goto end;
+			}
 #ifdef HAVE_LIBPCAP
-		if (ike_pcap_file)
-			rc_pcap_push(remote, local, packet);
+			if (ike_pcap_file)
+				rc_pcap_push(remote, local, packet);
 #endif
-		if (ikev2_check_payloads(packet, FALSE) != 0) {
-			isakmp_log(0, local, remote, packet,
-				   PLOG_PROTOERR, PLOGLOC,
-				   "malformed payload format\n");
-			++isakmpstat.malformed_payload;
-			goto end;
+			if (ikev2_check_payloads(packet, FALSE) != 0) {
+				isakmp_log(0, local, remote, packet,
+					   PLOG_PROTOERR, PLOGLOC,
+					   "malformed payload format\n");
+				++isakmpstat.malformed_payload;
+				goto end;
+			}
 		}
 
 		/* (draft-17)
@@ -476,6 +481,8 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 #endif
 
       end:
+	if (packet)
+		rc_vfree(packet);
 	if (conf)
 		rcf_free_remote(conf);
 	return 0;
