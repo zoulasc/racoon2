@@ -237,6 +237,7 @@ ikev2_check_payloads(rc_vchar_t *packet, int before_decrypt)
 			    if (payload_length < sizeof(struct ikev2payl_encrypted_fragment))
 				TRACE((PLOGLOC, "payload length (%d) is shorter than expected", payload_length));
 			}
+			break;
 		default:
 			break;
 		}
