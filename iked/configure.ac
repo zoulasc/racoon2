@@ -136,7 +136,7 @@ AC_MSG_RESULT(${kernel_build_dir})
 
 RC_CHECK_PFKEYV2_H
 RC_IF_NATT_ENABLE
-RC_IF_FRAG_ENABLE
+
 if test x"$enable_natt" = x"yes"; then
   if test x"$ikev1" = x"yes"; then
 	IKEV1_SRC="${IKEV1_SRC} \$(IKEV1_NATT_SRC)"

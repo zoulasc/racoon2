@@ -217,7 +217,6 @@ extern const char * ikev1_peerscertfile(struct rcf_remote *rmconf);
 extern int ikev1_weak_phase1_check(struct rcf_remote *);
 
 extern rc_type ike_ipsec_mode(struct rcf_policy *);
-extern unsigned int ikev1_frag_enabled(struct rcf_remote *);
 extern unsigned int ike_acceptable_kmp(struct rcf_remote *);
 extern rc_type ike_initiate_kmp(struct rcf_remote *);
 

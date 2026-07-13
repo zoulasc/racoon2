@@ -109,12 +109,10 @@ resp_state0_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 #endif
 		/* FALLTHROUGH */
 
-#ifdef ENABLE_FRAG
 	case IKEV2_FRAGMENTATION_SUPPORTED:
 		ike_sa->frag_supported = 1;
 		TRACE((PLOGLOC, "peer supports IKEv2 fragmentation\n"));
 		break;
-#endif
 
 	default:
 		/* else, unexpected unauthenticated notify */
@@ -256,12 +254,10 @@ init_ike_sa_init_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 #endif
 		/* FALLTHROUGH */
 
-#ifdef ENABLE_FRAG
 	case IKEV2_FRAGMENTATION_SUPPORTED:
 		ike_sa->frag_supported = 1;
 		TRACE((PLOGLOC, "peer supports IKEv2 fragmentation\n"));
 		break;
-#endif
 
 	default:
 		/* else, unexpected unauthenticated notify */

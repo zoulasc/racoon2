@@ -88,7 +88,6 @@ struct remoteconf {
 	int verify_identifier;		/* vefify the peer's identifier */
 	int nonce_size;			/* the number of bytes of nonce */
 	int passive;			/* never initiate */
-	int ike_frag;			/* IKE fragmentation */
 	int esp_frag;			/* ESP fragmentation */
 	int mode_cfg;			/* Gets config through mode config */
 	int support_proxy;		/* support mip6/proxy */

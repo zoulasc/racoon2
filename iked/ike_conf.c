@@ -100,7 +100,6 @@ struct rcf_kmp ikev1_default_values = {
 	RCT_BOOL_ON,		/* verify_pubkey */
 	RCT_BOOL_ON,		/* send_cert    */
 	RCT_BOOL_ON,		/* send_cert_req */
-	RCT_BOOL_ON,		/* ikev1_frag	 */
 	IKEV1_DEFAULT_NONCE_SIZE,	/* nonce_size   */
 	RCT_BOOL_ON,		/* initial_contact */
 	RCT_BOOL_OFF,		/* support_proxy */
@@ -162,7 +161,6 @@ struct rcf_kmp ikev2_default_values = {
 	RCT_BOOL_OFF,		/* verify_pubkey */
 	RCT_BOOL_OFF,		/* send_cert    */
 	RCT_BOOL_OFF,		/* send_cert_req */
-	RCT_BOOL_ON,		/* ikev2_frag	 */
 	IKEV2_DEFAULT_NONCE_SIZE,	/* nonce_size   */
 	RCT_BOOL_OFF,		/* initial_contact */
 	RCT_BOOL_OFF,		/* support_proxy */
@@ -600,20 +598,6 @@ ike_ipsec_mode(struct rcf_policy *pl)
 
 	POLICY_DEFAULT(retval, ipsec_mode, RCT_IPSM_TUNNEL);
 	return retval;
-}
-
-uint
-ikev1_frag_enabled(struct rcf_remote* conf)
-{
-	if (conf && conf->ikev1->ike_frag)
-		return conf->ikev1->ike_frag;
-
-	if (rcf_default_head
-	    && rcf_default_head->remote
-	    && rcf_default_head->remote->ikev1->ike_frag)
-		return rcf_default_head->remote->ikev1->ike_frag;
-
-	return 0;
 }
 
 uint

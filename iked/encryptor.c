@@ -215,10 +215,12 @@ encryptor_decrypt(struct encryptor *encr, rc_vchar_t *ciphertext,
 
 	ret = ((struct encryptor_method *)encr)->decrypt(ciphertext, key, iv);
 
-	IF_TRACE({
-		plog(PLOG_DEBUG, PLOGLOC, NULL, "  decrypted text:\n");
-		plogdump(PLOG_DEBUG, PLOGLOC, NULL, ret->v, ret->l);
-	});
+	if (ret) {
+		IF_TRACE({
+			plog(PLOG_DEBUG, PLOGLOC, NULL, "  decrypted text:\n");
+			plogdump(PLOG_DEBUG, PLOGLOC, NULL, ret->v, ret->l);
+		});
+	}
 
 	return ret;
 }

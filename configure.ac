@@ -16,6 +16,7 @@ AC_PROG_RANLIB
 AC_PROG_MAKE_SET
 RC_IF_INSTALL_OPTS
 
+
 AC_CONFIG_SUBDIRS([lib spmd iked kinkd])
 
 dnl Set the debug option by default for now.

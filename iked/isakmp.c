@@ -90,10 +90,8 @@
 # ifdef ENABLE_NATT
 #  include "ikev1/ikev1_natt.h"
 # endif
-# ifdef ENABLE_FRAG
    extern struct rcf_remote *getrmconf(struct sockaddr *);
 # endif
-#endif
 #include "crypto_impl.h"
 
 #include "ike_conf.h"
@@ -624,7 +622,6 @@ isakmp_find_socket(struct sockaddr *sa)
 		return -1;
 	return a->sock;
 }
-#ifdef ENABLE_FRAG
 /*
  * Free a fragment context and all of the per-fragment buffers that it
  * owns.  Safe to call with a NULL pointer.
@@ -870,7 +867,6 @@ isakmp_frag_purge(struct ph1handle *iph1)
 	}
 	iph1->frag_chain = NULL;
 }
-#endif /* ENABLE_FRAG */
 
 /*
  * isakmp packet handler
@@ -1045,7 +1041,6 @@ isakmp_handler(int so_isakmp)
 	}
 
 	/* Dispatch the packet to protocol handler by ISAKMP version */
-#ifdef ENABLE_FRAG
 	if (ISAKMP_GETMAJORV(isakmp.v) == ISAKMP_MAJOR_VERSION &&
 	    buf->l >= sizeof(struct isakmp) &&
 	    ((struct isakmp *)buf->v)->np == ISAKMP_NPTYPE_FRAG) {
@@ -1135,7 +1130,6 @@ isakmp_handler(int so_isakmp)
 		delph1(frag_iph1);
 		frag_iph1 = NULL;
 	}
-#endif
 	switch (ISAKMP_GETMAJORV(isakmp.v)) {
 #ifdef IKEV1
 	case ISAKMP_MAJOR_VERSION:
