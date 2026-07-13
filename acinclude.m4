@@ -339,7 +339,6 @@ case $host in
 esac
 ])
 
-dnl
 dnl check mkdep
 dnl
 AC_DEFUN([RC_PROG_MKDEP],

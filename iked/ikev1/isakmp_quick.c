@@ -1699,7 +1699,7 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 	plog(PLOG_DEBUG, PLOGLOC, NULL,
 	     "IKEv1 phase 1 endpoints src<=>dst: %s<=>%s\n",
 	     rcs_sa2str(iph2->src), rcs_sa2str(iph2->dst));
-#if 0
+
 	/* generate policy */
 	int lifetime;
 	struct rcf_selector *s;
@@ -1708,6 +1708,7 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 		TRACE((PLOGLOC, "rcf_get_selectorlist() failed\n"));
 		return 0;
         }
+
 	for (; s; s_next = s->next, rcf_free_selector(s), s = s_next) {
 		if (s->direction != RCT_DIR_OUTBOUND)
 			continue;
@@ -1785,9 +1786,107 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 				goto end;
 			}
 		}
+
+		if (rcs_is_addr_rw(s->dst) && ike_ipsec_mode(s->pl) == RCT_IPSM_TUNNEL)
+		{
+		    if (!iph2->dst_id)
+		    {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+				"dst_id is NULL, skip policy generation for this selector\n");
+			continue;
+		    }
+
+		    IPSEC_CONF(lifetime, s->pl->ips,
+			    ipsec_sa_lifetime_time, 0);
+
+		    s->dst->type = RCT_ADDR_INET;
+
+		    const struct sockaddr* inner_dst = iph2->dst_id;
+
+		    rc_vfree(s->dst->a.vstr);
+
+		    s->dst->a.ipaddr = rcs_sadup(inner_dst);
+
+		    if (s->dst->a.ipaddr->sa_family == AF_INET)
+			s->dst->prefixlen = 32;
+		    if (s->dst->a.ipaddr->sa_family == AF_INET6)
+			s->dst->prefixlen = 128;
+
+		    const struct rc_addrlist* al_dst = s->dst;
+
+		    plog(PLOG_INFO, PLOGLOC, NULL,
+			    "Generating policy for dst=%s",
+			    rcs_addrlist2str(al_dst));
+
+		    if (ike_spmif_post_policy_add(s, ike_ipsec_mode(s->pl),
+				lifetime, NULL, NULL, iph2->ph1->rmconf) < 0)
+		    {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+				"generate policy failed.\n");
+
+			struct rcf_selector *n, *next;
+
+			for (n = s; n; n = next)
+			{
+			    next = n->next;
+			    rcf_free_selector(n);
+			}
+
+			goto end;
+		    }
+
+		}
+
+		if (rcs_is_addr_rw(s->src) && ike_ipsec_mode(s->pl) == RCT_IPSM_TUNNEL)
+		{
+		    if (!iph2->src_id)
+		    {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+				"src_id is null, skip generation policy for this selector\n");
+			continue;
+		    }
+
+		    IPSEC_CONF(lifetime, s->pl->ips,
+			    ipsec_sa_lifetime_time, 0);
+		    s->src->type = RCT_ADDR_INET;
+		    const struct sockaddr *inner_src = iph2->src_id;
+		    rc_vfree(s->src->a.vstr);
+
+		    s->src->a.ipaddr = rcs_sadup(inner_src);
+
+		    if (s->src->a.ipaddr->sa_family == AF_INET)
+			s->src->prefixlen = 32;
+
+		    if (s->src->a.ipaddr->sa_family == AF_INET6)
+			s->src->prefixlen = 128;
+
+		    const struct rc_addrlist* al_src = s->src;
+		    //const struct rc_addrlist* al_dst = s->dst;
+
+		    plog(PLOG_INFO, PLOGLOC, NULL,
+			    "Generating policy for src=%s",
+			    rcs_addrlist2str(al_src));
+
+		    if (ike_spmif_post_policy_add(s, ike_ipsec_mode(s->pl),
+				lifetime, NULL, NULL, iph2->ph1->rmconf) < 0)
+		    {
+			plog(PLOG_INTERR, PLOGLOC, NULL,
+				"generate policy failed.\n");
+
+			struct rcf_selector *n, *next;
+
+			for (n = s; n; n = next)
+			{
+			    next = n->next;
+			    rcf_free_selector(n);
+			}
+
+			goto end;
+
+		    }
+		}
 		/* XXX Handle IP_RW in tunnel mode here */
 	}
-#endif
 	/* Do UPDATE as responder */
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "call pk_sendupdate\n");
 	if (pk_sendupdate(iph2) < 0) {

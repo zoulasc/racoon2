@@ -350,9 +350,7 @@ delph1(struct ph1handle *iph1)
 	VPTRINIT(iph1->sa);
 	VPTRINIT(iph1->sa_ret);
 
-#ifdef ENABLE_FRAG
 	isakmp_frag_purge(iph1);
-#endif
 #ifdef HAVE_GSSAPI
 	VPTRINIT(iph1->gi_i);
 	VPTRINIT(iph1->gi_r);

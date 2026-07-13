@@ -466,10 +466,8 @@ isakmp_info_send_nx(struct isakmp *isakmp, struct sockaddr *remote, struct socka
 		goto end;
 	}
 #endif
-#ifdef ENABLE_FRAG
 	iph1->frag = 0;
 	iph1->frag_chain = NULL;
-#endif
 	iph1->proposal = ikev1_conf_to_isakmpsa(rmconf);
 
 	/* copy remote address */

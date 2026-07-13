@@ -70,21 +70,6 @@ AC_MSG_RESULT($enable_natt)
 ])
 
 dnl
-dnl check if IKE fragmentation is available.
-dnl
-AC_DEFUN([RC_IF_FRAG_ENABLE],
-[
-AC_MSG_CHECKING(if --enable-frag option is specified)
-AC_ARG_ENABLE(frag, [  --enable-frag           enable IKE fragmentation support (RFC 7383)],
-	[], [enable_frag=no])
-if test x"$enable_frag" = xyes; then
-	AC_DEFINE(ENABLE_FRAG, 1, [define to enable IKE fragmentation support])
-fi
-AC_MSG_RESULT($enable_frag)
-])
-
-
-dnl
 dnl build debugging version
 dnl
 AC_DEFUN([RC_IF_BUILD_DEBUG],

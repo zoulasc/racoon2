@@ -66,8 +66,6 @@
 
 #include "debug.h"
 
-#ifdef ENABLE_FRAG
-
 /*
  * Fragment and send an IKEv2 packet.
  * Called after ikev2_packet_construct() when the constructed packet
@@ -730,5 +728,3 @@ ikev2_frag_purge(struct ikev2_sa *ike_sa)
 
 	ike_sa->frag_chain = NULL;
 }
-
-#endif /* ENABLE_FRAG */

@@ -2204,13 +2204,12 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 #ifdef ENABLE_NATT
 	size_t extralen = NON_ESP_MARKER_USE(iph1) ? NON_ESP_MARKER_LEN : 0;
 
-#ifdef ENABLE_FRAG
 	/*
 	 * Do not add the non ESP marker for a packet that will
 	 * be fragmented. The non ESP marker should appear in
 	 * all fragment's packets, but not in the fragmented packet
 	 */
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN)
+	if (sbuf->l > ISAKMP_FRAG_MAXLEN)
 		extralen = 0;
 #endif
 	if (extralen)
@@ -2229,7 +2228,6 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 		memcpy (vbuf->u + extralen, sbuf->v, sbuf->l);
 		sbuf = vbuf;
 	}
-#endif
 
 	/* select the socket to be sent */
 	s = getsockmyaddr(iph1->local);
@@ -2242,8 +2240,7 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "%zu bytes from %s to %s\n",
 	     sbuf->l, rcs_sa2str(iph1->local), rcs_sa2str(iph1->remote));
 
-#ifdef ENABLE_FRAG
-	if (ikev1_frag_enabled(iph1->rmconf) && sbuf->l > ISAKMP_FRAG_MAXLEN) {
+	if (sbuf->l > ISAKMP_FRAG_MAXLEN) {
 		if (isakmp_sendfrags(iph1, sbuf) == -1) {
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "isakmp_sendfrags failed\n");
@@ -2252,7 +2249,6 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 			return -1;
 		}
 	} else
-#endif
 	{
 		len = sendfromto(s, sbuf->v, sbuf->l, iph1->local,
 		    iph1->remote, ikev1_times_per_send(iph1->rmconf));
@@ -2271,7 +2267,6 @@ isakmp_send(struct ph1handle *iph1, rc_vchar_t *sbuf)
 	return 0;
 }
 
-#ifdef ENABLE_FRAG
 int isakmp_sendfrags(struct ph1handle *iph1, rc_vchar_t *buf)
 {
 	size_t hdrlen = sizeof(struct isakmp);
@@ -2351,7 +2346,6 @@ int isakmp_sendfrags(struct ph1handle *iph1, rc_vchar_t *buf)
 
 	return 0;
 }
-#endif
 
 void
 ikev1_set_rmconf(struct ph1handle *iph1, struct rcf_remote *conf)

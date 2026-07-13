@@ -31,10 +31,8 @@
  */
 
 #include "ike_pfkey.h"
-#ifdef ENABLE_FRAG
 #include "vmbuf.h"   /* for rc_vchar_t */
 #include "isakmp_var.h"  /* for ISAKMP_MAX_FRAGS */
-#endif
 
 /* Phase 1 handler */
 /*
@@ -100,7 +98,6 @@
  * acquire msg		I	R
  * ID payload		I	R		I	R
  */
-#ifdef ENABLE_FRAG
 /*
  * IKEv1 fragmentation context.
  */
@@ -112,7 +109,6 @@ struct isakmp_frag_item {
 	struct isakmp_frag_item *next;
 	rc_vchar_t *parts[ISAKMP_MAX_FRAGS];
 };
-#endif
 struct ph1handle {
 	isakmp_index_t	index;
 
@@ -140,11 +136,9 @@ struct ph1handle {
 	struct ph1natt_options *natt_options;	/* Selected NAT-T IKE version */
 	uint32_t natt_flags;		/* NAT-T related flags */
 #endif
-#ifdef ENABLE_FRAG
 	int frag;			/* IKE phase 1 fragmentation */
 	uint32_t frag_msgid;		/* IKE phase 1 fragment message ID */
 	struct isakmp_frag_item *frag_chain;	/* Received fragments */
-#endif
 
 	int dpd_support;	/* Does remote supports DPD ? */
 	time_t dpd_lastack;	/* Last ack received */

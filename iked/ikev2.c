@@ -227,7 +227,6 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 
 	ike_sa = ikev2_find_sa(packet);
 
-#ifdef ENABLE_FRAG
 
 	/*
 	 * Handle IKEv2 fragment (SKF) reassembly BEFORE payload checking.
@@ -251,7 +250,6 @@ ikev2_input(rc_vchar_t *packet, struct sockaddr *remote, struct sockaddr *local)
 		ike_sa = ikev2_find_sa(packet);
 		reassembled = 1;
 	}
-#endif
 
 	if (ikev2_check_payloads(packet, TRUE) != 0) {
 		isakmp_log(0, local, remote, packet, PLOG_PROTOERR, PLOGLOC,
@@ -616,7 +614,6 @@ ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 	TRACE((PLOGLOC, "ikev2_transmit(%p, %p) len %d\n",
 	       ike_sa, packet, (int)packet->l));
 
-#ifdef ENABLE_FRAG
 	if (ike_sa != NULL && ike_sa->frag_supported) 
 	{
 	    if (SOCKADDR_FAMILY(ike_sa->remote) == AF_INET)
@@ -633,7 +630,6 @@ ikev2_transmit(struct ikev2_sa *ike_sa, rc_vchar_t *packet)
 	    }
 		/* fragmentation not needed or failed, send original */
 	}
-#endif
 
 	if (packet->l > IKEV2_SHOULD_SUPPORT_PACKET_SIZE) {
 		isakmp_log(ike_sa, 0, 0, 0,
@@ -655,7 +651,6 @@ ikev2_transmit_response(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 	TRACE((PLOGLOC, "ikev2_transmit_response(%p, %p) len %d\n",
 	       ike_sa, packet, (int)packet->l));
 
-#ifdef ENABLE_FRAG
 	if (ike_sa->frag_supported) {
 	    if (SOCKADDR_FAMILY(ike_sa->remote) == AF_INET)
 	    {
@@ -671,7 +666,6 @@ ikev2_transmit_response(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 	    }
 		/* fragmentation not needed or failed, send original */
 	}
-#endif
 
 	if (packet->l > IKEV2_SHOULD_SUPPORT_PACKET_SIZE) {
 		INFO((PLOGLOC,
@@ -1021,7 +1015,6 @@ ikev2_initiator_start(struct ikev2_sa *ike_sa)
 	}
 #endif
 
-#ifdef ENABLE_FRAG
 	/*
 	 * [N(IKEV2_FRAGMENTATION_SUPPORTED)]
 	 */
@@ -1030,7 +1023,6 @@ ikev2_initiator_start(struct ikev2_sa *ike_sa)
 						 IKEV2_FRAGMENTATION_SUPPORTED,
 						 0, 0),
 			    TRUE);
-#endif
 	pkt = ikev2_packet_construct(IKEV2EXCH_IKE_SA_INIT, IKEV2FLAG_INITIATOR,
 				     0, ike_sa, &payl);
 	if (!pkt)
@@ -1435,7 +1427,6 @@ responder_state0_send(struct ikev2_sa *ike_sa, struct sockaddr *src,
 	}
 #endif
 
-#ifdef ENABLE_FRAG
 	/*
 	 * [N(IKEV2_FRAGMENTATION_SUPPORTED)]
 	 */
@@ -1446,7 +1437,6 @@ responder_state0_send(struct ikev2_sa *ike_sa, struct sockaddr *src,
 							 0, 0),
 				    TRUE);
 	}
-#endif
 
 	pkt = ikev2_packet_construct(IKEV2EXCH_IKE_SA_INIT, IKEV2FLAG_RESPONSE,
 				     0, ike_sa, &payl);
