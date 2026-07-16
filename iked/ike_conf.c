@@ -2589,6 +2589,9 @@ addrlist_match(struct rc_addrlist *l, struct sockaddr *addr)
 			if (sockaddr_compare_with_prefix(addr, l->a.ipaddr, prefixlen))
 				return TRUE;
 			break;
+		case RCT_ADDR_MACRO:
+			/* IP_RW and IP_ANY wildcards match any concrete address */
+			return TRUE;
 		default:
 			isakmp_log(0, 0, 0, 0,
 				   PLOG_INTERR, PLOGLOC,

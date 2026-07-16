@@ -165,8 +165,8 @@ struct ph2handle;		/* forward decl */
 extern int set_proposal_from_policy (struct ph2handle *,
 					 struct rcf_remote *,
 					 struct rcf_policy *);
-/*
-extern int set_proposal_from_policy (struct ph2handle *,
-   struct secpolicy *, struct secpolicy *);
+
+/*extern int set_proposal_from_policy (struct ph2handle *,
+   struct secpolicy *, struct secpolicy *);*/
 extern int set_proposal_from_proposal (struct ph2handle *);
-*/
+

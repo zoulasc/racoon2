@@ -98,17 +98,7 @@
  * acquire msg		I	R
  * ID payload		I	R		I	R
  */
-/*
- * IKEv1 fragmentation context.
- */
-struct isakmp_frag_item {
-	uint8_t frag_id;
-	uint32_t msgid;
-	int last_frag;
-	int nfrags;
-	struct isakmp_frag_item *next;
-	rc_vchar_t *parts[ISAKMP_MAX_FRAGS];
-};
+
 struct ph1handle {
 	isakmp_index_t	index;
 
@@ -324,6 +314,18 @@ struct ph2handle {
 
 	          LIST_ENTRY(ph2handle) chain;
 	          LIST_ENTRY(ph2handle) ph1bind;	/* chain to ph1handle */
+};
+
+/*
+ * IKEv1 fragmentation context.
+ */
+struct isakmp_frag_item {
+	uint8_t frag_id;
+	uint32_t msgid;
+	int last_frag;
+	int nfrags;
+	struct isakmp_frag_item *next;
+	rc_vchar_t *parts[ISAKMP_MAX_FRAGS];
 };
 
 /*

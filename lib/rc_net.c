@@ -328,7 +328,7 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 	int error;
 
 	lastap = &new_head;
-
+#ifdef INET6
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -358,7 +358,7 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 		lastap = &new->next;
 	}
 	freeaddrinfo(ai);
-
+#endif
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
