@@ -698,7 +698,6 @@ err:
 	return -1;
 }
 
-
 #if 0
 int
 set_satrnsbysainfo(pr, sainfo)
@@ -805,6 +804,7 @@ err:
 	flushsatrns(pr->head);
 	return -1;
 }
+
 #endif
 
 struct saprop *
@@ -1327,15 +1327,13 @@ err:
 }
 #endif
 
-#if 0
 /*
  * generate a policy from peer's proposal.
  * this function unconditionally choices first proposal in SA payload
  * passed by peer.
  */
 int
-set_proposal_from_proposal(iph2)
-	struct ph2handle *iph2;
+set_proposal_from_proposal(struct ph2handle* iph2)
 {
         struct saprop *newpp = NULL, *pp0, *pp_peer = NULL;
 	struct saproto *newpr = NULL, *pr;
@@ -1365,10 +1363,11 @@ set_proposal_from_proposal(iph2)
 				"failed to allocate saprop.\n");
 			goto end;
 		}
+
 		pp0->prop_no = 1;
-		pp0->lifetime = iph2->sainfo->lifetime;
-		pp0->lifebyte = iph2->sainfo->lifebyte;
-		pp0->pfs_group = iph2->sainfo->pfs_group;
+		pp0->lifetime = pp_peer->lifetime;
+		pp0->lifebyte = pp_peer->lifebyte;
+		pp0->pfs_group = pp_peer->pfs_group;
 
 		if (pp_peer->next != NULL) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
@@ -1391,15 +1390,33 @@ set_proposal_from_proposal(iph2)
 			newpr->spi_p = pr->spi;	/* copy peer's SPI */
 			newpr->reqid_in = 0;
 			newpr->reqid_out = 0;
+
+			struct satrns *tr;
+
+			for (tr = pr->head; tr; tr = tr->next)
+			{
+			    struct satrns* newtr = newsatrns();
+
+			    if (newtr == NULL)
+			    {
+				plog(PLOG_INTERR, PLOGLOC, NULL,
+					"failed to allocate satrns\n");
+				goto end;
+			    }
+
+			    *newtr = *tr;
+
+			    newtr->trns_no = tr->trns_no;
+			    newtr->trns_id = tr->trns_id;
+			    newtr->encklen = tr->encklen;
+			    newtr->authtype = tr->authtype;
+			    newtr->next = tr->next;
+
+			    inssatrns(newpr, newtr);
+			}
+			inssaproto(pp0, newpr);
 		}
 
-		if (set_satrnsbysainfo(newpr, iph2->sainfo) < 0) {
-			plog(PLOG_INTERR, PLOGLOC, NULL,
-				"failed to get algorithms.\n");
-			goto end;
-		}
-
-		inssaproto(pp0, newpr);
 		inssaprop(&newpp, pp0);
 	}
 
@@ -1420,4 +1437,3 @@ end:
 		free_proppair(pair);
 	return error;
 }
-#endif
