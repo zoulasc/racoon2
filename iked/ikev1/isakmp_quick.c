@@ -1718,7 +1718,7 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 			continue;
 		/* In transport mode, the dst address is the same as the phase 1 endpoint address
 		   This will usually be the case when we are a VPN server responder */
-		if (rcs_is_addr_rw(s->dst) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+		if (rcs_is_addr_rw(s->pl->peers_sa_ipaddr) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
 			IPSEC_CONF(lifetime, s->pl->ips,
 				   ipsec_sa_lifetime_time, 0);
 			s->dst->type = RCT_ADDR_INET;
@@ -1753,7 +1753,7 @@ quick_r3prep(struct ph2handle *iph2, rc_vchar_t *msg0)
 		}
 		/* In transport mode, the src address is the same as the phase 1 endpoint address
 		   This will usually be the case when we are a VPN client initiator */
-		if (rcs_is_addr_rw(s->src) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
+		if (rcs_is_addr_rw(s->pl->my_sa_ipaddr) && ike_ipsec_mode(s->pl) == RCT_IPSM_TRANSPORT) {
 			IPSEC_CONF(lifetime, s->pl->ips,
 				   ipsec_sa_lifetime_time, 0);
 			s->src->type = RCT_ADDR_INET;
