@@ -46,6 +46,11 @@
 # include <netinet6/in6_var.h>		/* for in6_ifreq */
 #endif
 
+#ifdef __linux__
+# include <ifaddrs.h>
+# include <linux/if_addr.h>
+#endif
+
 #ifdef HAVE_GETIFADDRS
 #include <ifaddrs.h>
 #endif
@@ -144,10 +149,11 @@ rcs_is_addr_any(struct rc_addrlist *al)
 int
 rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 {
-	char *buf, *p, *ifname;
+	char *buf, *p, *ifname, *mname;
 	struct rcs_addrmacro *mx;
 	struct rc_addrlist *al;
 	int error = -1;
+	size_t mname_len = 0;
 
 	if ((buf = rc_malloc(m->l + 1)) == NULL)
 		return EAI_MEMORY;
@@ -155,11 +161,21 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 	buf[m->l] = '\0';
 
 	if ((p = strrchr(buf, '%')) != NULL && *(p + 1) != '\0') {
+		mname_len = p - buf;
+
+		if ((mname = rc_malloc(mname_len - 1)) == NULL)
+		    return EAI_MEMORY;
+
+		memcpy(mname, buf, mname_len);
+		mname[mname_len] = '\0';
+
 		*p = '\0';
 		ifname = p + 1;
 	} else
-		ifname = NULL;
-	if ((mx = find_addrmacro(buf)) == NULL) {
+	{
+	    ifname = NULL;
+	}
+	if ((mx = find_addrmacro(mname)) == NULL) {
 		error = EAI_NONAME;
 		goto end;
 	}
@@ -186,8 +202,12 @@ find_addrmacro(const char *buf)
 		if (len != plen)
 			continue;
 		if (memcmp(buf, rcs_addrmacro_list[i].macro, len) == 0)
-			return &rcs_addrmacro_list[i];
+		    return &rcs_addrmacro_list[i];
+		
 	}
+
+	plog(PLOG_DEBUG, PLOGLOC, 0,
+		"unknown addrmacro: %s\n", buf);
 
 	return NULL;
 }
@@ -407,7 +427,11 @@ getifaddrlist(int family, const char *ifname)
 	struct ifaddrs *ifa0, *ifap;
 
 	if (getifaddrs(&ifa0))
-		return NULL;
+	{
+	    plog(PLOG_INTERR, PLOGLOC, NULL,
+		    "getifaddrs failed\n");
+	    return NULL;
+	}
 
 	for (ifap = ifa0; ifap; ifap = ifap->ifa_next) {
 		if (!ifap->ifa_addr)
@@ -615,7 +639,40 @@ static int
 suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 {
 #ifdef __linux__
-	return 1;		/* XXX FIXME */
+
+	struct ifaddrs *ifa = 0, *ifl;
+	unsigned int suitable;
+
+	if (ifaddr == NULL || ifaddr->sa_family != AF_INET6)
+	    return 0;
+
+	if(getifaddrs(&ifl))
+	    return 0;
+
+	for (ifa = ifl; ifa != NULL; ifa = ifa->ifa_next)
+	{
+	   if (strcmp(ifa->ifa_name, ifname) != 0) 
+	       continue;
+
+	   struct sockaddr_in6 *sin6_list = (struct sockaddr_in6*)ifa->ifa_addr;
+	   struct sockaddr_in6 *sin6_target = (struct sockaddr_in6*)ifaddr;
+
+	   if (memcmp(&sin6_list->sin6_addr, &sin6_target->sin6_addr, sizeof(struct in6_addr)) == 0)
+	   {
+	       if (ifa->ifa_data)
+	       {
+		   unsigned int flags = *(unsigned int*)ifa->ifa_data;
+
+		   if (flags & IFA_F_DADFAILED || flags & IFA_F_TENTATIVE)
+		       suitable = 0;
+		   else
+		       suitable = 1;
+		   break;
+	       }
+	   }
+	}
+
+	return suitable;
 #else
 	struct in6_ifreq ifr6;
 	int s;
@@ -1224,9 +1281,16 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 			if (san->sin_addr.s_addr == 0)
 				return 1;
 
+			if (address->prefixlen == 0)
+			{
+			    plog(PLOG_INFO, PLOGLOC, NULL,
+				    "IPv4 prefixlen=0, match ANY\n");
+			    return 1;
+			}
+
 			/* If selector's masked address matches the
 		 	 * peer's masked address, match the peer's address */
-			if (address->prefixlen > 0 && address->prefixlen < 32) {
+			if (address->prefixlen < 32) {
 				uint32_t mask = 0;
 				rcs_in_prefixlen2mask(&mask, address->prefixlen);
 				if(((sin->sin_addr.s_addr ^
@@ -1270,4 +1334,4 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 		}
 	}
 	return 0;
-}
+};
