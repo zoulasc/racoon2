@@ -4404,7 +4404,10 @@ ike_determine_sa_endpoint(struct sockaddr_storage *ss,
 		plog(PLOG_DEBUG, PLOGLOC, 0, "MACRO %.*s %s\n",
 		    (int)config_ipaddr->a.vstr->l,
 		    config_ipaddr->a.vstr->s, rcs_sa2str(actual_addr));
+
 		if (!rcs_matchaddr(addrlist, actual_addr)) {
+		    plog(PLOG_INTERR, PLOGLOC, 0,
+			    "rcs_matchaddr() failed\n");
 			return NULL;
 		}
 
