@@ -167,15 +167,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 # check for struct sockaddr
 RC_IF_SA_LEN
 
-# check for --enable-ipv6
-RC_IF_IPV6_ENABLE
-if test "$ipv6" = "yes"; then
-    AC_MSG_CHECKING(for advanced API support)
-    AC_CACHE_VAL(racoon_cv_advapi, [dnl
+# check for IPv6 advanced API support
+AC_MSG_CHECKING(for advanced API support)
+AC_CACHE_VAL(racoon_cv_advapi, [dnl
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#ifndef INET6
-#define INET6
-#endif
 #include <sys/types.h>
 #include <netinet/in.h>
 ]], [[struct in6_pktinfo a;]])],[racoon_cv_advapi="yes"],[racoon_cv_advapi="no"])])
@@ -187,9 +182,6 @@ if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if _GNU_SOURCE is required)
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
-#ifndef INET6
-#define INET6
-#endif
 #include <sys/types.h>
 #include <netinet/in.h>
 ]], [[struct in6_pktinfo a;]])],[racoon_cv_advapi="yes"],[racoon_cv_advapi="no"])
@@ -197,7 +189,6 @@ if test "$ipv6" = "yes"; then
 	AC_DEFINE(ADVAPI, 1, [define if IPv6 advanced API is available])
 	AC_DEFINE(_GNU_SOURCE, 1, [define for glibc to use ADVAPI])
     fi
-fi
 
 # Checks for libraries.
 

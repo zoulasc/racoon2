@@ -103,10 +103,8 @@
 static rc_vchar_t *quick_ir1mx (struct ph2handle *, rc_vchar_t *, rc_vchar_t *);
 static int get_sainfo_r (struct ph2handle *);
 static int get_proposal_r (struct ph2handle *);
-#ifdef INET6
 static uint32_t setscopeid (struct sockaddr *, struct sockaddr *)
 	GCC_ATTRIBUTE((unused));
-#endif
 
 /* called from scheduler */
 void
@@ -2102,7 +2100,6 @@ get_proposal_r(struct ph2handle *iph2)
 		if (error)
 			return error;
 
-#ifdef INET6
 		/*
 		 * get scopeid from the SA address.
 		 * note that the phase 1 source address is used as
@@ -2115,7 +2112,6 @@ get_proposal_r(struct ph2handle *iph2)
 			if (error)
 				return error;
 		}
-#endif
 
 		if (_XIDT(iph2->id) == IPSECDOI_ID_IPV4_ADDR
 		 || _XIDT(iph2->id) == IPSECDOI_ID_IPV6_ADDR)
@@ -2139,11 +2135,9 @@ get_proposal_r(struct ph2handle *iph2)
 		case AF_INET:
 			spidx.prefd = sizeof(struct in_addr) << 3;
 			break;
-#ifdef INET6
 		case AF_INET6:
 			spidx.prefd = sizeof(struct in6_addr) << 3;
 			break;
-#endif
 		default:
 			spidx.prefd = 0;
 			break;
@@ -2163,7 +2157,6 @@ get_proposal_r(struct ph2handle *iph2)
 		if (error)
 			return error;
 
-#ifdef INET6
 		/*
 		 * get scopeid from the SA address.
 		 * for more detail, see above of this function.
@@ -2174,7 +2167,6 @@ get_proposal_r(struct ph2handle *iph2)
 			if (error)
 				return error;
 		}
-#endif
 
 		/* make id[src,dst] if both ID types are IP address and same */
 		if (_XIDT(iph2->id_p) == idi2type
@@ -2196,11 +2188,9 @@ get_proposal_r(struct ph2handle *iph2)
 		case AF_INET:
 			spidx.prefs = sizeof(struct in_addr) << 3;
 			break;
-#ifdef INET6
 		case AF_INET6:
 			spidx.prefs = sizeof(struct in6_addr) << 3;
 			break;
-#endif
 		default:
 			spidx.prefs = 0;
 			break;
@@ -2309,7 +2299,6 @@ get_proposal_r(struct ph2handle *iph2)
 #endif
 }
 
-#ifdef INET6
 static uint32_t
 setscopeid(struct sockaddr *sp_addr0, struct sockaddr *sa_addr0)
 {
@@ -2340,4 +2329,3 @@ setscopeid(struct sockaddr *sp_addr0, struct sockaddr *sa_addr0)
 
 	return 0;
 }
-#endif

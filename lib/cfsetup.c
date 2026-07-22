@@ -2666,13 +2666,11 @@ str2addr(rc_vchar_t *str, int *af, uint8_t *addr)
 			    + offsetof(struct sockaddr_in, sin_addr);
 			alen = sizeof(struct in_addr);
 			break;
-#ifdef INET6
 		case AF_INET6:
 			a = ((uint8_t *)(void *)p->ai_addr)
 			    + offsetof(struct sockaddr_in6, sin6_addr);
 			alen = sizeof(struct in6_addr);
 			break;
-#endif
 		default:
 			plog(PLOG_INTWARN, PLOGLOC, NULL,
 			     "ignoring unsupported address (family %d) returned by getaddrinfo(%s)\n",

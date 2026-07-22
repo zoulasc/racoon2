@@ -140,11 +140,9 @@ getlocaladdr(struct sockaddr *remote, struct sockaddr *hint, int lport)
 	case AF_INET:
 		((struct sockaddr_in *)local)->sin_port = htons(lport);
 		break;
-#ifdef INET6
 	case AF_INET6:
 		((struct sockaddr_in6 *)local)->sin6_port = htons(lport);
 		break;
-#endif
 	default:
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "getlocaladdr: unexpected address family (%d)\n",
@@ -179,9 +177,7 @@ recvfromto(int s, void *buf, size_t buflen, int flags,
 #if defined(INET6) && defined(ADVAPI)
 	struct in6_pktinfo *pi;
 #endif	 /*ADVAPI*/
-#ifdef INET6
 	struct sockaddr_in6 *sin6;
-#endif
 
 	sslen = sizeof(ss);
 	if (getsockname(s, (struct sockaddr *)&ss, &sslen) < 0) {
@@ -527,12 +523,10 @@ setsockopt_bypass(int fd, int family)
 		level = IPPROTO_IP;
 		optname = IP_IPSEC_POLICY;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		level = IPPROTO_IPV6;
 		optname = IPV6_IPSEC_POLICY;
 		break;
-#endif
 	default:
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "unsupported address family (%d)\n", family);

@@ -983,12 +983,10 @@ ike_aton(rc_vchar_t *s, int *af)
 				a = (uint8_t *)&((struct sockaddr_in *)p->ai_addr)->sin_addr;
 				alen = sizeof(struct in_addr);
 				break;
-#ifdef INET6
-			case AF_INET6:
-				a = (uint8_t *)&((struct sockaddr_in6 *)p->ai_addr)->sin6_addr;
-				alen = sizeof(struct in6_addr);
-				break;
-#endif
+		case AF_INET6:
+			a = (uint8_t *)&((struct sockaddr_in6 *)p->ai_addr)->sin6_addr;
+			alen = sizeof(struct in6_addr);
+			break;
 			default:
 				isakmp_log(0, 0, 0, 0,
 					   PLOG_INTWARN, PLOGLOC,
@@ -1043,12 +1041,10 @@ ike_identifier_data(struct rc_idlist *id, int *id_type)
 			case AF_INET:
 				*id_type = IKEV2_ID_IPV4_ADDR;
 				break;
-#ifdef INET6
-			case AF_INET6:
-				*id_type = IKEV2_ID_IPV6_ADDR;
-				break;
-#endif
-			default:	/* shouldn't happen: addrbuf must be 0 */
+		case AF_INET6:
+			*id_type = IKEV2_ID_IPV6_ADDR;
+			break;
+		default:	/* shouldn't happen: addrbuf must be 0 */
 				rc_vfree(data);
 				return 0;
 			}
@@ -1213,9 +1209,7 @@ ikev1_id2rct_id(rc_vchar_t *id_p, rc_type *type)
 	case IPSECDOI_ID_KEY_ID:
 	case IPSECDOI_ID_DER_ASN1_DN:
 	case IPSECDOI_ID_IPV4_ADDR:
-#ifdef INET6
 	case IPSECDOI_ID_IPV6_ADDR:
-#endif
 		rc_id_type = ikev1_id_to_rc(id_b->type);
 		idbuf = rc_vnew((uint8_t *)(id_b + 1), id_len);
 		break;
@@ -1254,9 +1248,7 @@ ikev2_id2rct_id(struct ikev2_payload_header *payl, rc_type *type)
 	case IKEV2_ID_KEY_ID:
 	case IKEV2_ID_DER_ASN1_DN:
 	case IKEV2_ID_IPV4_ADDR:
-#ifdef INET6
 	case IKEV2_ID_IPV6_ADDR:
-#endif
 		rc_id_type = ikev2_id_to_rc(id->id_h.id_type);
 		idbuf = rc_vnew((uint8_t *)(id + 1), id_len);
 		break;
@@ -1515,7 +1507,6 @@ sockaddr_in_compare_with_prefix(struct sockaddr_in *addr,
 	return FALSE;
 }
 
-#ifdef INET6
 static int
 sockaddr_in6_compare_with_prefix(struct sockaddr_in6 *addr,
 				 struct sockaddr_in6 *netaddr,
@@ -1524,7 +1515,6 @@ sockaddr_in6_compare_with_prefix(struct sockaddr_in6 *addr,
 	return compare_bits(&addr->sin6_addr.s6_addr[0],
 			    &netaddr->sin6_addr.s6_addr[0], prefixlen);
 }
-#endif
 
 static int
 sockaddr_compare_with_prefix(struct sockaddr *addr,
@@ -1539,13 +1529,11 @@ sockaddr_compare_with_prefix(struct sockaddr *addr,
 						       (struct sockaddr_in *)netaddr,
 						       prefixlen);
 		break;
-#ifdef INET6
 	case AF_INET6:
 		return sockaddr_in6_compare_with_prefix((struct sockaddr_in6 *)addr,
 							(struct sockaddr_in6 *)netaddr,
 							prefixlen);
 		break;
-#endif
 	default:
 		isakmp_log(0, 0, 0, 0,
 			   PLOG_INTERR, PLOGLOC,
@@ -1579,7 +1567,6 @@ match_addr_ipv4(struct sockaddr *addr, int prefixlen,
 	return (s == (a & ~bits) && (a | bits) == e);
 }
 
-#ifdef INET6
 static int
 match_addr_ipv6(struct sockaddr *addr, int prefixlen,
 		uint8_t *start_addr, uint8_t *end_addr)
@@ -1609,7 +1596,6 @@ match_addr_ipv6(struct sockaddr *addr, int prefixlen,
 	}
 	return TRUE;
 }
-#endif
 
 static int addr_match(int, struct sockaddr *, int, uint8_t *, uint8_t *)
 	GCC_ATTRIBUTE((unused));
@@ -1621,10 +1607,8 @@ addr_match(int type, struct sockaddr *addr, int prefixlen,
 	switch (type) {
 	case IKEV2_TS_IPV4_ADDR_RANGE:
 		return match_addr_ipv4(addr, prefixlen, start_addr, end_addr);
-#ifdef INET6
 	case IKEV2_TS_IPV6_ADDR_RANGE:
 		return match_addr_ipv6(addr, prefixlen, start_addr, end_addr);
-#endif
 	default:
 		return FALSE;
 	}
@@ -1636,10 +1620,8 @@ sockaddr_port(struct sockaddr *addr)
 	switch (SOCKADDR_FAMILY(addr)) {
 	case AF_INET:
 		return ntohs(((struct sockaddr_in *)addr)->sin_port);
-#ifdef INET6
 	case AF_INET6:
 		return ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
-#endif
 	default:
 		return -1;	/* shouldn't happen */
 	}
@@ -1961,12 +1943,10 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
 		addrptr = (uint8_t *)&((struct sockaddr_in *)addr)->sin_addr.s_addr;
 		addrsize = sizeof(struct in_addr);
 		break;
-#ifdef INET6
 	case AF_INET6:
 		addrptr = (uint8_t *)&((struct sockaddr_in6 *)addr)->sin6_addr;
 		addrsize = sizeof(struct in6_addr);
 		break;
-#endif
 	default:
 		return 0;
 	}
@@ -1989,11 +1969,9 @@ ts_match(struct ikev2payl_traffic_selector *ts, int num_ts,
 	case AF_INET:
 		r_ts->ts_type = IKEV2_TS_IPV4_ADDR_RANGE;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		r_ts->ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
 		break;
-#endif
 	}
 	r_ts->protocol_id = proto;
 	put_uint16(&r_ts->selector_length,
@@ -2055,12 +2033,10 @@ ts_add_return(rc_vchar_t *ptr, int proto, struct sockaddr *addr, int prefixlen)
 		addrptr = (uint8_t *)&((struct sockaddr_in *)addr)->sin_addr.s_addr;
 		addrsize = sizeof(struct in_addr);
 		break;
-#ifdef INET6
 	case AF_INET6:
 		addrptr = (uint8_t *)&((struct sockaddr_in6 *)addr)->sin6_addr;
 		addrsize = sizeof(struct in6_addr);
 		break;
-#endif
 	default:
 		return ptr;
 	}
@@ -2076,11 +2052,9 @@ ts_add_return(rc_vchar_t *ptr, int proto, struct sockaddr *addr, int prefixlen)
 	case AF_INET:
 		r_ts->ts_type = IKEV2_TS_IPV4_ADDR_RANGE;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		r_ts->ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
 		break;
-#endif
 	}
 	r_ts->protocol_id = proto;
 	put_uint16(&r_ts->selector_length,

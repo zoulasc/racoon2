@@ -37,20 +37,7 @@ AC_MSG_RESULT(${kernel_build_dir})
 
 dnl check if ipv6 is available.
 AC_MSG_CHECKING(if ipv6 is available)
-AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6           enable ipv6 (with ipv4) support
-  --disable-ipv6          disable ipv6 support],
-	[ case "$enableval" in
-	  no)
-	       AC_MSG_RESULT(no)
-	       ipv6=no
-	       ;;
-	  *)   AC_MSG_RESULT(yes)
-	       AC_DEFINE(INET6, 1, [Enable IPv6 support])
-	       ipv6=yes
-	       ;;
-	  esac ],
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 avalable check */
+AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 avalable check */
 #include <sys/types.h>
 #include <sys/socket.h>
 main()
@@ -62,11 +49,11 @@ main()
    exit(0);
 }
 ]])],[AC_MSG_RESULT(yes)
-  AC_DEFINE(INET6)
+  AC_DEFINE(INET6, 1, [define if IPv6 is enabled])
   ipv6=yes],[AC_MSG_RESULT(no)
   ipv6=no],[AC_MSG_RESULT(no)
   ipv6=no
-]))
+])
 
 AC_MSG_CHECKING(if --enable-debug option is specified)
 AC_ARG_ENABLE(debug, [  --enable-debug          build a debug version],

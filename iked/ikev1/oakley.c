@@ -1764,11 +1764,9 @@ oakley_check_certid(struct ph1handle *iph1)
 		case AF_INET:
 			a = (caddr_t)&((struct sockaddr_in *)res->ai_addr)->sin_addr.s_addr;
 			break;
-#ifdef INET6
 		case AF_INET6:
 			a = (caddr_t)&((struct sockaddr_in6 *)res->ai_addr)->sin6_addr.s6_addr;
 			break;
-#endif
 		default:
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 				"family not supported: %d.\n", res->ai_family);

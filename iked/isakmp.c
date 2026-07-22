@@ -481,9 +481,10 @@ isakmp_open_address(struct sockaddr *addr, int port)
 #else				/* old adv. API */
 			pktinfo = IPV6_PKTINFO;
 #endif				/* IPV6_RECVPKTINFO */
-#else
+#elif defined(IPV6_RECVDSTADDR)
 			pktinfo = IPV6_RECVDSTADDR;
 #endif
+#if defined(ADVAPI) || defined(IPV6_RECVDSTADDR)
 			if (setsockopt(p->sock, IPPROTO_IPV6, pktinfo,
 				       (const void *)&yes, sizeof(yes)) < 0) {
 				plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -491,6 +492,7 @@ isakmp_open_address(struct sockaddr *addr, int port)
 				     strerror(errno));
 				goto fail;
 			}
+#endif
 #ifdef IPV6_USE_MIN_MTU
 			if (sa->sa_family == AF_INET6 &&
 			    setsockopt(p->sock, IPPROTO_IPV6,
@@ -1021,11 +1023,9 @@ isakmp_handler(int so_isakmp)
 	case AF_INET:
 		port = ((struct sockaddr_in *)&remote)->sin_port;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		port = ((struct sockaddr_in6 *)&remote)->sin6_port;
 		break;
-#endif
 	default:
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "invalid remote address family: %d\n",
@@ -2165,9 +2165,7 @@ isakmp_sendto(rc_vchar_t *pkt, struct sockaddr *remote, struct sockaddr *local)
 char *snapend;
 
 char *getname (const unsigned char *);
-#ifdef INET6
 char *getname6 (const unsigned char *);
-#endif
 int safeputchar (int);
 
 /*
@@ -2193,7 +2191,6 @@ getname(ap)
 	return ntop_buf;
 }
 
-#ifdef INET6
 /*
  * Return a name for the IP6 address pointed to by ap.  This address
  * is assumed to be in network byte order.
@@ -2216,7 +2213,6 @@ getname6(ap)
 
 	return ntop_buf;
 }
-#endif				/* INET6 */
 
 int
 safeputchar(c)

@@ -3146,11 +3146,9 @@ ipsecdoi_checkid1(struct ph1handle *iph1)
 				case AF_INET:
 					port = ((struct sockaddr_in *)iph1->remote)->sin_port;
 					break;
-#ifdef INET6
-				case AF_INET6:
-					port = ((struct sockaddr_in6 *)iph1->remote)->sin6_port;
-					break;
-#endif
+		case AF_INET6:
+			port = ((struct sockaddr_in6 *)iph1->remote)->sin6_port;
+			break;
 				default:
 					plog(PLOG_PROTOERR, PLOGLOC, NULL,
 						"invalid family: %d\n",
@@ -3409,7 +3407,6 @@ ipsecdoi_sockaddr2id(struct sockaddr *saddr, unsigned int prefixlen,
 		sa = (caddr_t)&((struct sockaddr_in *)(saddr))->sin_addr;
 		port = ((struct sockaddr_in *)(saddr))->sin_port;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		len1 = sizeof(struct in6_addr);
 		if (prefixlen == (sizeof(struct in6_addr) << 3)) {
@@ -3422,7 +3419,6 @@ ipsecdoi_sockaddr2id(struct sockaddr *saddr, unsigned int prefixlen,
 		sa = (caddr_t)&((struct sockaddr_in6 *)(saddr))->sin6_addr;
 		port = ((struct sockaddr_in6 *)(saddr))->sin6_port;
 		break;
-#endif
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			"invalid family: %d.\n", saddr->sa_family);
@@ -3498,14 +3494,12 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		SET_SOCKADDR_LEN(saddr, sizeof(struct sockaddr_in));
 		saddr->sa_family = AF_INET;
 		break;
-#ifdef INET6
 	case IPSECDOI_ID_IPV6_ADDR:
 	case IPSECDOI_ID_IPV6_ADDR_SUBNET:
 		SET_SOCKADDR_LEN(saddr, sizeof(struct sockaddr_in6));
 		saddr->sa_family = AF_INET6;
 		*rcs_getsascopeid(saddr) = 0;
 		break;
-#endif
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			"unsupported ID type %d\n", id_b->type);
@@ -3522,15 +3516,11 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 	case IPSECDOI_ID_IPV4_ADDR:
 		plen = sizeof(struct in_addr) << 3;
 		break;
-#ifdef INET6
 	case IPSECDOI_ID_IPV6_ADDR:
 		plen = sizeof(struct in6_addr) << 3;
 		break;
-#endif
 	case IPSECDOI_ID_IPV4_ADDR_SUBNET:
-#ifdef INET6
 	case IPSECDOI_ID_IPV6_ADDR_SUBNET:
-#endif
 	    {
 		unsigned char *p;
 		unsigned int max;
@@ -3540,11 +3530,8 @@ ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		case IPSECDOI_ID_IPV4_ADDR_SUBNET:
 			alen = sizeof(struct in_addr);
 			break;
-#ifdef INET6
 		case IPSECDOI_ID_IPV6_ADDR_SUBNET:
 			alen = sizeof(struct in6_addr);
-			break;
-#endif
 		}
 
 		/* sanity check */

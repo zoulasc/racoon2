@@ -114,7 +114,7 @@
 /* Define to 1 if you have the 'vprintf' function. */
 #undef HAVE_VPRINTF
 
-/* Enable IPv6 support */
+/* define if IPv6 is enabled */
 #undef INET6
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
