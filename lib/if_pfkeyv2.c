@@ -1985,10 +1985,8 @@ rcpfk_recv_acquire(uint8_t **mhp, struct rcpfk_msg *rc)
 	/* ignore it if src is multicast address */
 	if ((dst->sa_family == AF_INET &&
 	    IN_MULTICAST(ntohl(((struct in_addr *)saddr)->s_addr)))
-#ifdef INET6
 	    || (dst->sa_family == AF_INET6 &&
 	    IN6_IS_ADDR_MULTICAST(((struct in6_addr *)saddr)))
-#endif
 	) {
 		rcpfk_seterror(rc, 0, "ignore ACQUIRE message "
 		    "due to a multicast address");

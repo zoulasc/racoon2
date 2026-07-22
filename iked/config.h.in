@@ -144,9 +144,6 @@
 /* window size of IPsec SA created by IKEv2 */
 #undef IKEV2_IPSEC_WINDOW_SIZE
 
-/* define if IPv6 is enabled */
-#undef INET6
-
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 

@@ -574,12 +574,10 @@ ikev1_initiate(struct isakmp_acquire_request *req,
 			((struct sockaddr_in *)peer)->sin_port =
 				htons(isakmp_port);
 			break;
-#ifdef INET6
 		case AF_INET6:
 			((struct sockaddr_in6 *)peer)->sin6_port =
 				htons(isakmp_port);
 			break;
-#endif
 		default:
 			isakmp_log(0, req->src, req->dst, 0,
 				   PLOG_INTERR, PLOGLOC,
@@ -1858,7 +1856,6 @@ copy_ph1addresses(struct ph1handle *iph1, struct rcf_remote *rmconf,
 			break;
 		*port = htons(isakmp_port);
 		break;
-#ifdef INET6
 	case AF_INET6:
 		port = &((struct sockaddr_in6 *)iph1->remote)->sin6_port;
 		if (*port)
@@ -1868,7 +1865,6 @@ copy_ph1addresses(struct ph1handle *iph1, struct rcf_remote *rmconf,
 			break;
 		*port = htons(isakmp_port);
 		break;
-#endif
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 		     "invalid family: %d\n", iph1->remote->sa_family);
@@ -1886,11 +1882,9 @@ copy_ph1addresses(struct ph1handle *iph1, struct rcf_remote *rmconf,
 	case AF_INET:
 		port = &((struct sockaddr_in *)iph1->local)->sin_port;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		port = &((struct sockaddr_in6 *)iph1->local)->sin6_port;
 		break;
-#endif
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 		     "invalid family: %d\n", iph1->remote->sa_family);
@@ -1963,13 +1957,11 @@ isakmp_newcookie(caddr_t place, struct sockaddr *remote, struct sockaddr *local)
 		sa1 = (caddr_t)&((struct sockaddr_in *)remote)->sin_addr;
 		sa2 = (caddr_t)&((struct sockaddr_in *)local)->sin_addr;
 		break;
-#ifdef INET6
 	case AF_INET6:
 		alen = sizeof(struct in6_addr);
 		sa1 = (caddr_t)&((struct sockaddr_in6 *)remote)->sin6_addr;
 		sa2 = (caddr_t)&((struct sockaddr_in6 *)local)->sin6_addr;
 		break;
-#endif
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 		     "invalid family: %d\n", remote->sa_family);
@@ -2705,9 +2697,7 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 			return FALSE;
 		}
 
-#ifdef INET6
 		/* scope? */
-#endif
 		break;
 
 	default:
@@ -2736,7 +2726,6 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 #endif
 			san->sin_family = sin->sin_family;
 			break;
-#ifdef INET6
 		case AF_INET6:
 			if (san6->sin6_port == IPSEC_PORT_ANY)
 				san6->sin6_port = sin6->sin6_port;
@@ -2747,7 +2736,6 @@ id_is_matching(struct rc_addrlist *addr, int upper_layer_protocol,
 #endif
 			san6->sin6_scope_id = sin6->sin6_scope_id;
 			break;
-#endif
 		default:
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			   "unsupported address family (%d) for selector address\n",

@@ -959,13 +959,11 @@ ikev2_construct_ts(int proto, uint32_t uss, uint32_t use,
 				a = (uint8_t *)&((struct sockaddr_in *)sa)->sin_addr;
 				alen = sizeof(struct in_addr);
 				break;
-#ifdef INET6
-			case AF_INET6:
-				ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
-				a = (uint8_t *)&((struct sockaddr_in6 *)sa)->sin6_addr;
-				alen = sizeof(struct in6_addr);
-				break;
-#endif
+		case AF_INET6:
+			ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
+			a = (uint8_t *)&((struct sockaddr_in6 *)sa)->sin6_addr;
+			alen = sizeof(struct in6_addr);
+			break;
 			default:
 				plog(PLOG_INTERR, PLOGLOC, 0,
 				     "unsupported address type %d\n",
@@ -1165,13 +1163,11 @@ ikev2_confirm_ts(struct ikev2_payload_header *ts_i,
 					a = (uint8_t *)
 					    &((struct sockaddr_in *)sa)->sin_addr;
 					break;
-#ifdef INET6
 				case AF_INET6:
 					ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
 					a = (uint8_t *)
 					    &((struct sockaddr_in6 *)sa)->sin6_addr;
 					break;
-#endif
 				default:
 					return -1;
 				}
@@ -1281,13 +1277,11 @@ ikev2_confirm_ts(struct ikev2_payload_header *ts_i,
 					a = (uint8_t *)
 					    &((struct sockaddr_in *)sa)->sin_addr;
 					break;
-#ifdef INET6
 				case AF_INET6:
 					ts_type = IKEV2_TS_IPV6_ADDR_RANGE;
 					a = (uint8_t *)
 					    &((struct sockaddr_in6 *)sa)->sin6_addr;
 					break;
-#endif
 				default:
 					return -2;
 				}

@@ -5,19 +5,7 @@ dnl
 AC_DEFUN([RC_IF_IPV6_ENABLE],
 [
 AC_MSG_CHECKING(if ipv6 is available)
-AC_ARG_ENABLE(ipv6,
-	[  --enable-ipv6           enable ipv6 (with ipv4) support
-  --disable-ipv6          disable ipv6 support],
-	[ case "$enableval" in
-	  no)
-	       AC_MSG_RESULT(no)
-	       ipv6=no
-	       ;;
-	  *)   AC_MSG_RESULT(yes)
-	       ipv6=yes
-	       ;;
-	  esac ],
-  AC_TRY_RUN([ /* AF_INET6 avalable check */
+AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 avalable check */
 #include <sys/types.h>
 #include <sys/socket.h>
 main()
@@ -28,17 +16,12 @@ main()
  else
    exit(0);
 }
-],
-  AC_MSG_RESULT(yes)
-  ipv6=yes,
-  AC_MSG_RESULT(no)
-  ipv6=no,
-  AC_MSG_RESULT(no)
+]])],[AC_MSG_RESULT(yes)
+  AC_DEFINE(INET6, 1, [define if IPv6 is enabled])
+  ipv6=yes],[AC_MSG_RESULT(no)
+  ipv6=no],[AC_MSG_RESULT(no)
   ipv6=no
-))
-if test x"$ipv6" = x"yes"; then
-	AC_DEFINE(INET6, 1, [define if IPv6 is enabled])
-fi
+])
 ])
 
 dnl

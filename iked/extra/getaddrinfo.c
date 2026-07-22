@@ -265,9 +265,7 @@ getaddrinfo(hostname, servname, hints, res)
 		switch (hints->ai_family) {
 		case PF_UNSPEC:
 		case PF_INET:
-#ifdef INET6
 		case PF_INET6:
-#endif
 			break;
 		default:
 			ERR(EAI_FAMILY);
@@ -415,13 +413,11 @@ getaddrinfo(hostname, servname, hints, res)
 				if (v4a == 0 || v4a == IN_LOOPBACKNET)
 					pai->ai_flags &= ~AI_CANONNAME;
 				break;
-#ifdef INET6
 			case AF_INET6:
 				pfx = ((struct in6_addr *)pton)->s6_addr[0];
 				if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
 					pai->ai_flags &= ~AI_CANONNAME;
 				break;
-#endif
 			}
 			
 			if (pai->ai_family == afdl[i].a_af ||
@@ -639,18 +635,15 @@ get_addr0(hostname, af, res, pai, port0)
 	
 	for (i = 0; (ap = hp->h_addr_list[i]) != NULL; i++) {
 		switch (af) {
-#ifdef INET6
 		case AF_INET6:
 			afd = &afdl[N_INET6];
 			break;
-#endif
 #ifndef INET6
 		default:	/* AF_UNSPEC */
 #endif
 		case AF_INET:
 			afd = &afdl[N_INET];
 			break;
-#ifdef INET6
 		default:	/* AF_UNSPEC */
 			if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *)ap)) {
 				ap += sizeof(struct in6_addr) -
@@ -659,7 +652,6 @@ get_addr0(hostname, af, res, pai, port0)
 			} else
 				afd = &afdl[N_INET6];
 			break;
-#endif
 		}
 #ifdef FAITH
 		if (translate && afd->a_af == AF_INET) {

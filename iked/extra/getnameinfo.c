@@ -57,10 +57,8 @@ static struct afd {
 	int a_socklen;
 	int a_off;
 } afdl [] = {
-#ifdef INET6
 	{PF_INET6, sizeof(struct in6_addr), sizeof(struct sockaddr_in6),
 		offsetof(struct sockaddr_in6, sin6_addr)},
-#endif
 	{PF_INET, sizeof(struct in_addr), sizeof(struct sockaddr_in),
 		offsetof(struct sockaddr_in, sin_addr)},
 	{0, 0, 0},
@@ -147,8 +145,6 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 		if (v4a == 0 || v4a == IN_LOOPBACKNET)
 			flags |= NI_NUMERICHOST;			
 		break;
-#ifdef INET6
-	case AF_INET6:
 	    {
 		struct sockaddr_in6 *sin6;
 		sin6 = (struct sockaddr_in6 *)sa;
@@ -170,9 +166,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 		}
 	    }
 		break;
-#endif
 	}
-	if (host == NULL || hostlen == 0) {
 		/* what should we do? */
 	} else if (flags & NI_NUMERICHOST) {
 		/* NUMERICHOST and NAMEREQD conflicts with each other */

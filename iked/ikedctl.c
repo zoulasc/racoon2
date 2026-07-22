@@ -801,10 +801,8 @@ get_family(const char *str)
 {
 	if (strcmp("inet", str) == 0)
 		return AF_INET;
-#ifdef INET6
 	else if (strcmp("inet6", str) == 0)
 		return AF_INET6;
-#endif
 	errno = EAFNOSUPPORT;
 	return -1;
 }

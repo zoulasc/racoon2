@@ -739,7 +739,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			    ((struct sockaddr_in *)policy->my_sa_ipaddr->a.ipaddr)->sin_addr =
 				((struct sockaddr_in *)param->sa2_src)->sin_addr;
 			    break;
-#ifdef INET6
 			case AF_INET6:
 			    if (policy->my_sa_ipaddr->type != RCT_ADDR_INET)
 				break;
@@ -747,7 +746,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 				   &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
 				   sizeof(struct in6_addr));
 			    break;
-#endif
 			default:
 				return -1;
 			}
@@ -759,7 +757,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			    ((struct sockaddr_in *)policy->peers_sa_ipaddr->a.ipaddr)->sin_addr =
 				((struct sockaddr_in *)param->sa2_dst)->sin_addr;
 			    break;
-#ifdef INET6
 			case AF_INET6:
 			    if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET)
 				break;
@@ -767,7 +764,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 				   &((struct sockaddr_in6 *)param->sa2_dst)->sin6_addr,
 				   sizeof(struct in6_addr));
 			    break;
-#endif
 			default:
 				return -1;
 			}
@@ -790,7 +786,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			((struct sockaddr_in *)param->sa2_src)->sin_addr;
 		((struct sockaddr_in *)ike_sa->remote)->sin_addr =
 			((struct sockaddr_in *)param->sa2_dst)->sin_addr;
-#ifdef INET6
 	case AF_INET6:
 		memcpy(&((struct sockaddr_in6 *)ike_sa->local)->sin6_addr, 
 		       &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
@@ -799,7 +794,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		       &((struct sockaddr_in6 *)param->sa2_dst)->sin6_addr,
 		       sizeof(struct in6_addr));
 		break;
-#endif
 	default:
 		return -1;
 	}
@@ -846,7 +840,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		    }
 		  }
 		break;
-#ifdef INET6
 		case AF_INET6:
 		  if (child_sa->local)
 		    memcpy(&((struct sockaddr_in6 *)child_sa->local)->sin6_addr,
@@ -881,7 +874,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		    }
 		  }
 		break;
-#endif
 		}
 		plog(PLOG_INFO, PLOGLOC, 0, "move child_sa(%p)\n", child_sa);
 	}
@@ -905,7 +897,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			((struct sockaddr_in *)param->sa2_src)->sin_addr;
 		((struct sockaddr_in *)iph1->remote)->sin_addr =
 			((struct sockaddr_in *)param->sa2_dst)->sin_addr;
-#ifdef INET6
 	case AF_INET6:
 		memcpy(&((struct sockaddr_in6 *)iph1->local)->sin6_addr, 
 		       &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
@@ -914,7 +905,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		       &((struct sockaddr_in6 *)param->sa2_dst)->sin6_addr,
 		       sizeof(struct in6_addr));
 		break;
-#endif
 	default:
 		return -1;
 	}
@@ -955,7 +945,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		      ((struct sockaddr_in *)iph1->local)->sin_addr;
 		  }
 		  break;
-#ifdef INET6
 		case AF_INET6:
 		  if (iph2->src)
 		    memcpy(&((struct sockaddr_in6 *)iph2->src)->sin6_addr,
@@ -986,7 +975,6 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			   sizeof(struct in6_addr));
 		  }
 		  break;
-#endif
 		}
 		plog(PLOG_INFO, PLOGLOC, 0, "move iph2(%p)\n", iph2);
 	}

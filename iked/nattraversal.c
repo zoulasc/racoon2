@@ -128,13 +128,11 @@ natt_create_hash(isakmp_index_t *index, struct sockaddr *addr, int use_spi_r)
 		addr_port = &((struct sockaddr_in *)addr)->sin_port;
 		break;
 
-#ifdef INET6
 	case AF_INET6:
 		addr_size = sizeof(struct in6_addr);
 		addr_ptr = &((struct sockaddr_in6 *)addr)->sin6_addr;
 		addr_port = &((struct sockaddr_in6 *)addr)->sin6_port;
 		break;
-#endif
 
 	default:
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,

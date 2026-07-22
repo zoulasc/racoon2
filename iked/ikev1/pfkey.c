@@ -1510,11 +1510,9 @@ pk_recvacquire(mhp)
 		     IN_MULTICAST(ntohl
 				  (((struct sockaddr_in *)sa)->sin_addr.
 				   s_addr)))
-#ifdef INET6
 		    || (sa->sa_family == AF_INET6
 			&& IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)sa)->
 						 sin6_addr))
-#endif
 			) {
 			plog(PLOG_DEBUG, PLOGLOC, NULL,
 			     "ignore due to multicast address: %s.\n",

@@ -348,7 +348,6 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 	int error;
 
 	lastap = &new_head;
-#ifdef INET6
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -378,7 +377,6 @@ rcs_exmacro_ip_unspecified(const char *ifname)
 		lastap = &new->next;
 	}
 	freeaddrinfo(ai);
-#endif
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -1066,12 +1064,10 @@ rcs_cmpsa_wop(const struct sockaddr *addr1, const struct sockaddr *addr2)
 	sa2 = rcs_getsaaddr(addr2);
 	if (memcmp(sa1, sa2, rcs_getsaaddrlen(addr1)) != 0)
 		return 1;
-#ifdef INET6
 	if (addr1->sa_family == AF_INET6) {
 		if (*rcs_getsascopeid(addr1) != *rcs_getsascopeid(addr2))
 			return 1;
 	}
-#endif
 
 	return 0;
 }
@@ -1248,7 +1244,6 @@ rcs_getsaaddr(const struct sockaddr *sa)
 	}
 }
 
-#ifdef INET6
 /* Useful IPv6 macros and definitions (derived from NetBSD kernel) */
 #define _IN6MASK0        {{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
 #ifndef s6_addr32
@@ -1259,7 +1254,6 @@ rcs_getsaaddr(const struct sockaddr *sa)
 	(((d)->s6_addr32[1] ^ (a)->s6_addr32[1]) & (m)->s6_addr32[1]) == 0 && \
 	(((d)->s6_addr32[2] ^ (a)->s6_addr32[2]) & (m)->s6_addr32[2]) == 0 && \
 	(((d)->s6_addr32[3] ^ (a)->s6_addr32[3]) & (m)->s6_addr32[3]) == 0 )
-#endif
 int
 rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 {
@@ -1299,7 +1293,6 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 				}
 			}
 			break;
-#ifdef INET6
 		case AF_INET6:
 			if (si->sa_family != AF_INET6)
 				break;
@@ -1325,7 +1318,6 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 				}
 			}
 			break;
-#endif
 		default:
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			   "unsupported address family (%d) for selector address\n",
