@@ -461,7 +461,6 @@ isakmp_open_address(struct sockaddr *addr, int port)
 #endif
 		break;
 
-#ifdef INET6
 	case AF_INET6:
 		{
 			int pktinfo;
@@ -506,7 +505,6 @@ isakmp_open_address(struct sockaddr *addr, int port)
 #endif
 		}
 		break;
-#endif
 	default:
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "shouldn't happen: sockaddr_family %d\n",
