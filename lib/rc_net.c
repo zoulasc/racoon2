@@ -1329,7 +1329,7 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 			if (address->prefixlen == 0)
 			{
 			    plog(PLOG_INFO, PLOGLOC, NULL,
-				    "IPv4 prefixlen=0, match ANY\n");
+				    "IPv6 prefixlen=0, match ANY\n");
 			    return 1;
 			}
 
