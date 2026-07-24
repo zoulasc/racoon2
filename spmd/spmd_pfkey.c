@@ -441,7 +441,13 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 			al = pl->peers_sa_ipaddr;
 		switch (al->type) {
 		case RCT_ADDR_MACRO:  /* XXX IP_ANY */
-			rcs_getaddrlistbymacro(al->a.vstr, &ipal);
+			if(rcs_getaddrlistbymacro(al->a.vstr, &ipal) != 0 || ipal == NULL)
+			{
+			    SPMD_PLOG(SPMD_L_INTERR,
+				    "my_sa_ipaddr macro expansion failure (policy=%.*s)",
+				    (int)pl->pl_index->l, pl->pl_index->s);
+			    goto err;
+			}
 			rc->sa_src = rcs_sadup(ipal->a.ipaddr);
 			rcs_free_addrlist(ipal);
 			ipal = NULL;
@@ -470,7 +476,13 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 			al = pl->peers_sa_ipaddr;
 		switch (al->type) {
 		case RCT_ADDR_MACRO: /* XXX IP_ANY */
-			rcs_getaddrlistbymacro(al->a.vstr, &ipal);
+			if(rcs_getaddrlistbymacro(al->a.vstr, &ipal) != 0 || ipal == NULL)
+			{
+			    SPMD_PLOG(SPMD_L_INTERR,
+				    "peers_sa_ipaddr macro expansion failure (policy=%.*s)",
+				    (int)pl->pl_index->l, pl->pl_index->s);
+			    goto err;
+			}
 			rc->sa_dst = rcs_sadup(ipal->a.ipaddr);
 			rcs_free_addrlist(ipal);
 			ipal = NULL;
