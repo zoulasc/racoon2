@@ -157,6 +157,7 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 
 	if ((buf = rc_malloc(m->l + 1)) == NULL)
 		return EAI_MEMORY;
+
 	memcpy(buf, m->v, m->l);
 	buf[m->l] = '\0';
 
@@ -183,8 +184,10 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 		error = EAI_FAIL;
 		goto end;
 	}
+
 	*al0 = al;
-	error = 0;
+
+	return 0;
 
     end:
 	rc_free(buf);
@@ -655,6 +658,13 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 	   struct sockaddr_in6 *sin6_list = (struct sockaddr_in6*)ifa->ifa_addr;
 	   struct sockaddr_in6 *sin6_target = (struct sockaddr_in6*)ifaddr;
 
+	   if (ifa->ifa_addr == NULL)
+	   {
+	       plog(PLOG_DEBUG, PLOGLOC, NULL,
+		       "iface=%s (ifa_addr is NULL)\n", ifa->ifa_name);
+	       continue;
+	   }
+
 	   if (memcmp(&sin6_list->sin6_addr, &sin6_target->sin6_addr, sizeof(struct in6_addr)) == 0)
 	   {
 	       if (ifa->ifa_data)
@@ -667,8 +677,15 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 		       suitable = 1;
 		   break;
 	       }
+	       else
+	       {
+		   suitable = 1;
+		   break;
+	       }
 	   }
 	}
+
+	freeifaddrs(ifl);
 
 	return suitable;
 #else
@@ -1284,7 +1301,7 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 
 			/* If selector's masked address matches the
 		 	 * peer's masked address, match the peer's address */
-			if (address->prefixlen < 32) {
+			if (address->prefixlen > 0 && address->prefixlen < 32) {
 				uint32_t mask = 0;
 				rcs_in_prefixlen2mask(&mask, address->prefixlen);
 				if(((sin->sin_addr.s_addr ^
@@ -1308,6 +1325,13 @@ rcs_matchaddr(const struct rc_addrlist *addr, const struct sockaddr *si)
 
 			/* If selector's masked address matches the peer's
 		 	 * masked address, match the address of the peer */
+
+			if (address->prefixlen == 0)
+			{
+			    plog(PLOG_INFO, PLOGLOC, NULL,
+				    "IPv4 prefixlen=0, match ANY\n");
+			    return 1;
+			}
 
 			if (address->prefixlen > 0 && address->prefixlen < 128) {
 				struct in6_addr mask6 = _IN6MASK0;
