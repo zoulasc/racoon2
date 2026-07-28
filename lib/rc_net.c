@@ -154,6 +154,7 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 	struct rc_addrlist *al;
 	int error = -1;
 	size_t mname_len = 0;
+	int mname_allocated = 0;
 
 	if ((buf = rc_malloc(m->l + 1)) == NULL)
 		return EAI_MEMORY;
@@ -164,8 +165,9 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 	if ((p = strrchr(buf, '%')) != NULL && *(p + 1) != '\0') {
 		mname_len = p - buf;
 
-		if ((mname = rc_malloc(mname_len - 1)) == NULL)
+		if ((mname = rc_malloc(mname_len + 1)) == NULL)
 		    return EAI_MEMORY;
+		mname_allocated = 1;
 
 		memcpy(mname, buf, mname_len);
 		mname[mname_len] = '\0';
@@ -174,6 +176,7 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 		ifname = p + 1;
 	} else
 	{
+	    mname = buf;
 	    ifname = NULL;
 	}
 	if ((mx = find_addrmacro(mname)) == NULL) {
@@ -190,6 +193,8 @@ rcs_getaddrlistbymacro(const rc_vchar_t *m, struct rc_addrlist **al0)
 	return 0;
 
     end:
+	if (mname_allocated)
+		rc_free(mname);
 	rc_free(buf);
 	return error;
 }
