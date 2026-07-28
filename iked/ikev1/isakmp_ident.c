@@ -111,6 +111,7 @@ ident_i1send(struct ph1handle *iph1, rc_vchar_t *msg /* must be null */)
 	int i;
 #endif
 	rc_vchar_t *vid_dpd = NULL;
+	rc_vchar_t *vid_frag = NULL;
 	/* validity check */
 	if (msg != NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -140,14 +141,10 @@ ident_i1send(struct ph1handle *iph1, rc_vchar_t *msg /* must be null */)
 	if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF) 
 		plist = isakmp_plist_append_natt_vids(plist, vid_natt);
 #endif
-	{
-		rc_vchar_t *vid_frag = set_vendorid(VENDORID_FRAG);
-		if (vid_frag != NULL)
-			plist = isakmp_plist_append(plist, vid_frag,
-						    ISAKMP_NPTYPE_VID);
-		if (vid_frag != NULL)
-			rc_vfree(vid_frag);
-	}
+	vid_frag = set_vendorid(VENDORID_FRAG);
+	if (vid_frag != NULL)
+		plist = isakmp_plist_append(plist, vid_frag,
+					    ISAKMP_NPTYPE_VID);
 	if(ikev1_dpd(iph1->rmconf) == RCT_BOOL_ON){
 		vid_dpd = set_vendorid(VENDORID_DPD);
 		if (vid_dpd != NULL)
@@ -178,7 +175,9 @@ end:
 #endif
 	if (vid_dpd != NULL)
 		rc_vfree(vid_dpd);
- 
+	if (vid_frag != NULL)
+		rc_vfree(vid_frag);
+
 	return error;
 }
 
