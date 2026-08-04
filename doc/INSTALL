@@ -142,8 +142,8 @@ o Linux (kernel 2.6)
   CONFIG_INET_XFRM_MODE_TRANSPORT
   CONFIG_INET_XFRM_MODE_TUNNEL
 
-  ** If you have the IPv6 and you want to use IPsec on it,
-     you additionally need these items.
+  ** For IPv6 IPsec, the following kernel configuration items
+     are also required:
 
      CONFIG_INET6_AH
      CONFIG_INET6_ESP

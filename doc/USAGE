@@ -152,6 +152,7 @@ o Edit /usr/local/racoon2/etc/racoon2/racoon2.conf
         peers_ipaddr	[PEER_IP_ADDRESS];
         peers_id	[ID_TYPE] [ID_STRING];
         my_id		[ID_TYPE] [ID_STRING];
+        # IKE message fragmentation is always enabled.
         kmp_enc_alg	{ [ENCR_ALGS]; };	# 3des_cbc, aes128_cbc, aes192_cbc, aes256_cbc
         kmp_prf_alg	{ [PRF_ALGS]; };	# hmac_md5, hmac_sha1, aes_xcbc
         kmp_hash_alg	{ [INTEGRITY_ALGS]; };	# hmac_md5, hmac_sha1, aes_xcbc
@@ -614,6 +615,8 @@ C) With DNS FQDN names
       ipsec_mode transport;
       ipsec_index { ipsec-esp-a-b; };
       ipsec_level require;
+      # peers_sa_ipaddr and my_sa_ipaddr are optional for tunnel mode;
+      # if omitted, the IKE SA tunnel endpoints are used automatically.
       peers_sa_ipaddr 10.2.2.2;       # 10.1.1.1 at B
       my_sa_ipaddr 10.1.1.1;          # 10.2.2.2 at B
     };
