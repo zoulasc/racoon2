@@ -53,17 +53,12 @@ and use Racoon2 to get working IPsec connections with minimal
 effort.
 
 Currently Racoon2 works well as an L2TP/IPsec VPN server or as
-an IKEv2 VPN server running on NetBSD. Racoon2 on Linux will provide
-only limited functionality because Racoon2 uses the pfkeyv2 interface
-to the kernel, while many Linux features require the IKEv2 daemon to
-use the netlink interface to the kernel instead. Until the netlink
-interface to the Linux kernel is addd to Racoon2, only the most basic
-connections can be made using Racoon2 on Linux. Currently L2TP/IPsec
-connections from Windows or iphone clients can be made to Racoon2
-running on Linux, and IPv4 in IPv4 IKEv2 tunnel conections can be made
-from Windows clients to Racoon2 running on Linux, but Apple clients
-can have difficulty connecting because of the limitations of the pfkeyv2
-interface to the Linux kernel that Racoon2 uses. Please refer to NEWS
+an IKEv2 VPN server running on NetBSD. Racoon2 on Linux uses the
+pfkeyv2 interface to the kernel; support for modern Linux features
+that require the netlink interface is planned but not yet implemented.
+L2TP/IPsec connections from Windows and iPhone clients can be made to
+Racoon2 running on Linux, and IKEv2 tunnel connections can be made from
+Windows clients. IPv6 is enabled by default. Please refer to NEWS
 for updates on current developments.
 
 

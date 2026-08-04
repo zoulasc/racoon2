@@ -123,8 +123,13 @@ o Representation of IP addresses
 		followed by the interface name.
 			e.g. MY_IPV6%fxp0
 	
-		The following strings will be implemented.
-			IP_ANY means that :: and 0.0.0.0.
+		Note: IPv6 support is enabled by default. The INET6 build
+		option has been removed; IPv4 and IPv6 are always available.
+
+			IP_ANY, IP_RW, and IP_UNSPECIFIED are synonyms for an
+			unspecified/wildcard address (:: or 0.0.0.0). IP_RW can
+			be used in my_sa_ipaddr or peers_sa_ipaddr to generate
+			policies dynamically.
 
 o Representation of bytes
 
@@ -465,6 +470,9 @@ remote
 	kink  { (directives) } ;
 		It defines the KINK configuration.
 
+	Note: IKE message fragmentation is always enabled for both IKEv1
+	and IKEv2.
+
 	acceptable_kmp (ikev1|ikev2|kink) ;
 		It defines key management protocols to be used.
 		The list defines the KMPs whom the responder allows to accept.
@@ -783,6 +791,7 @@ remote
 		    REMOTE_NET_ADDR
 		    REMOTE_NET_PREFIXLEN
 		    REMOTE_NET_PORT
+		    Note: A prefixlen of 0 matches any address (wildcard).
 		    UPPER_LAYER_PROTOCOL (decimal number or any)
 		    INTERNAL4_ADDR (only if an IPv4 address is leased to peer)
 		    INTERNAL6_ADDR (only if an IPv6 address is leased to peer)
@@ -893,13 +902,14 @@ policy
 	my_sa_ipaddr (address) ;
 		It defines an IP address of the end points of the SAs
 		on my side.  (address) is an IP address.
-		It must be defined when the action directive is static_ipsec
-		or tunnel.
+		For tunnel mode, it can be inherited from the IKE SA
+		endpoints if not explicitly specified.
 
 	peers_sa_ipaddr (address) ;
 		It defines an IP address of the end points of the SAs
-		on the peer's side. Write IP_RW to generate policy
-		dynamically.
+		on the peer's side. Write IP_RW in either my_sa_ipaddr
+		or peers_sa_ipaddr to generate policy dynamically for
+		tunnel mode.
 
 	ipsec_level (unique|require|use) ;
 		use
