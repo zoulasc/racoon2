@@ -106,17 +106,27 @@ dnl sa_len
 dnl
 AC_DEFUN([RC_IF_SA_LEN],
 [
-AC_MSG_CHECKING(if sa_len is available)
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>
-], [
-	struct sockaddr s;
-	s.sa_len = 0;
-], [sa_len=yes
-    AC_DEFINE(HAVE_SA_LEN, 1, [define if struct sockaddr has sa_len field])
-], [sa_len=no])
-AC_MSG_RESULT($sa_len)
+  AC_MSG_CHECKING([if sa_len is available])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(
+      [[
+        #include <sys/types.h>
+        #include <sys/socket.h>
+      ]],
+      [[
+        struct sockaddr s;
+        s.sa_len = 0;
+      ]]
+    )],
+    [
+      sa_len=yes
+      AC_DEFINE([HAVE_SA_LEN], [1], [Define if struct sockaddr has sa_len field])
+    ],
+    [
+      sa_len=no
+    ]
+  )
+  AC_MSG_RESULT([$sa_len])
 ])
 
 dnl

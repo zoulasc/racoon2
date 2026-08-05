@@ -81,7 +81,7 @@
 /* Define to 1 if you have the <openssl/x509.h> header file. */
 #undef HAVE_OPENSSL_X509_H
 
-/* define if struct sockaddr has sa_len field */
+/* Define if struct sockaddr has sa_len field */
 #undef HAVE_SA_LEN
 
 /* Define to 1 if you have the 'setprogname' function. */

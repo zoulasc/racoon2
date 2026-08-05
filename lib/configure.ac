@@ -12,7 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
-AC_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_INSTALL
