@@ -24,7 +24,7 @@ o spmd shell interface (port number: 9555, temporary)
      E: 500 = syntax error
         502 = command not implemented
         550 = operation failed
-        
+
   - name server operation
 
      NS <SP> COMMAND <SP> [ OPTION ] <CRLF>
@@ -45,7 +45,7 @@ o spmd shell interface (port number: 9555, temporary)
 
      reply)
      if the result is single line:
-     STATUS <SP> STRING <CRLF> 
+     STATUS <SP> STRING <CRLF>
 
      if the result is multiple lines:
      *(STATUS <-> STRING <CRLF>)
@@ -79,7 +79,7 @@ o spmd shell interface (port number: 9555, temporary)
 
      SP_SRC have to match the "src" member of selector object which specified by SELECTOR_INDEX.
      SP_DST have to match the "dst" member of selector object which specified by SELECTOR_INDEX.
-     
+
      reply)
      STATUS <SP> STRING <CRLF>
 
@@ -89,7 +89,7 @@ o spmd shell interface (port number: 9555, temporary)
      	251 = requested action ok, but no policy exists
      E: 500 = syntax error
         550 = operation failed
-	551 = 
+	551 =
 
    - query operation
 
@@ -113,7 +113,7 @@ o spmd shell interface (port number: 9555, temporary)
 
      S: 250 = requested action ok
      	251 = requested action ok, but no fqdn list exists
-     E: 500 = syntax error 
+     E: 500 = syntax error
         501 = not chached
         550 = operation failed
 
@@ -131,7 +131,7 @@ o spmd shell interface (port number: 9555, temporary)
      STATUS <SP> STRING <CRLF>
 
      STATUS := [1-5][0-5][0-5]
-     
+
      S: 250 = requested action ok
      E: 500 = syntax error
         550 = operation failed

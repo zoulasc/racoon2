@@ -6,7 +6,7 @@
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * Copyright (C) 2008 Timo Teras.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -18,7 +18,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,7 +62,7 @@
 #include <unistd.h>
 #endif
 #include <err.h>
-#include <sys/ioctl.h> 
+#include <sys/ioctl.h>
 #include <resolv.h>
 
 #include "var.h"
@@ -201,7 +201,7 @@ static char *fixed_addr(char *, char *, size_t);
 static __dead void
 usage(void)
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 "Usage:\n"
 "  %s [opts] reload-config\n"
 "  %s [opts] show-schedule\n"
@@ -539,7 +539,7 @@ f_exchangesa(int ac, char **av)
 		id = av[1];
 		if ((key = getpass("Password: ")) == NULL)
 			err(EXIT_FAILURE, "getpass() failed");
-		
+
 		com_len += sizeof(*acp) + strlen(id) + 1 + strlen(key) + 1;
 		cmd = ADMIN_ESTABLISH_SA_PSK;
 
@@ -631,7 +631,7 @@ f_vpnc(int ac, char **av)
 		errx(EXIT_FAILURE, "insufficient arguments");
 
 	evt_quit_event = EVT_PHASE1_MODE_CFG;
-	
+
 	/* Optional -u identity */
 	if (strcmp(av[0], "-u") == 0) {
 		if (ac < 2)
@@ -665,7 +665,7 @@ f_vpnc(int ac, char **av)
 		errx(EXIT_FAILURE, "cannot read source address");
 
 	/* We get "ip[port]" strip the port */
-	if ((idx = index(srcaddr, '[')) == NULL) 
+	if ((idx = index(srcaddr, '[')) == NULL)
 		errx(EXIT_FAILURE, "unexpected source address format");
 	*idx = '\0';
 
@@ -985,13 +985,13 @@ dump_isakmp_sa(const char *buf, size_t len)
 /* short header;
  1234567890123456789012 0000000000000000:0000000000000000 000000000000
 */
-char *header1 = 
+char *header1 =
 "Destination            Cookies                           Created";
 
 /* semi long header;
  1234567890123456789012 0000000000000000:0000000000000000 00 X 00 X 0000-00-00 00:00:00 000000
 */
-char *header2 = 
+char *header2 =
 "Destination            Cookies                           ST S  V E Created             Phase2";
 
 /* long header;
@@ -1002,7 +1002,7 @@ char *header3 =
 
 /* phase status header */
 /* short format;
-   side stats source address         destination address   
+   side stats source address         destination address
    xxx  xxxxx 1234567890123456789012 1234567890123456789012
 */
 
@@ -1100,19 +1100,19 @@ dump_internal(const char *buf, size_t tlen)
 
 /*
 short header;
- source address         destination address    
- 1234567890123456789012 1234567890123456789012 
+ source address         destination address
+ 1234567890123456789012 1234567890123456789012
 */
-char *short_h1 = 
+char *short_h1 =
 "Source                 Destination            ";
 
 /*
 long header;
- source address                                destination address                           
- 123456789012345678901234567890123456789012345 123456789012345678901234567890123456789012345 
+ source address                                destination address
+ 123456789012345678901234567890123456789012345 123456789012345678901234567890123456789012345
  0000:0000:0000:0000:0000:0000:0000:0000.00000 0000:0000:0000:0000:0000:0000:0000:0000.00000 0000:0000:0000:0000:0000:0000:0000:0000.00000
 */
-char *long_h1 = 
+char *long_h1 =
 "Source                                        Destination                                  ";
 
 	printf("%s\n", long_format ? long_h1 : short_h1);
@@ -1219,7 +1219,7 @@ print_evt(const struct evt_async *evtdump)
 	int i;
 	char *srcstr;
 	char *dststr;
-	
+
 	for (i = 0; i < sizeof(evtmsg) / sizeof(evtmsg[0]); i++)
 		if (evtmsg[i].type == evtdump->ec_type)
 			break;
@@ -1251,7 +1251,7 @@ print_cfg(const char *buf, size_t len)
 	struct isakmp_data *attr;
 	char *banner = NULL;
 	struct in_addr addr4;
-	
+
 	memset(&addr4, 0, sizeof(addr4));
 
 	if (evtdump->ec_type != EVT_PHASE1_MODE_CFG)
@@ -1318,9 +1318,9 @@ print_cfg(const char *buf, size_t len)
 		int col = 0;
 		int i;
 
-		if (ioctl(1, TIOCGWINSZ, &win) != 1) 
+		if (ioctl(1, TIOCGWINSZ, &win) != 1)
 			col = win.ws_col;
-			
+
 		for (i = 0; i < col; i++)
 			printf("%c", '=');
 		printf("\n%s\n", banner);

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -98,7 +98,7 @@ struct dnsh { 			/* raw data (stored by network byte order) */
 #define GET_RA(x)		(((x) & M_RA)     >>  7)
 #define GET_Z(x)		(((x) & M_Z)      >>  4)
 #define GET_RCODE(x)		((x) & M_RCODE)
-	
+
 /*----- resource ------*/
 #define MAX_LABEL_LEN		64  /* 63 octets or less */
 #define MAX_NAME_LEN		256 /* 255 octets or less */

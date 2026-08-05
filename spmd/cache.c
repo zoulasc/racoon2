@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,11 +40,11 @@
 #endif
 
 /* statistics */
-cstat_t cstat[] = 
-{ 
-	{C_ADDRESS, 0, "CACHE IP ADDRESS"},       /* # of cached IP addresses */ 
-	{C_FQDN, 0, "CACHE FQDN"},                /* # of FQDNs which we have to cache */ 
-	{C_TOTAL_FQDN, 0, "CACHE TOTAL FQDN"},    /* total # of cached FQDNS (sum of FQDNs each by IP addresses) */ 
+cstat_t cstat[] =
+{
+	{C_ADDRESS, 0, "CACHE IP ADDRESS"},       /* # of cached IP addresses */
+	{C_FQDN, 0, "CACHE FQDN"},                /* # of FQDNs which we have to cache */
+	{C_TOTAL_FQDN, 0, "CACHE TOTAL FQDN"},    /* total # of cached FQDNS (sum of FQDNs each by IP addresses) */
 	{C_END, 0, NULL},
 };
 
@@ -179,7 +179,7 @@ add_fqdn_addr_list(struct fqdn_list **flp, const struct sockaddr *sa)
 			return 0;
 		f = f->next;
 	}
-	
+
 	fal = spmd_calloc(sizeof(*fal));
 	fal->sa = (struct sockaddr *)&fal->ss;
 	memcpy(fal->sa, sa, SPMD_SALEN(sa));
@@ -196,7 +196,7 @@ add_fqdn_addr_list(struct fqdn_list **flp, const struct sockaddr *sa)
 	return 0;
 }
 
-/* len is not include '\0' 
+/* len is not include '\0'
  *  0: succeed
  * -1: error
  */
@@ -337,7 +337,7 @@ find_cache_entry(const struct sockaddr *sa)
 	return NULL;
 }
 
-int 
+int
 del_cache_entry_by_fqdn(const char *name, size_t len)
 {
 	struct cache_entry *ce, *nce;
@@ -503,7 +503,7 @@ cache_update(struct dns_data *dd)
 						add_fqdn(&ce->fltop, orgfqdn, strlen(orgfqdn));
 						cache_updated=1;
 						cstat[C_TOTAL_FQDN].number++;
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]updated(cname:%s):%s", cname, orgfqdn); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]updated(cname:%s):%s", cname, orgfqdn);
 						fl = find_fqdn_db(orgfqdn, strlen(orgfqdn));
 						add_fqdn_addr_list(&fl, rr->sa);
 						if (spmd_loglevel >= SPMD_L_DEBUG) {
@@ -513,10 +513,10 @@ cache_update(struct dns_data *dd)
 							SPMD_PLOG(SPMD_L_DEBUG, "[FQDN list]resolved:(cname:%s):%s=[%s]", cname, orgfqdn, host);
 						}
 					} else if (ret == -1) {
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed"); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed");
 						return -1;
 					} else {
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists"); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists");
 					}
 				} else {
 					ret = find_fqdn(&ce->fltop, rr->name, strlen(rr->name));
@@ -524,7 +524,7 @@ cache_update(struct dns_data *dd)
 						add_fqdn(&ce->fltop, rr->name, strlen(rr->name));
 						cache_updated=1;
 						cstat[C_TOTAL_FQDN].number++;
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]updated:%s", rr->name); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]updated:%s", rr->name);
 						fl = find_fqdn_db(rr->name, strlen(rr->name));
 						add_fqdn_addr_list(&fl, rr->sa);
 						if (spmd_loglevel >= SPMD_L_DEBUG) {
@@ -534,14 +534,14 @@ cache_update(struct dns_data *dd)
 							SPMD_PLOG(SPMD_L_DEBUG, "[FQDN list]resolved:%s=[%s]", rr->name, host);
 						}
 					} else if (ret == -1) {
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed"); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed");
 						return -1;
 					} else {
-						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists"); 
+						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists");
 					}
 				}
 			}
-			
+
 		}
 	}
 
@@ -579,7 +579,7 @@ cache_update(struct dns_data *dd)
  *
  *    IP_ADDRESS FQDN ALIASES...
  *
- * and also we dont parse ALIASES part. 
+ * and also we dont parse ALIASES part.
  */
 int
 hosts_cache_update(void)
@@ -621,7 +621,7 @@ hosts_cache_update(void)
 			 SPMD_PLOG(SPMD_L_INTERR, "Failed to convert into canonical address:%s", gai_strerror(err));
 			 return -1;
 		}
-		
+
 
 		while (*cp == ' ' || *cp == '\t')
 			cp++;
@@ -639,7 +639,7 @@ hosts_cache_update(void)
 
 		if (!find_fqdn(&fqdn_list_top, hp, strlen(hp))) {
 			ce = find_cache_entry(res->ai_addr);
-			if (!ce) { 
+			if (!ce) {
 				ce = alloc_cache_entry();
 				add_fqdn(&ce->fltop, hp, strlen(hp));
 				cstat[C_TOTAL_FQDN].number++;
@@ -652,7 +652,7 @@ hosts_cache_update(void)
 				add_fqdn_addr_list(&fl, res->ai_addr);
 				if (spmd_loglevel >= SPMD_L_DEBUG) {
 					char host[NI_MAXHOST];
-					getnameinfo(res->ai_addr, res->ai_addrlen, 
+					getnameinfo(res->ai_addr, res->ai_addrlen,
 						    host, sizeof(host), NULL, 0, NI_NUMERICHOST);
 					SPMD_PLOG(SPMD_L_DEBUG, "[FQDN list]resolved:%s=[%s]", hp, host);
 				}
@@ -668,16 +668,16 @@ hosts_cache_update(void)
 					add_fqdn_addr_list(&fl, res->ai_addr);
 					if (spmd_loglevel >= SPMD_L_DEBUG) {
 						char host[NI_MAXHOST];
-						getnameinfo(res->ai_addr, res->ai_addrlen, 
+						getnameinfo(res->ai_addr, res->ai_addrlen,
 							    host, sizeof(host), NULL, 0, NI_NUMERICHOST);
 						SPMD_PLOG(SPMD_L_DEBUG, "[FQDN list]resolved:%s=[%s]", hp, host);
 					}
 
 				} else if (ret == -1) {
-					SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed"); 
+					SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]search failed");
 					return -1;
 				} else {
-					SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists"); 
+					SPMD_PLOG(SPMD_L_DEBUG, "[FQDN cache]already exists");
 				}
 			}
 		}

@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -138,7 +138,7 @@ ident_i1send(struct ph1handle *iph1, rc_vchar_t *msg /* must be null */)
 
 #ifdef ENABLE_NATT
 	/* set VID payload for NAT-T if NAT-T support allowed in the config file */
-	if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF) 
+	if (ikev1_nat_traversal(iph1->rmconf) != NATT_OFF)
 		plist = isakmp_plist_append_natt_vids(plist, vid_natt);
 #endif
 	vid_frag = set_vendorid(VENDORID_FRAG);
@@ -261,7 +261,7 @@ ident_i2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 
 #ifdef ENABLE_NATT
 	if (NATT_AVAILABLE(iph1))
-		plog(PLOG_INFO, PLOGLOC, 0, 
+		plog(PLOG_INFO, PLOGLOC, 0,
 		     "Selected NAT-T version: %s\n",
 		     vid_string_by_id(iph1->natt_options->version));
 #endif
@@ -439,21 +439,21 @@ ident_i3recv(struct ph1handle *iph1, rc_vchar_t *msg)
 				natd_received = NULL;
 				if (isakmp_p2ph (&natd_received, pa->ptr) < 0)
 					goto end;
-                        
+
 				/* set both bits first so that we can clear them
 				   upon verifying hashes */
 				if (natd_seq == 0)
 					iph1->natt_flags |= NAT_DETECTED;
-                        
-				/* this function will clear appropriate bits bits 
+
+				/* this function will clear appropriate bits bits
 				   from iph1->natt_flags */
 				natd_verified = ikev1_natt_compare_addr_hash (iph1,
 					natd_received, natd_seq++);
-                        
+
 				plog (PLOG_INFO, PLOGLOC, NULL, "NAT-D payload #%d %s\n",
 					natd_seq - 1,
 					natd_verified ? "verified" : "doesn't match");
-                        
+
 				rc_vfree (natd_received);
 				break;
 			}
@@ -474,7 +474,7 @@ ident_i3recv(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_NATT
 	if (NATT_AVAILABLE(iph1)) {
 		plog (PLOG_INFO, PLOGLOC, NULL, "NAT %s %s%s\n",
-		      iph1->natt_flags & NAT_DETECTED ? 
+		      iph1->natt_flags & NAT_DETECTED ?
 		      		"detected:" : "not detected",
 		      iph1->natt_flags & NAT_DETECTED_ME ? "ME " : "",
 		      iph1->natt_flags & NAT_DETECTED_PEER ? "PEER" : "");
@@ -734,7 +734,7 @@ ident_i4recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 				/* msg printed inner oakley_validate_auth() */
 				goto end;
 			}
-			EVT_PUSH(iph1->local, iph1->remote, 
+			EVT_PUSH(iph1->local, iph1->remote,
 			    EVTT_PEERPH1AUTH_FAILED, NULL);
 			isakmp_info_send_n1(iph1, type, NULL);
 			goto end;
@@ -759,7 +759,7 @@ ident_i4recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 	 * If we got a GSS token, we need to this roundtrip again.
 	 */
 #ifdef HAVE_GSSAPI
-	iph1->status = gsstoken != 0 ? PHASE1ST_MSG3RECEIVED : 
+	iph1->status = gsstoken != 0 ? PHASE1ST_MSG3RECEIVED :
 	    PHASE1ST_MSG4RECEIVED;
 #else
 	iph1->status = PHASE1ST_MSG4RECEIVED;
@@ -895,7 +895,7 @@ ident_r1recv(struct ph1handle *iph1, rc_vchar_t *msg)
 
 #ifdef ENABLE_NATT
 	if (NATT_AVAILABLE(iph1))
-		plog(PLOG_INFO, PLOGLOC, 0, 
+		plog(PLOG_INFO, PLOGLOC, 0,
 		     "Selected NAT-T version: %s\n",
 		     vid_string_by_id(iph1->natt_options->version));
 #endif
@@ -1102,20 +1102,20 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 			{
 				rc_vchar_t *natd_received = NULL;
 				int natd_verified;
-				
+
 				if (isakmp_p2ph (&natd_received, pa->ptr) < 0)
 					goto end;
-				
+
 				if (natd_seq == 0)
 					iph1->natt_flags |= NAT_DETECTED;
-				
+
 				natd_verified = ikev1_natt_compare_addr_hash (iph1,
 					natd_received, natd_seq++);
-				
+
 				plog (PLOG_INFO, PLOGLOC, NULL, "NAT-D payload #%d %s\n",
 					natd_seq - 1,
 					natd_verified ? "verified" : "doesn't match");
-				
+
 				rc_vfree (natd_received);
 				break;
 			}
@@ -1136,7 +1136,7 @@ ident_r2recv(struct ph1handle *iph1, rc_vchar_t *msg)
 #ifdef ENABLE_NATT
 	if (NATT_AVAILABLE(iph1))
 		plog (PLOG_INFO, PLOGLOC, NULL, "NAT %s %s%s\n",
-		      iph1->natt_flags & NAT_DETECTED ? 
+		      iph1->natt_flags & NAT_DETECTED ?
 		      		"detected:" : "not detected",
 		      iph1->natt_flags & NAT_DETECTED_ME ? "ME " : "",
 		      iph1->natt_flags & NAT_DETECTED_PEER ? "PEER" : "");
@@ -1422,7 +1422,7 @@ ident_r3recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 		id_data = ikev1_id2rct_id(iph1->id_p, &rc_id_type);
 		if (!id_data)
 			goto end;
-		for (peers_id = ikev1_peers_id(iph1->rmconf); 
+		for (peers_id = ikev1_peers_id(iph1->rmconf);
 		     peers_id;
 		     peers_id = peers_id->next) {
 			if (ike_compare_id(rc_id_type, id_data, peers_id) == 0)
@@ -1450,7 +1450,7 @@ ident_r3recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 				/* msg printed inner oakley_validate_auth() */
 				goto end;
 			}
-			EVT_PUSH(iph1->local, iph1->remote, 
+			EVT_PUSH(iph1->local, iph1->remote,
 			    EVTT_PEERPH1AUTH_FAILED, NULL);
 			isakmp_info_send_n1(iph1, type, NULL);
 			goto end;
@@ -1681,7 +1681,7 @@ ident_ir2mx(struct ph1handle *iph1)
 		plist = isakmp_plist_append(plist, natd[1], iph1->natt_options->payload_nat_d);
 	}
 #endif
-	
+
 	buf = isakmp_plist_set_all (&plist, iph1);
 
 	error = 0;
@@ -1825,7 +1825,7 @@ ident_ir3mx(struct ph1handle *iph1)
 	}
 
 	buf = isakmp_plist_set_all (&plist, iph1);
-	
+
 #ifdef HAVE_PRINT_ISAKMP_C
 	isakmp_printpacket(buf, iph1->local, iph1->remote, 1);
 #endif

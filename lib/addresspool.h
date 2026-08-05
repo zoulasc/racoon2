@@ -37,11 +37,11 @@
 
 #define	MAX_ADDRESS_LENGTH	16 /* sizeof(struct in6_addr) */
 
-/*						     
+/*
  *					       	   ikev2_child_sa
- *		   			    	     * ^         
- *					    	     | |         
- *		 			             v |         
+ *		   			    	     * ^
+ *					    	     | |
+ *		 			             v |
  * rcf_addresspool *--- rcf_address_pool_item *--- rcf_address
  *
  */
@@ -76,7 +76,7 @@ struct rcf_address {
 	/* struct ikev2_child_sa	*sa; */
 };
 
-struct rcf_address *rc_address_new(int, uint8_t *, int, struct timeval *, 
+struct rcf_address *rc_address_new(int, uint8_t *, int, struct timeval *,
 				   struct rcf_address_list_head *);
 struct rcf_address *rc_addrpool_alloc_any(struct rcf_addresspool *, int);
 struct rcf_address *rc_addrpool_assign(struct rcf_addresspool *, int, uint8_t *);

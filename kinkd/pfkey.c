@@ -186,7 +186,7 @@ ipsecdoi2rct_convert(unsigned int proto_id,
 		*a_keylen >>= 3;
 
 #if 0
-		if (t_id == IPSECDOI_ATTR_AUTH_HMAC_MD5 
+		if (t_id == IPSECDOI_ATTR_AUTH_HMAC_MD5
 		    && hashtype == IPSECDOI_ATTR_AUTH_KPDK) {
 			/* XXX is this ok? */
 

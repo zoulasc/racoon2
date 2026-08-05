@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# run scripts in the ikesa-rekey.d directory when IKE_SA is rekeyed 
+# run scripts in the ikesa-rekey.d directory when IKE_SA is rekeyed
 #
 
 cd @prefix@/etc/racoon2/hook

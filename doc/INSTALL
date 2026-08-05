@@ -16,7 +16,7 @@ o Note
 
   In this release,
 
-- We changed the default location of the configuration file 
+- We changed the default location of the configuration file
   from /usr/local/racoon2/etc to /usr/local/racoon2/etc/racoon2.
 
 - IKEv2 Configuration Payload is still experimental.
@@ -29,7 +29,7 @@ o Note
 
 - IKEv1 NAT-T only tested on Linux, and is still very experimental.
 
-- Linux specific Note that if your kernel enables NAT-T AND if you do not 
+- Linux specific Note that if your kernel enables NAT-T AND if you do not
   specify both "peers_sa_ipaddr" and "my_sa_ipaddr" in the configuration
   of the racoon system, then iked(8) can not install the pair of SAs
   into the kernel.
@@ -165,7 +165,7 @@ o Linux (kernel 2.6)
   CONFIG_CRYPTO_AES(_586)
   CONFIG_CRYPTO_DEFLATE
 
-  for more information about building kernel, 
+  for more information about building kernel,
   please refer to "Linux Kernel Source Directory"/README.
 
 o FreeBSD 5.5-RELEASE
@@ -251,15 +251,15 @@ After you run the configure script, you have to make all programs.
 	% make
 
 NOTE:
-       You may meet the compile error related to struct in6_pktinfo 
-       at iked/sockmisc.c on Linux. In this case rerun the configure 
+       You may meet the compile error related to struct in6_pktinfo
+       at iked/sockmisc.c on Linux. In this case rerun the configure
        script at the top racoon2 directory as described below:
 
        % make distclean
        % CFLAGS=-D_GNU_SOURCE ./configure
        % make
 
-       If you meet the error again, check whether the both ADVAPI line 
+       If you meet the error again, check whether the both ADVAPI line
        and _GNU_SOURCE line are defined (== 1) in iked/config.h.
 
 Then if you want to install them, just type the following:

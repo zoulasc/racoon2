@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2005-2006 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -77,7 +77,7 @@ extern int ikev1_cacerttype(struct rcf_remote *conf);
 extern void purge_remote(struct ph1handle *ph1);
 extern void purge_ipsec_spi(struct ph1handle *, struct sockaddr *, int,	uint32_t *, int);
 
-extern struct payload_list *isakmp_plist_append (struct payload_list *plist, 
+extern struct payload_list *isakmp_plist_append (struct payload_list *plist,
 	rc_vchar_t *payload, int payload_type);
 extern rc_vchar_t *isakmp_plist_set_all (struct payload_list **plist,
 	struct ph1handle *iph1);

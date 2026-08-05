@@ -75,7 +75,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 
 ]])],[AC_DEFINE(HAVE_SA_LEN, 1, define if struct sockaddr has sa_len field)
         AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
-        
+
 echo $ac_n "checking for architecture""... $ac_c" 1>&6
 case "$target" in
 	*freebsd4*)
@@ -86,7 +86,7 @@ case "$target" in
 		AC_DEFINE(HAVE_LOOKUP_IN_RESOLV_CONF, 1, [use lookup in /etc/resolve.conf])
 		AC_MSG_RESULT(use lookup in /etc/resolv.conf)
 		;;
-	*)      
+	*)
 		AC_DEFINE(HAVE_NSSWITCH_CONF, 1, [use /etc/nsswitch.conf])
 		AC_MSG_RESULT(use /etc/nsswitch.conf)
 		;;

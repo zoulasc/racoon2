@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -50,7 +50,7 @@ struct rcpfk_msg {
 	uint32_t seq;
 	struct sockaddr *sa_src;
 	struct sockaddr *sa_dst;
-	struct sockaddr *sa2_src;   /* required for pfkey migrate */ 
+	struct sockaddr *sa2_src;   /* required for pfkey migrate */
 	struct sockaddr *sa2_dst;   /* required for pfkey migrate */
 	uint32_t spi;
 	uint32_t reqid;

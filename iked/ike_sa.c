@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -396,7 +396,7 @@ ikev2_find_sa_by_serial(int num)
 
 /*
  * creates a new IKE_SA
- * if initiator_spi is NULL, creates an initiator SA 
+ * if initiator_spi is NULL, creates an initiator SA
  * if initiator_spi is non-NULL, creates a responder SA, remembers initiator_spi
  */
 struct ikev2_sa *

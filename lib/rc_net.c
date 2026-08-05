@@ -211,7 +211,7 @@ find_addrmacro(const char *buf)
 			continue;
 		if (memcmp(buf, rcs_addrmacro_list[i].macro, len) == 0)
 		    return &rcs_addrmacro_list[i];
-		
+
 	}
 
 	plog(PLOG_DEBUG, PLOGLOC, 0,
@@ -657,7 +657,7 @@ suitable_ifaddr6(const char *ifname, const struct sockaddr *ifaddr)
 
 	for (ifa = ifl; ifa != NULL; ifa = ifa->ifa_next)
 	{
-	   if (strcmp(ifa->ifa_name, ifname) != 0) 
+	   if (strcmp(ifa->ifa_name, ifname) != 0)
 	       continue;
 
 	   struct sockaddr_in6 *sin6_list = (struct sockaddr_in6*)ifa->ifa_addr;

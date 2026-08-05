@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004 Emmanuel Dreyfus
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,13 +33,13 @@
 #define _EVT_H
 
 struct evtdump {
-	size_t len;	
+	size_t len;
 	struct sockaddr_storage src;
 	struct sockaddr_storage dst;
 	time_t timestamp;
 	int type;
-	/* 
-	 * Optionnal list of struct isakmp_data 
+	/*
+	 * Optionnal list of struct isakmp_data
 	 * for type EVTT_ISAKMP_CFG_DONE
 	 */
 };

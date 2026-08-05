@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,8 +39,8 @@
 #define SAT_ESP		2
 #define SAT_IPCOMP	4
 
-/********** 
-           DECLARATIONS 
+/**********
+           DECLARATIONS
                        **********/
 
 /************************************************************************
@@ -133,9 +133,9 @@ static struct spid_data *sd_top = NULL;
 static int spid_data_srch_by_seq(uint32_t seq, struct spid_data **sdp);
 static int spid_data_srch_by_spid(uint32_t spid, struct spid_data **sdp);
 #ifdef HAVE_SPDUPDATE_BUG
-static int spid_data_srch_by_triplet(const char *slid, 
-		const struct sockaddr *sl_src, 
-		const struct sockaddr *sl_dst, 
+static int spid_data_srch_by_triplet(const char *slid,
+		const struct sockaddr *sl_src,
+		const struct sockaddr *sl_dst,
 		struct spid_data **sdp);
 #endif
 int get_slid_by_spid(uint32_t spid, char **slidp);
@@ -199,7 +199,7 @@ spmd_pfkey_init(void)
 	pfkey_sock = pfkey_container.so;
 
 	if (rcf_get_selectorlist(&sl_head) < 0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
+		SPMD_PLOG(SPMD_L_INTERR,
 			"Can't get Selector list in your configuration file");
 		return -1;
 	}
@@ -215,8 +215,8 @@ spmd_pfkey_init(void)
 
 		if (rcals->type == RCT_ADDR_FQDN && rcald->type == RCT_ADDR_FQDN) {
 			if (resolver_off&&!(spmd_nss & NSS_FILES)) {
-				SPMD_PLOG(SPMD_L_INTERR, 
-					"FQDN(dst=%.*s, src=%.*s) specified int selector %.*s, " 
+				SPMD_PLOG(SPMD_L_INTERR,
+					"FQDN(dst=%.*s, src=%.*s) specified int selector %.*s, "
 					"but resolver OFF. disregard this SP.",
 					(int)rcald->a.vstr->l, rcald->a.vstr->s,
 					(int)rcals->a.vstr->l, rcals->a.vstr->s,
@@ -235,7 +235,7 @@ spmd_pfkey_init(void)
 		}
 		else if (rcals->type == RCT_ADDR_FQDN && rcald->type == RCT_ADDR_INET) {
 			if (resolver_off) {
-				SPMD_PLOG(SPMD_L_INTERR, 
+				SPMD_PLOG(SPMD_L_INTERR,
 					"FQDN(src=%.*s) specified in selector %.*s, "
 					"but resolver OFF. disregard this SP.",
 					(int)rcals->a.vstr->l, rcals->a.vstr->s,
@@ -248,10 +248,10 @@ spmd_pfkey_init(void)
 			/* add sp_queue */
 			sp_queue_add(rc_vmem2str(sl->sl_index), rcals, rcald);
 			spd_add_skip=1;
-		} 
+		}
 		else if (rcals->type == RCT_ADDR_INET && rcald->type == RCT_ADDR_FQDN) {
 			if (resolver_off) {
-				SPMD_PLOG(SPMD_L_INTERR, 
+				SPMD_PLOG(SPMD_L_INTERR,
 					"FQDN(dst=%.*s) specified in selector %.*s,"
 					"but resolver OFF. disregard this SP.",
 					(int)rcald->a.vstr->l, rcald->a.vstr->s,
@@ -266,8 +266,8 @@ spmd_pfkey_init(void)
 			spd_add_skip=1;
 		}
 		else if (rcals->type == RCT_ADDR_MACRO && rcald->type == RCT_ADDR_MACRO) {
-			SPMD_PLOG(SPMD_L_INTERR, 
-				  "Not supported: both src and dst are macro (selector=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				  "Not supported: both src and dst are macro (selector=%.*s)",
 				  (int)sl->sl_index->l, sl->sl_index->s);
 			return -1; /* XXX we have to support this. */
 			spd_add_skip=1;
@@ -320,8 +320,8 @@ spmd_pfkey_init(void)
 	return 0;
 }
 
-/* 
- * PF_KEY socker receiver glue 
+/*
+ * PF_KEY socker receiver glue
  */
 static int
 spmd_pfkey_receiver(struct task *t)
@@ -342,7 +342,7 @@ spmd_pfkey_receiver(struct task *t)
 	return 0;
 }
 
-/* 
+/*
  * add only non-FQDN policies
  * this should be called by spmd_pfkey_init() only.
  * (it means that it is called once at spmd starting.)
@@ -400,16 +400,16 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 
 	/* check rcf_ipsec{} sa_* set or NULL */
 	if (set_satype(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			"Can't set suitable SA type, check your configuration file (selector=%.*s)",
 			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
 	/* set rc->samode; tunnel or transport */
 	if (set_samode(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			"Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			"Can't set suitable SA mode, check your configuration file (selector=%.*s)",
 			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
@@ -424,7 +424,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 
 	if (rc->samode == RCT_IPSM_TUNNEL) {
 		if (!pl->my_sa_ipaddr) {
-			SPMD_PLOG(SPMD_L_INTERR, "No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR, "No my_sa_ipaddr, check your configuration file (policy=%.*s)",
 			(int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
@@ -456,14 +456,14 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 			rc->sa_src = rcs_sadup(al->a.ipaddr);
 			break;
 		case RCT_ADDR_FQDN:
-			SPMD_PLOG(SPMD_L_INTERR, 
-				  "FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				  "FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
 				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
 		default:
-			SPMD_PLOG(SPMD_L_INTERR, 
-				  "Unknown address type in my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				  "Unknown address type in my_sa_ipaddr, check your configuration file (policy=%.*s)",
 				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
@@ -491,14 +491,14 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 			rc->sa_dst = rcs_sadup(al->a.ipaddr);
 			break;
 		case RCT_ADDR_FQDN:
-			SPMD_PLOG(SPMD_L_INTERR, 
-				"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
 				(int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 			break; /* never reach */
 		default:
-			SPMD_PLOG(SPMD_L_INTERR, 
-				"Unknown address type in peers_sa_ipaddr, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				"Unknown address type in peers_sa_ipaddr, check your configuration file (policy=%.*s)",
 				(int)pl->pl_index->l, pl->pl_index->s);
 			goto err; /* never reach */
 		}
@@ -506,11 +506,11 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 
     set_selectors:
 	if (!sl->src || !sl->dst) {
-		SPMD_PLOG(SPMD_L_INTERR, "No selector src or/and dst address(es) (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR, "No selector src or/and dst address(es) (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
-	al = sl->src; /* do we need to care multiple entries? - NO, but FQDN/MACRO OK*/ 
+	al = sl->src; /* do we need to care multiple entries? - NO, but FQDN/MACRO OK*/
 	switch (al->type) {
 	case RCT_ADDR_MACRO:
 		if (rcs_is_addr_any(al) || rcs_is_addr_rw(al)) {
@@ -552,19 +552,19 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		break;
 	case RCT_ADDR_FQDN:
 		/* this type have to be filtered out by spmd_pfkey_init() */
-		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector source address (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector source address (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err; /* XXX */
 		break; /* never reach */
 	default:
-		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector source address (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector source address (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 		break; /* never reach */
 	}
 	rc->pref_src = sl->src->prefixlen;
 
-	al = sl->dst; /* do we need to care multiple entries? - ditto */ 
+	al = sl->dst; /* do we need to care multiple entries? - ditto */
 	switch (al->type) {
 	case RCT_ADDR_MACRO:
 		if (rcs_is_addr_any(al) || rcs_is_addr_rw(al)) {
@@ -605,12 +605,12 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		break;
 	case RCT_ADDR_FQDN:
 		/* this type have to be filtered out by spmd_pfkey_init() */
-		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector dstination address (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR, "FQDN macro is not supported in selector dstination address (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err; /* XXX */
 		break; /* never reach */
 	default:
-		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector dstination address (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR, "Unknown address macro in selector dstination address (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 		break; /* never reach */
@@ -641,7 +641,7 @@ spmd_nonfqdn_sp_add(struct rcf_selector *sl)
 		goto err;
 	}
 
-	/* at spmd starting time(== this time), 
+	/* at spmd starting time(== this time),
 	 * we set urgent=1
 	 * because we may send a lot of spdupdate messages to the kernel.
 	 * this will cause the pfkey socket buffer to overflow before reading these response.
@@ -662,9 +662,9 @@ err:
 /************************************************************************
  * PF_KEY operations
  ************************************************************************/
-/* 
+/*
  * Create a SPDUPDATE task
- * NOTE : rc{seq, slid, ...} will be overwritten 
+ * NOTE : rc{seq, slid, ...} will be overwritten
  */
 int
 spmd_spd_update(struct rcf_selector *sl, struct rcpfk_msg *rc, int urgent)
@@ -694,20 +694,20 @@ retry:
 		memset(&src, 0, sizeof(src));
 		memset(&dst, 0, sizeof(dst));
 
-		ret = getnameinfo(rc->sp_src, SPMD_SALEN(rc->sp_src), 
-				  shost, sizeof(shost), sserv, sizeof(sserv), 
+		ret = getnameinfo(rc->sp_src, SPMD_SALEN(rc->sp_src),
+				  shost, sizeof(shost), sserv, sizeof(sserv),
 						NI_NUMERICHOST|NI_NUMERICSERV);
 		if (ret) {
 			SPMD_PLOG(SPMD_L_INTERR, "Failed: getnameinfo(src):%s", strerror(errno));
 		}
-		ret = getnameinfo(rc->sp_dst, SPMD_SALEN(rc->sp_dst), 
-				  dhost, sizeof(dhost), dserv, sizeof(dserv), 
+		ret = getnameinfo(rc->sp_dst, SPMD_SALEN(rc->sp_dst),
+				  dhost, sizeof(dhost), dserv, sizeof(dserv),
 				  		NI_NUMERICHOST|NI_NUMERICSERV);
 		if (ret) {
 			SPMD_PLOG(SPMD_L_INTERR, "Failed: getnameinfo(dst):%s", strerror(errno));
 		}
 		SPMD_PLOG(SPMD_L_DEBUG, "[SP UPDATE] SRC=[%s]:%s DST=[%s]:%s", shost, sserv, dhost, dserv);
-			
+
 	}
 #endif
 	rc->seq = (pfkey_seq++) != 0 ? pfkey_seq : (pfkey_seq++);
@@ -1075,9 +1075,9 @@ spmd_spd_flush(int urgent)
 	SPMD_PLOG(SPMD_L_INFO, "Flushing Security Policies...");
 	sd = sd_top;
 	do {
-		/* after calling spmd_spd_delete(urgent=1), sd will be free'd. 
+		/* after calling spmd_spd_delete(urgent=1), sd will be free'd.
 		 * so we have to store sd->next.*/
-		sd_next = sd->next; 
+		sd_next = sd->next;
 		if ( (sd->spid != 0) && (spmd_spd_delete(sd->spid, urgent)<0) ) {
 			SPMD_PLOG(SPMD_L_INTERR, "Can't delete IPsec Security Policy: spid=%u", sd->spid);
 		} else {
@@ -1173,7 +1173,7 @@ spmd_pfkey_send_migrate(struct task *t)
 /*
  * SPDADD callback
  */
-static int 
+static int
 spmd_pfkey_spdadd_cb(struct rcpfk_msg *rc)
 {
 
@@ -1206,7 +1206,7 @@ spmd_pfkey_spdadd_cb(struct rcpfk_msg *rc)
 /*
  * SPDUPDATE callback
  */
-static int 
+static int
 spmd_pfkey_spdupdate_cb(struct rcpfk_msg *rc)
 {
 	spid_data_update(rc->seq, rc->slid); /* returned rc->slid is spid */
@@ -1229,7 +1229,7 @@ spmd_pfkey_spdupdate_cb(struct rcpfk_msg *rc)
 /*
  * SPDDELETE calback
  */
-static int 
+static int
 spmd_pfkey_spddelete_cb(struct rcpfk_msg *rc)
 {
 #ifdef SPMD_DEBUG
@@ -1251,7 +1251,7 @@ spmd_pfkey_spddelete_cb(struct rcpfk_msg *rc)
 /*
  * SPDDELETE2 callback
  */
-static int 
+static int
 spmd_pfkey_spddelete2_cb(struct rcpfk_msg *rc)
 {
 #ifdef SPMD_DEBUG
@@ -1306,7 +1306,7 @@ spmd_alloc_rcpfk_msg(void)
 	struct rcpfk_msg *rc = NULL;
 
 	rc = spmd_calloc(sizeof(struct rcpfk_msg));
-	if (!rc) 
+	if (!rc)
 		return NULL;
 
 	rc->so = pfkey_sock;
@@ -1321,7 +1321,7 @@ spmd_alloc_rcpfk_msg(void)
 static void
 spmd_rcpfk_cont_sock_free(struct rcpfk_msg *rc)
 {
-	if (!rc) 
+	if (!rc)
 		return;
 
 	if (rc->sa_src && (rc->sa_src != (void *)&rc->sa_src_storage)) {
@@ -1369,7 +1369,7 @@ spmd_free_rcpfk_msg(struct rcpfk_msg *rc)
 /*
  * Set satype in rcpfk_msg{}
  */
-static int 
+static int
 set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 {
 	struct rcf_policy *pl = NULL;
@@ -1381,16 +1381,16 @@ set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 		return -1;
 	}
 	if (!sl->pl) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			"No policy found, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			"No policy found, check your configuration file (selector=%.*s)",
 			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 	pl = sl->pl;
 
 	if (!sl->pl->ips) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			"No IPsec info, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			"No IPsec info, check your configuration file (selector=%.*s)",
 			(int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
@@ -1408,7 +1408,7 @@ set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 		satype |= SAT_IPCOMP;
 	}
 	if ( (satype&SAT_ESP) && !(satype&SAT_AH) && !(satype&SAT_IPCOMP) ) {
-		rc->satype = RCT_SATYPE_ESP; 
+		rc->satype = RCT_SATYPE_ESP;
 	} else if ( !(satype&SAT_ESP) && (satype&SAT_AH) && !(satype&SAT_IPCOMP) ) {
 		rc->satype = RCT_SATYPE_AH;
 	} else if ( !(satype&SAT_ESP) && !(satype&SAT_AH) && (satype&SAT_IPCOMP) ) {
@@ -1432,7 +1432,7 @@ set_satype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	return 0;
 }
 
-/* 
+/*
  * Set samode in rcpfk_msg{}
  */
 static int
@@ -1445,8 +1445,8 @@ set_samode(struct rcf_selector *sl, struct rcpfk_msg *rc)
 		return -1;
 	}
 	if (!sl->pl) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			  "No policy found, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			  "No policy found, check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
@@ -1479,7 +1479,7 @@ set_dir(struct rcf_selector *sl, struct rcpfk_msg *rc)
  * Set upper layer protocol (ul) in rcpfk_msg{}
  */
 static int
-set_ul_proto(struct rcf_selector *sl, struct rcpfk_msg *rc) 
+set_ul_proto(struct rcf_selector *sl, struct rcpfk_msg *rc)
 {
 	if (!sl) {
 		SPMD_PLOG(SPMD_L_INTERR, "No selector");
@@ -1579,9 +1579,9 @@ set_pltype(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	return 0;
 }
 
-/* 
- * Fill the rcpfk_msg{} from the selector value 
- * except for sp_src/sp_dst and prefix 
+/*
+ * Fill the rcpfk_msg{} from the selector value
+ * except for sp_src/sp_dst and prefix
  */
 int
 sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
@@ -1602,16 +1602,16 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 
 	/*** set rc->ul_proto (upper layer protocol) ***/
 	if (set_ul_proto(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			  "Can't set upper layer protocol, check your configuration(selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			  "Can't set upper layer protocol, check your configuration(selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
 
 	/*** set rc->dir (direction) ***/
 	if (set_dir(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			  "Can't set direction, check your configuration (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			  "Can't set direction, check your configuration (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
@@ -1619,7 +1619,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	/*** set rc->reqid ***/
 	if (set_reqid(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
-			  "Can't set reqid, check your configuration file (selector=%.*s)", 
+			  "Can't set reqid, check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		goto err;
 	}
@@ -1638,16 +1638,16 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 
 	/*** set rc->satype ***/
 	if (set_satype(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			  "Can't set suitable SA type, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			  "Can't set suitable SA type, check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
 
 	/*** set rc->samode (tunnel or transport) ***/
 	if (set_samode(sl, rc)<0) {
-		SPMD_PLOG(SPMD_L_INTERR, 
-			  "Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
+		SPMD_PLOG(SPMD_L_INTERR,
+			  "Can't set suitable SA mode, check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
@@ -1655,7 +1655,7 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	/*** set rc->ipsec_level ***/
 	if (set_ipsec_level(sl, rc)<0) {
 		SPMD_PLOG(SPMD_L_INTERR,
-			  "Can't set suitable ipsec_level, check your configuration file (selector=%.*s)", 
+			  "Can't set suitable ipsec_level, check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		return -1;
 	}
@@ -1663,19 +1663,19 @@ sl_to_rc_wo_addr(struct rcf_selector *sl, struct rcpfk_msg *rc)
 	/*** set rc->sa_src, rc->sa_dst ***/
 	if (rc->samode == RCT_IPSM_TUNNEL) {
 		if (!pl->my_sa_ipaddr) {
-			SPMD_PLOG(SPMD_L_INTERR, 
-				  "No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				  "No my_sa_ipaddr, check your configuration file (policy=%.*s)",
 				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		if (!pl->peers_sa_ipaddr) {
-			SPMD_PLOG(SPMD_L_INTERR, 
-				  "No peers_sa_ipaddr, check your configuration file (policy=%.*s)", 
+			SPMD_PLOG(SPMD_L_INTERR,
+				  "No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
 				  (int)pl->pl_index->l, pl->pl_index->s);
 			goto err;
 		}
 		al = pl->my_sa_ipaddr; /* always single entry */
-		if (al->type == RCT_ADDR_INET) { 
+		if (al->type == RCT_ADDR_INET) {
 			rc->sa_src = rcs_sadup(al->a.ipaddr);
 		} else {
 			rc->sa_src = NULL; /* just ignore, caller must set this */
@@ -1797,7 +1797,7 @@ sp_queue_search(const char *sl_index)
 
 	len = strlen(sl_index);
 	for (spq=sp_queue_top;spq;spq=spq->next) {
-		if ( (len == strlen(spq->sl_index)) && (!strncmp(spq->sl_index, sl_index, len)) ) 
+		if ( (len == strlen(spq->sl_index)) && (!strncmp(spq->sl_index, sl_index, len)) )
 			return spq;
 	}
 
@@ -1816,7 +1816,7 @@ spmd_msg_update(struct rcf_selector *sl, struct sockaddr *src,
 
 	if (rcs_getsaport(src) == NULL) {
 		SPMD_PLOG(SPMD_L_INTERR, "Unknown address family, "
-			  "check your configuration file (selector=%.*s)", 
+			  "check your configuration file (selector=%.*s)",
 			  (int)sl->sl_index->l, sl->sl_index->s);
 		return;
 	}
@@ -1835,7 +1835,7 @@ spmd_msg_update(struct rcf_selector *sl, struct sockaddr *src,
 }
 
 /*
- * Update FQDN policies 
+ * Update FQDN policies
  */
 int
 fqdn_sp_update(void)
@@ -1882,16 +1882,16 @@ fqdn_sp_update(void)
 				    fal_dst->sa, DIR_DST);
 			}
 		}
-		else { 
+		else {
 			for (fal_src=fal_src0; fal_src; fal_src=fal_src->next) {
 				af = fal_src->sa->sa_family;
 				if ( (!fal_dst) && (sp->dst_type==RCT_ADDR_INET) ) {
-					if (af != sp->dst.dst_sa->sa_family) 
+					if (af != sp->dst.dst_sa->sa_family)
 						continue;
 					spmd_msg_update(sl, fal_src->sa,
 					    sp->dst.dst_sa, DIR_SRC);
 				}
-				else { 
+				else {
 					for (fal_dst=fal_dst0; fal_dst; fal_dst=fal_dst->next) {
 						if (af != fal_dst->sa->sa_family)
 							continue;
@@ -1899,7 +1899,7 @@ fqdn_sp_update(void)
 						    fal_dst->sa, DIR_BOTH);
 					}
 				}
-			} 
+			}
 		}
 
 		rcf_free_selector(sl);
@@ -1911,8 +1911,8 @@ fqdn_sp_update(void)
 /************************************************************************
  *  SPID<->SLID list operations
  ************************************************************************/
-/* 
- * Get spid_data by seq number 
+/*
+ * Get spid_data by seq number
  */
 static int
 spid_data_srch_by_seq(uint32_t seq, struct spid_data **sdp)
@@ -1937,8 +1937,8 @@ spid_data_srch_by_seq(uint32_t seq, struct spid_data **sdp)
 	return 0;
 }
 
-/* 
- * Get spid_data by spid 
+/*
+ * Get spid_data by spid
  */
 static int
 spid_data_srch_by_spid(uint32_t spid, struct spid_data **sdp)
@@ -1965,9 +1965,9 @@ spid_data_srch_by_spid(uint32_t spid, struct spid_data **sdp)
 
 #ifdef HAVE_SPDUPDATE_BUG
 static int
-spid_data_srch_by_triplet(const char *slid, 
-		const struct sockaddr *sl_src, 
-		const struct sockaddr *sl_dst, 
+spid_data_srch_by_triplet(const char *slid,
+		const struct sockaddr *sl_src,
+		const struct sockaddr *sl_dst,
 		struct spid_data **sdp)
 {
 	struct spid_data *sd = NULL;
@@ -1980,21 +1980,21 @@ spid_data_srch_by_triplet(const char *slid,
 
 	sd = sd_top;
 	while (sd) {
-		if ( (!strncmp(sd->slid, slid, strlen(sd->slid))) 
-		      && (!sockcmp(sd->src, sl_src)) 
+		if ( (!strncmp(sd->slid, slid, strlen(sd->slid)))
+		      && (!sockcmp(sd->src, sl_src))
 		      && (!sockcmp(sd->dst, sl_dst)) ) {
 			*sdp = sd;
 			break;
 		}
 		sd = sd->next;
 	}
-		
+
 	return 0;
 }
 #endif
 
-/* 
- * Get slid by (real) spid 
+/*
+ * Get slid by (real) spid
  */
 int
 get_slid_by_spid(uint32_t spid, char **slidp)
@@ -2043,7 +2043,7 @@ spid_data_update(uint32_t seq, uint32_t spid)
 		SPMD_PLOG(SPMD_L_DEBUG, "Not found spid_data (by spid) - No Problem");
 	}
 	if (another_sd) {
-		SPMD_PLOG(SPMD_L_DEBUG, 
+		SPMD_PLOG(SPMD_L_DEBUG,
 			 "Already the same SP exists - It's not necessary to update the internal spid<->slid list");
 	}
 
@@ -2067,7 +2067,7 @@ spid_data_update(uint32_t seq, uint32_t spid)
 		SPMD_PLOG(SPMD_L_INTERR, "Already bound slid(%s) to spid(%u), could not bind slid to new spid(%u)",
 			sd->slid, sd->spid, spid);
 		return -1; /* lib blocks this, never rearch here */
-	} 
+	}
 
 	SPMD_PLOG(SPMD_L_DEBUG, "spid=%u mapped to slid=%s. (seq=%u)", spid, sd->slid, seq);
 
@@ -2078,9 +2078,9 @@ spid_data_update(uint32_t seq, uint32_t spid)
 	return 0;
 }
 
-/* 
+/*
  * Register SPID<->SLID list
- * at this time, slid<->spid mapping is not resolved(just add to list), spid==0 
+ * at this time, slid<->spid mapping is not resolved(just add to list), spid==0
  */
 #ifdef HAVE_SPDUPDATE_BUG
 /* *BSD doesn't keep SPID number after spdupdate.
@@ -2248,7 +2248,7 @@ spid_data_add_complete(uint32_t spid, const char *slid)
 }
 
 /*
- * Delete an element from SPID<->SLID list 
+ * Delete an element from SPID<->SLID list
  */
 static int
 spid_data_del(struct spid_data *sd)
@@ -2273,7 +2273,7 @@ spid_data_del(struct spid_data *sd)
 	if (sd_top == sd)
 		sd_top = next_sd;
 
-	if (sd->slid) 
+	if (sd->slid)
 		spmd_free(sd->slid);
 #ifdef HAVE_SPMDUPDATE_BUG
 	if (sd->src)
@@ -2286,7 +2286,7 @@ spid_data_del(struct spid_data *sd)
 }
 
 /*
- * Delete an element involved to the spid number from SPID<->SLID list 
+ * Delete an element involved to the spid number from SPID<->SLID list
  */
 static int
 spid_data_del_by_spid(int32_t spid)

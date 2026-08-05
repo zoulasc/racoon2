@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,15 +38,15 @@ struct llv {
 } llv_tbl [] = {
 	{ SPMD_L_MIN, 0 },
 	{ SPMD_L_CRIT, PLOG_CRITICAL },
-	{ SPMD_L_PROTOERR, PLOG_PROTOERR }, 
-	{ SPMD_L_PROTOWARN, PLOG_PROTOWARN }, 
-	{ SPMD_L_INTERR, PLOG_INTERR }, 
-	{ SPMD_L_INTWARN, PLOG_INTWARN }, 
+	{ SPMD_L_PROTOERR, PLOG_PROTOERR },
+	{ SPMD_L_PROTOWARN, PLOG_PROTOWARN },
+	{ SPMD_L_INTERR, PLOG_INTERR },
+	{ SPMD_L_INTWARN, PLOG_INTWARN },
 	{ SPMD_L_NOTICE, PLOG_INFO },
 	{ SPMD_L_INFO, PLOG_INFO },
-	{ SPMD_L_DEBUG, PLOG_DEBUG }, 
-	{ SPMD_L_DEBUG2, PLOG_DEBUG }, 
-	{ SPMD_L_DEBUG3, PLOG_DEBUG }, 
+	{ SPMD_L_DEBUG, PLOG_DEBUG },
+	{ SPMD_L_DEBUG2, PLOG_DEBUG },
+	{ SPMD_L_DEBUG3, PLOG_DEBUG },
 	{ SPMD_L_MAX, 0},
 };
 
@@ -93,7 +93,7 @@ sockcmp(const struct sockaddr *sa1, const struct sockaddr *sa2)
 
 		addr1 = sin1->sin_addr.s_addr;
 		addr2 = sin2->sin_addr.s_addr;
-		
+
 		if (addr1 == addr2)
 			return 0;
 		else

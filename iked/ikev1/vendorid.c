@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -191,7 +191,7 @@ set_vendorid(int vendorid)
 		return (NULL);
 	}
 
-	/* The rest of racoon expects a private copy 
+	/* The rest of racoon expects a private copy
 	 * of the VID that could be free'd after use.
 	 * That's why we don't return the original pointer. */
 	return rc_vdup(current->hash);
@@ -217,7 +217,7 @@ check_vendorid(struct isakmp_gen *gen)
 	current = lookup_vendor_id_by_hash((char *)(gen + 1));
 	if (!current)
 		goto unknown;
-	
+
 	if (current->hash->l < vidlen)
 		plog(PLOG_INFO, PLOGLOC, NULL,
 		     "received broken Microsoft ID: %s\n",
@@ -235,33 +235,33 @@ unknown:
 	return (VENDORID_UNKNOWN);
 }
 
-static rc_vchar_t * 
+static rc_vchar_t *
 vendorid_fixup(int vendorid, rc_vchar_t *vidhash)
-{			   
+{
 	switch(vendorid) {
 	case VENDORID_XAUTH: {	/* The vendor Id is truncated */
-		rc_vchar_t *tmp;					    
-				  
+		rc_vchar_t *tmp;
+
 		if ((tmp = rc_vmalloc(8)) == NULL) {
 			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "unable to hash vendor ID string\n");
-			return NULL;				    
-		}			
-		  
-		memcpy(tmp->v, vidhash->v, 8);
-		rc_vfree(vidhash);		  
-		vidhash = tmp;
-				   
-		break;
-	} 
-	case VENDORID_UNITY:	/* Two bytes tweak */
-		vidhash->u[14] = 0x01;		  
-		vidhash->u[15] = 0x00;
-		break;		   
+			return NULL;
+		}
 
-	default:     
+		memcpy(tmp->v, vidhash->v, 8);
+		rc_vfree(vidhash);
+		vidhash = tmp;
+
 		break;
-	}		
-	
+	}
+	case VENDORID_UNITY:	/* Two bytes tweak */
+		vidhash->u[14] = 0x01;
+		vidhash->u[15] = 0x00;
+		break;
+
+	default:
+		break;
+	}
+
 	return vidhash;
-}			 
+}

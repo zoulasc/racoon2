@@ -102,7 +102,7 @@ admin_process(void)
 {
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "calling process\n");
 }
-	
+
 #ifdef notyet
 static int
 admin_handler(void *ctx, int fd)

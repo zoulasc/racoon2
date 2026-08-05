@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004-2005 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -116,7 +116,7 @@ resp_state0_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 
 	default:
 		/* else, unexpected unauthenticated notify */
-		/* 
+		/*
 		 * if (trust_unauthenticated_notify) {
 		 *   rate-limit;
 		 *   ikev2_process_notify(notify);
@@ -261,7 +261,7 @@ init_ike_sa_init_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 
 	default:
 		/* else, unexpected unauthenticated notify */
-		/* 
+		/*
 		 * if (trust_unauthenticated_notify) {
 		 *   rate-limit;
 		 *   ikev2_process_notify(notify);
@@ -339,7 +339,7 @@ init_ike_sa_auth_recv_notify(struct ikev2_sa *ike_sa, rc_vchar_t *msg,
 
 	/* (draft-eronen-ipsec-ikev2-clarifications-05.tx)
 	 * 4.2  Creating an IKE_SA without a CHILD_SA
-	 * 
+	 *
 	 * It is recommended that the responder set up an IKE_SA even if it is
 	 * not possible to set up a CHILD_SA, as long as there is agreement on
 	 * the cryptographic parts of the IKE_SA.  This might happen when the
@@ -583,7 +583,7 @@ ikev2_process_notify(struct ikev2_sa *ike_sa,
 	 * proto == NONE:       no SPI
 	 * proto == IKE_SA:     no SPI
 	 * proto == CHILD:      child spi
-	 * 
+	 *
 	 * type ERROR:
 	 * in response: MUST assume request has failed entirely
 	 * in request: unrecognized error MUST be ignored, SHOULD be logged

@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, 1998, and 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -921,7 +921,7 @@ isakmp_handler(int so_isakmp)
 	}
 #ifdef ENABLE_NATT
 	/*
-	 * we don't know about portchange yet, 
+	 * we don't know about portchange yet,
 	 * look for non-esp marker instead
 	 */
 	if (x.non_esp[0] == 0 && x.non_esp[1] != 0) {
@@ -930,7 +930,7 @@ isakmp_handler(int so_isakmp)
 #endif
 
 	/*
-	 * now we know if there is an extra non-esp 
+	 * now we know if there is an extra non-esp
 	 * marker at the beginning or not
 	 */
 	memcpy((char *)&isakmp, x.buf + extralen, sizeof(isakmp));
@@ -1191,7 +1191,7 @@ isakmp_initiate(struct sadb_request_method *callback_method,
 	int err = ECONNREFUSED;
 
 	req = racoon_malloc(sizeof(*req));
-	if (!req) 
+	if (!req)
 		goto fail_nomem;
 
 	req->callback_method = callback_method;
@@ -1621,7 +1621,7 @@ isakmp_parse_proposal(struct isakmp_domain *doi, uint8_t *payload_ptr,
 			prop_array[prop->p_no] = transf_list;
 		} else {
 			struct prop_pair *q;
-			for (q = prop_array[prop->p_no]; q->next; q = q->next) 
+			for (q = prop_array[prop->p_no]; q->next; q = q->next)
 				;
 			q->next = transf_list;
 		}

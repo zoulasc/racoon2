@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,7 +31,7 @@
 #define __SPMD_QUERY_H
 
 /* statistics */
-/* 
+/*
  * Q_QUERY         : # of queries from apps to spmd
  * Q_RESPONSE      : # of responses from spmd to apps
  * Q_QUERY_PROXY   : # of query proxies from spmd to dns server
@@ -39,14 +39,14 @@
  * Q_EXPIRED_QUERY : # of expired quries (just sweep or timeout)
  * Q_DUP_QUERY     : # of duplicated queries which spmd received from apps
  */
-enum qtype {Q_QUERY, Q_RESPONSE, Q_QUERY_PROXY, 
+enum qtype {Q_QUERY, Q_RESPONSE, Q_QUERY_PROXY,
 	Q_RESPONSE_PROXY, Q_EXPIRED_QUERY, Q_DUP_QUERY, Q_END};
 typedef struct spmd_stat {
-	enum qtype type; 
+	enum qtype type;
 	uint32_t number;
 	const char *name;
 } qstat_t;
-extern qstat_t qstat[]; 
+extern qstat_t qstat[];
 
 /*----- query queue -----*/
 struct query_q {

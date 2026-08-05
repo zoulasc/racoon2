@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, 1998, and 2005 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -57,12 +57,12 @@ static int rtsock = -1;
 #ifdef RTM_IFANNOUNCE
             RTM_IFANNOUNCE,
 #endif
-            RTM_ADD, RTM_CHANGE, RTM_DELETE, 
+            RTM_ADD, RTM_CHANGE, RTM_DELETE,
 #ifdef RTM_CHGADDR
             RTM_CHGADDR,
-#endif          
-            RTM_NEWADDR, RTM_DELADDR 
-        };  
+#endif
+            RTM_NEWADDR, RTM_DELADDR
+        };
 #endif
 
 int
@@ -104,11 +104,11 @@ rtsock_process(void)
 {
 #ifndef __linux__
 	ssize_t len;
-#ifdef __linux__ 
+#ifdef __linux__
 	char buf[4096];
 	struct sockaddr_nl dst_sa;
 	struct iovec iov = { buf, sizeof(buf) };
-	struct msghdr msg = { &dst_sa, sizeof(dst_sa), &iov, 1, NULL, 0, 0 }; 
+	struct msghdr msg = { &dst_sa, sizeof(dst_sa), &iov, 1, NULL, 0, 0 };
 	struct nlmsghdr nlh = (struct nlmsghdr *)buf;
 #define rtm_type nlmsg_type
 	len = recv(rtsock, &msg, sizeof(msg), 0);

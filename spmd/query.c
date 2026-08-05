@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,7 +62,7 @@
 
 
 /*------ statistics ------*/
-qstat_t qstat[] = 
+qstat_t qstat[] =
 {
 	{Q_QUERY, 0, "DNS QUERY"},			/* apps -> spmd */
 	{Q_RESPONSE, 0, "DNS RESPONSE"},		/* spmd -> apps */
@@ -83,7 +83,7 @@ find_query_q(uint16_t id)
 {
 	struct query_q *q;
 
-	if (!top_q) 
+	if (!top_q)
 		goto end;
 
 	for (q = top_q; q; q = q->next) {
@@ -139,11 +139,11 @@ add_query_q(uint16_t id, struct sockaddr *sa, int s)
 
 	return 0;
 }
-	
+
 static struct query_q *
 del_query_q(struct query_q *q)
 {
-	struct query_q *next=NULL; 
+	struct query_q *next=NULL;
 	struct query_q *pre=NULL;
 
 	DPRINTF("[del_query_q]{%p} id=%#hx ",q,q->id);
@@ -158,7 +158,7 @@ del_query_q(struct query_q *q)
 	} else if (q->next == NULL) { /* last */
 		pre = q->pre;
 		pre->next = NULL;
-	} else { 
+	} else {
 		pre = q->pre;
 		next = q->next;
 
@@ -179,7 +179,7 @@ sweep_query_q(void)
 	struct query_q *q;
 	time_t now;
 
-	if (!top_q) 
+	if (!top_q)
 		return;
 
 	now = time(NULL);
@@ -201,9 +201,9 @@ sweep_query_q(void)
 	if (spmd_loglevel >= SPMD_L_DEBUG2) {
 		int i =0;
 		SPMD_PLOG(SPMD_L_DEBUG2, "[DNS Query Queue]");
-		for (q = top_q; q; q = q->next) 
-			SPMD_PLOG(SPMD_L_DEBUG2, 
-				 " [%02d]{%p} id=%#hx, expiration=%d, next=%p, pre=%p", 
+		for (q = top_q; q; q = q->next)
+			SPMD_PLOG(SPMD_L_DEBUG2,
+				 " [%02d]{%p} id=%#hx, expiration=%d, next=%p, pre=%p",
 				 i++, q,q->id,(int)q->expiration,q->next,q->pre);
 	}
 
@@ -229,8 +229,8 @@ flush_query_q(void)
 }
 
 /* ---------- task handler --------- */
-		
-/* from resolver 
+
+/* from resolver
  * s: from local resolver (v4/6)
  */
 int
@@ -259,7 +259,7 @@ query_recv(struct task *t)
 
 	rlen = recvfrom(s, msg, len, flags, sa, &salen);
 	if (rlen < 0 || rlen > MAX_UDP_DNS_SIZE) {
-		SPMD_PLOG(SPMD_L_PROTOWARN, "Invalid query packet, length=%d,(%s)", 
+		SPMD_PLOG(SPMD_L_PROTOWARN, "Invalid query packet, length=%d,(%s)",
 					rlen,strerror(errno));
 		rtn = -1;
 		goto fin;
@@ -268,7 +268,7 @@ query_recv(struct task *t)
 	h = (struct dnsh *)msg;
 	id = ntohs(h->id);
 	err = add_query_q(id, sa, s);
-	if (err < 0) { 
+	if (err < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't add this query to the query list");
 		rtn = -1;
 		goto fin;
@@ -303,7 +303,7 @@ fin:
 	return rtn;
 }
 
-/* to dns server 
+/* to dns server
  * s: dns server
  */
 int
@@ -356,7 +356,7 @@ query_send(struct task *t)
 	return 0;
 }
 
-/* from dns server 
+/* from dns server
  * s: dns server
  */
 int
@@ -447,7 +447,7 @@ response_send(struct task *t)
 		SPMD_PLOG(SPMD_L_INTERR, "Can't forward query response to resolver (sendto:n=%d)", n);
 		return -1;
 	}
-	
+
 	/* statistics */
 	qstat[Q_RESPONSE_PROXY].number++;
 

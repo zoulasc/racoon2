@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -87,7 +87,7 @@ dnsl_add(struct dns_server *dns)
 		dsl->tail = dns;
 		dsl->tail->next = dsl->head;
 		return ;
-	} 
+	}
 
 	dsl->tail->next = dns;
 	while (dns->next)
@@ -103,7 +103,7 @@ dnsl_del(struct dns_server *dns)
 {
 	struct dns_server *d, *pre;
 
-	if (dsl->head == dsl->tail) 
+	if (dsl->head == dsl->tail)
 		return -1;
 
 	d = dsl->head;
@@ -111,7 +111,7 @@ dnsl_del(struct dns_server *dns)
 
 	do {
 		if (!sockcmp(&d->sock.sa, &dns->sock.sa)) {
-			if (d == dsl->head) 
+			if (d == dsl->head)
 				dsl->head = d->next;
 			if (d == dsl->tail)
 				dsl->tail = pre;
@@ -120,7 +120,7 @@ dnsl_del(struct dns_server *dns)
 			pre->next = d->next;
 			return 0;
 		}
-			
+
 		d = d->next;
 		pre = pre->next;
 	} while (d != dsl->head);
@@ -140,7 +140,7 @@ dnsl_find(const struct sockaddr *sa)
 		ret = sockcmp(sa, &dns->sock.sa);
 		if (ret == 0) {
 			return dns;
-		} 
+		}
 		dns = dns->next;
 	} while (dns != dsl->head);
 
@@ -200,7 +200,7 @@ task_alloc_dns(struct sockaddr *sa)
 	return dns->t;
 }
 
-	
+
 void
 spmd_add_dns_task(void)
 {
@@ -213,7 +213,7 @@ spmd_add_dns_task(void)
 		spmd_exit(EXIT_FAILURE);
 	}
 
-	do { 
+	do {
 		t = task_alloc(MAX_UDP_DNS_SIZE);
 		t->fd = dns->s;
 		t->sa = NULL;
@@ -285,7 +285,7 @@ alloc_dns_data(void)
 #define ANCOUNT	2
 #define NSCOUNT	3
 #define ARCOUNT	4
-int 
+int
 add_dns_data(struct dns_data *dd, struct rr *p, int counttype)
 {
 	struct rr *r;
@@ -299,7 +299,7 @@ add_dns_data(struct dns_data *dd, struct rr *p, int counttype)
 				break;
 			}
 			r = dd->q;
-			while (r->next != NULL) 
+			while (r->next != NULL)
 				r = r->next;
 			r->next = p;
 			break;
@@ -310,7 +310,7 @@ add_dns_data(struct dns_data *dd, struct rr *p, int counttype)
 				break;
 			}
 			r = dd->a;
-			while (r->next != NULL) 
+			while (r->next != NULL)
 				r = r->next;
 			r->next = p;
 			break;
@@ -321,7 +321,7 @@ add_dns_data(struct dns_data *dd, struct rr *p, int counttype)
 				break;
 			}
 			r = dd->ns;
-			while (r->next != NULL) 
+			while (r->next != NULL)
 				r = r->next;
 			r->next = p;
 			break;
@@ -332,7 +332,7 @@ add_dns_data(struct dns_data *dd, struct rr *p, int counttype)
 				break;
 			}
 			r = dd->ar;
-			while (r->next != NULL) 
+			while (r->next != NULL)
 				r = r->next;
 			r->next = p;
 			break;
@@ -349,7 +349,7 @@ void
 free_dns_data(struct dns_data *dd)
 {
 	struct rr *p,*q;
-	
+
 	for (p=dd->q; p != NULL;) {
 		q = p->next;
 		if (p->sa) spmd_free(p->sa);
@@ -374,10 +374,10 @@ free_dns_data(struct dns_data *dd)
 		spmd_free(p);
 		p = q;
 	}
-		
+
 	spmd_free(dd);
 }
-	
+
 static int
 get_name(uint8_t *head, char *name, uint8_t *rrmsg, int idx)
 {
@@ -399,7 +399,7 @@ get_name(uint8_t *head, char *name, uint8_t *rrmsg, int idx)
 			break;
 		}
 
-		switch (label_len & LABEL_MASK) { 
+		switch (label_len & LABEL_MASK) {
 			case 0xc0: /* pointer */
 				offset = GET_OFFSET(label_len, *rrmsg);
 				get_name(head, name, head+offset, idx);
@@ -511,7 +511,7 @@ parse_rr(uint8_t *head, uint8_t **rrmsgp, int question)
 struct dns_data *
 snoop_reply(uint8_t *msg)
 {
-	struct dnsh *dh; 
+	struct dnsh *dh;
 	uint16_t flags;
 	struct dns_data *dd;
 	uint8_t *rrmsg;
@@ -521,10 +521,10 @@ snoop_reply(uint8_t *msg)
 	flags =  ntohs(dh->flags);
 
 	dd = alloc_dns_data();
-	if (!dd) 
+	if (!dd)
 		goto bad2;
-	
-	dd->id =  ntohs(dh->id); 
+
+	dd->id =  ntohs(dh->id);
 	dd->qr = GET_QR(flags);
 	dd->opcode = GET_OPCODE(flags);
 	dd->aa = GET_AA(flags);
@@ -541,28 +541,28 @@ snoop_reply(uint8_t *msg)
 
 	for (cnt = dd->qdcount; cnt; cnt--) {
 		struct rr *rr = parse_rr(msg, &rrmsg, 1);
-		if (rr == NULL) 
+		if (rr == NULL)
 			goto bad;
 		add_dns_data(dd, rr, QDCOUNT);
 	}
 
 	for (cnt = dd->ancount; cnt; cnt--) {
 		struct rr *rr = parse_rr(msg, &rrmsg, 0);
-		if (rr == NULL) 
+		if (rr == NULL)
 			goto bad;
 		add_dns_data(dd, rr, ANCOUNT);
 	}
 
 	for (cnt = dd->nscount; cnt; cnt--) {
 		struct rr *rr = parse_rr(msg, &rrmsg, 0);
-		if (rr == NULL) 
+		if (rr == NULL)
 			goto bad;
 		add_dns_data(dd, rr, NSCOUNT);
 	}
 
 	for (cnt = dd->arcount; cnt; cnt--) {
 		struct rr *rr = parse_rr(msg, &rrmsg, 0);
-		if (rr == NULL) 
+		if (rr == NULL)
 			goto bad;
 		add_dns_data(dd, rr, ARCOUNT);
 	}
@@ -582,7 +582,7 @@ qr_str(uint8_t qr)
 {
 	static char msg[16];
 
-	if (qr == 1) 
+	if (qr == 1)
 		snprintf(msg, sizeof(msg), "response <%#hhx>", qr);
 	else if (qr == 0)
 		snprintf(msg, sizeof(msg), "query <%#hhx>", qr);
@@ -642,16 +642,16 @@ rcode_str(uint8_t rcode)
 }
 
 static char *
-type_str(uint16_t type) 
+type_str(uint16_t type)
 {
 	static char msg[16];
 
 	switch (type) {
 		case TYPE_A:
 			snprintf(msg, sizeof(msg), "A <%#hx>", type); break;
-		case TYPE_NS: 
+		case TYPE_NS:
 			snprintf(msg, sizeof(msg), "NS <%#hx>", type); break;
-		case TYPE_MD: 
+		case TYPE_MD:
 			snprintf(msg, sizeof(msg), "MD <%#hx>", type); break;
 		case TYPE_MF:
 			snprintf(msg, sizeof(msg), "MD <%#hx>", type); break;
@@ -717,7 +717,7 @@ class_str(uint16_t class)
 	return msg;
 }
 
-void 
+void
 dump_dns_data(struct dns_data *dd)
 {
 	struct rr *rr = NULL;
@@ -727,12 +727,12 @@ dump_dns_data(struct dns_data *dd)
 	SPMD_PLOG(SPMD_L_DEBUG2, "     ID:%#hx", dd->id);
 	SPMD_PLOG(SPMD_L_DEBUG2, "     QR:%s", qr_str(dd->qr));
 	SPMD_PLOG(SPMD_L_DEBUG2, " OPCODE:%s", opcode_str(dd->opcode));
-	SPMD_PLOG(SPMD_L_DEBUG2, "     AA:%s <%#hhx>", 
+	SPMD_PLOG(SPMD_L_DEBUG2, "     AA:%s <%#hhx>",
 		dd->aa ? "Authoritative Answer": "Non Authoritative Answer", dd->aa);
 	SPMD_PLOG(SPMD_L_DEBUG2, "     TC:%s <%#hhx>", dd->tc ? "Truncated" : "Not Truncated", dd->tc);
-	SPMD_PLOG(SPMD_L_DEBUG2, "     RD:%s <%#hhx>", 
+	SPMD_PLOG(SPMD_L_DEBUG2, "     RD:%s <%#hhx>",
 		dd->rd ? "Recursion Desired" : "Recursion Not Desired", dd->rd);
-	SPMD_PLOG(SPMD_L_DEBUG2, "     RA:%s <%#hhx>", 
+	SPMD_PLOG(SPMD_L_DEBUG2, "     RA:%s <%#hhx>",
 		dd->ra ? "Recursion Available" : "Recursion Not Available", dd->ra);
 	SPMD_PLOG(SPMD_L_DEBUG2, "  RCODE:%s", rcode_str(dd->rcode));
 	SPMD_PLOG(SPMD_L_DEBUG2, "QDCOUNT:%hu", dd->qdcount);

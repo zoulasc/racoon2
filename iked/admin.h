@@ -5,7 +5,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -17,7 +17,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -99,7 +99,7 @@ struct admin_com {
 #define ADMIN_LOGOUT_USER	0x0205  /* Delete SA for a given Xauth user */
 
 /*
- * Range 0x08xx is reserved for privilege separation, see privsep.h 
+ * Range 0x08xx is reserved for privilege separation, see privsep.h
  */
 
 /* the value of proto */
@@ -118,12 +118,12 @@ struct admin_com_indexes {
 	struct sockaddr_storage dst;
 };
 
-struct admin_com_psk { 
+struct admin_com_psk {
 	int id_type;
 	size_t id_len;
 	size_t key_len;
 	/* Followed by id and key */
-}; 
+};
 
 extern int admin2pfkey_proto(u_int);
 extern int admin_open(void);

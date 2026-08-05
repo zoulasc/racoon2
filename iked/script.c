@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -92,7 +92,7 @@ sa2str(const struct sockaddr *sa, char *addr, size_t addrsiz, char *port,
 	if (sa == NULL)
 		return -1;
 	if ((err = getnameinfo(sa, SA_LEN(sa), addr, addrsiz, port, portsiz, niflags)) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, 0, 
+		plog(PLOG_INTERR, PLOGLOC, 0,
 		     "getnameinfo: %s\n", gai_strerror(err));
 		return -1;
 	}
@@ -140,23 +140,23 @@ ikev1_script_hook(struct ph1handle *iph1, int script)
 		inet_ntop(sin->sin_family, &sin->sin_addr, addrstr, IP_MAX);
 		snprintf(portstr, PORT_MAX, "%d", ntohs(sin->sin_port));
 
-		if (script_env_append(&envp, &envc, 
+		if (script_env_append(&envp, &envc,
 		    "REMOTE_ADDR", addrstr) != 0) {
-			plog(PLOG_INTERR, PLOGLOC, NULL, 
+			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "Cannot set REMOTE_ADDR\n");
 			goto out;
 		}
 
-		if (script_env_append(&envp, &envc, 
+		if (script_env_append(&envp, &envc,
 		    "REMOTE_PORT", portstr) != 0) {
-			plog(PLOG_INTERR, PLOGLOC, NULL, 
+			plog(PLOG_INTERR, PLOGLOC, NULL,
 			    "Cannot set REMOTEL_PORT\n");
 			goto out;
 		}
 	}
 
-	if (script_exec(ikev1_script(iph1->rmconf, script), script, envp) != 0) 
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+	if (script_exec(ikev1_script(iph1->rmconf, script), script, envp) != 0)
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		    "Script %s execution failed\n", script_names[script]);
 
 out:
@@ -216,7 +216,7 @@ ikev1_child_script_hook(struct ph2handle *child_sa, int script)
 			      rc_vmem2str(selector->sl_index)))
 		goto fail;
 
-	/* 
+	/*
 	 * IPSEC_MODE
 	 */
 	switch (policy->ipsec_mode) {
@@ -231,7 +231,7 @@ ikev1_child_script_hook(struct ph2handle *child_sa, int script)
 		if (child_sa->dst_id &&
 		    !env_add_addr(child_sa->dst_id,
 				  "LOCAL_NET_ADDR",
-				  "LOCAL_NET_PREFIXLEN", 
+				  "LOCAL_NET_PREFIXLEN",
 				  "LOCAL_NET_PORT",
 				     &envp, &envc))
 			goto out;
@@ -258,7 +258,7 @@ ikev1_child_script_hook(struct ph2handle *child_sa, int script)
 		snprintf(protostr, sizeof(protostr),
 			 "%d", selector->upper_layer_protocol);
 	}
-	if (script_env_append(&envp, &envc, "UPPER_LAYER_PROTOCOL", protostr)) 
+	if (script_env_append(&envp, &envc, "UPPER_LAYER_PROTOCOL", protostr))
 		goto fail;
 
 	/*
@@ -266,7 +266,7 @@ ikev1_child_script_hook(struct ph2handle *child_sa, int script)
 	 */
 	if (script_exec(ikev1_script(child_sa->ph1->rmconf, script),
 			script, envp) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "Script %s execution failed\n", script_names[script]);
 		goto out;
 	}
@@ -297,7 +297,7 @@ ikev1_migrate_script_hook(struct ph1handle *iph1,
 
 	if (script_exec(ikev1_script(iph1->rmconf, SCRIPT_MIGRATE),
 			SCRIPT_MIGRATE, envp) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "Script %s execution failed\n",
 		     script_names[SCRIPT_MIGRATE]);
 		return;
@@ -329,7 +329,7 @@ ikev2_script_hook(struct ikev2_sa *ike_sa, int script)
 		goto out;
 
 	if (script_exec(ikev2_script(ike_sa->rmconf, script), script, envp) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "Script %s execution failed\n", script_names[script]);
 		goto out;
 	}
@@ -370,7 +370,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 		goto out;
 	}
 
-	/* 
+	/*
 	 * LOCAL_ADDR
 	 */
 	addr = ike_determine_sa_endpoint(&ss, policy->my_sa_ipaddr,
@@ -379,7 +379,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	    env_add_addr(addr, "LOCAL_ADDR", NULL, &envp, &envc))
 		goto out;
 
-	/* 
+	/*
 	 * REMOTE_ADDR
 	 */
 	addr = ike_determine_sa_endpoint(&ss, policy->peers_sa_ipaddr,
@@ -424,7 +424,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	 */
 	if (env_add_addrlist(child_sa->srclist,
 			     "LOCAL_NET_ADDR",
-			     "LOCAL_NET_PREFIXLEN", 
+			     "LOCAL_NET_PREFIXLEN",
 			     "LOCAL_NET_PORT",
 			     &envp, &envc))
 		goto out;
@@ -444,7 +444,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 		snprintf(protostr, sizeof(protostr),
 			 "%d", selector->upper_layer_protocol);
 	}
-	if (script_env_append(&envp, &envc, "UPPER_LAYER_PROTOCOL", protostr)) 
+	if (script_env_append(&envp, &envc, "UPPER_LAYER_PROTOCOL", protostr))
 		goto fail;
 
 	/*
@@ -514,7 +514,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	/*
 	 * INTERNAL_DNS4
 	 */
-	if (env_add_addresses(&child_sa->internal_ip4_dns, 
+	if (env_add_addresses(&child_sa->internal_ip4_dns,
 			      "INTERNAL_DNS4", &envp, &envc))
 		return;
 
@@ -556,7 +556,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	/*
 	 * APPLICATION_VERSION
 	 */
-	if (script_env_append(&envp, &envc, "APPLICATION_VERSION", 
+	if (script_env_append(&envp, &envc, "APPLICATION_VERSION",
 			      (child_sa->peer_application_version ?
 			       rc_vmem2str(child_sa->peer_application_version) :
 			       "")))
@@ -567,7 +567,7 @@ ikev2_child_script_hook(struct ikev2_child_sa *child_sa, int script)
 	 */
 	if (script_exec(ikev2_script(child_sa->parent->rmconf, script),
 			script, envp) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "Script %s execution failed\n", script_names[script]);
 		goto out;
 	}
@@ -598,7 +598,7 @@ ikev2_migrate_script_hook(struct ikev2_sa *ike_sa,
 
 	if (script_exec(ikev2_script(ike_sa->rmconf, SCRIPT_MIGRATE),
 			SCRIPT_MIGRATE, envp) != 0) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 		     "Script %s execution failed\n",
 		     script_names[SCRIPT_MIGRATE]);
 		return;
@@ -739,7 +739,7 @@ env_add_addrlist(struct rc_addrlist *addrlist, const char *netname,
 
 	return 0;
 }
-		 
+
 
 int
 script_env_append(char ***envp, size_t *envc, const char *name, const char *value)

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,13 +38,13 @@
 
 struct task_root *spmd_task_root;
 
-void 
+void
 task_init(void)
 {
 	struct task_list *tl;
 
 	spmd_task_root = (struct task_root *)spmd_malloc(sizeof(struct task_root));
-	
+
 	tl = &spmd_task_root->read;
 	FD_ZERO(&tl->fds);
 	tl->head = NULL;
@@ -91,11 +91,11 @@ task_alloc(size_t len)
 /* DONT free t->sa !  and t->fd !
  * they have to been free'd by original data
  */
-void 
+void
 task_free(struct task *t)
 {
 	SPMD_PLOG(SPMD_L_DEBUG2, "=== FREE TASK: %p",t);
-	if (t->len > 0) 
+	if (t->len > 0)
 		spmd_free(t->msg);
 	spmd_free(t);
 	return;
@@ -269,7 +269,7 @@ task_run(void)
 			delq->next = t;
 		}
 	}
-	
+
 	return 0;
 }
 

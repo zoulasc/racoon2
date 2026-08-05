@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -64,7 +64,7 @@ enum {
 };
 
 #ifdef HAVE_GETOPT_LONG
-static struct option const longoptions[] = 
+static struct option const longoptions[] =
 {
 	{"config-file", required_argument, (int *)0, OPT_CONFIG},
 	{"foreground",  no_argument,       (int *)0, OPT_FW},
@@ -86,7 +86,7 @@ main(int argc, char **argv)
 	int option_index;
 #endif /* HAVE_GETOPT_LONG */
 	struct dns_server *dns = NULL;
-	char config[PATH_MAX]; 
+	char config[PATH_MAX];
 	int run_as_dns_proxy = 0;
 	int kill_now = 0;
 
@@ -100,7 +100,7 @@ main(int argc, char **argv)
 
 	/* parse options */
 #ifdef HAVE_GETOPT_LONG
-	while ((c = getopt_long(argc, argv, shortoptions, 
+	while ((c = getopt_long(argc, argv, shortoptions,
 					longoptions, &option_index)) != EOF) {
 #else
 	while ((c = getopt(argc, argv, shortoptions)) != EOF) {
@@ -147,13 +147,13 @@ main(int argc, char **argv)
 	}
 
 	/* init libracoon */
-	plog_setmode(spmd_loglevel <= SPMD_L_DEFLT ? RCT_LOGMODE_NORMAL : RCT_LOGMODE_DEBUG, NULL, "spmd", 1, spmd_foreground);	
+	plog_setmode(spmd_loglevel <= SPMD_L_DEFLT ? RCT_LOGMODE_NORMAL : RCT_LOGMODE_DEBUG, NULL, "spmd", 1, spmd_foreground);
 	if (rbuf_init(8, 80, 4, 160, 4) == -1) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed to initilize internal buffer(rbuf)");
 		exit(EXIT_FAILURE);
 	}
 
-	if (kill_now>0) { 
+	if (kill_now>0) {
 		do_kill();
 		exit(EXIT_SUCCESS);
 	}
@@ -170,7 +170,7 @@ main(int argc, char **argv)
 
 	SPMD_PLOG(SPMD_L_NOTICE, "Racoon Spmd - Security Policy Management Daemon - Started");
 	SPMD_PLOG(SPMD_L_NOTICE, "Spmd Version: %s", rc_version());
-	
+
 	/*---------- task ----------*/
 	task_init();
 
@@ -261,7 +261,7 @@ main(int argc, char **argv)
 		}
 		spmd_add_dns_task();
 	}
-	
+
 	/*-------- setup resolver sockets --------*/
 	if ( run_as_dns_proxy) {
 		struct rc_addrlist *ns_bounds = NULL;
@@ -380,26 +380,26 @@ do_daemon(void)
 	pid_t pid;
 
 	openlog("spmd", LOG_PID, LOG_DAEMON);
-	if (daemon(0, 0) < 0) { 
+	if (daemon(0, 0) < 0) {
 #ifdef __linux__ /* glibc specific ? */
 		int en = errno;
 #endif
-		perror("daemon()"); 
+		perror("daemon()");
 #ifdef __linux__ /* glibc specific ? */
 		if (en == 0) {
-			SPMD_PLOG(SPMD_L_INTERR, 
+			SPMD_PLOG(SPMD_L_INTERR,
 			"Device file /dev/null may not be a character device with the expected major and minor numbers, check please");
 		}
 #endif
-		exit(EXIT_FAILURE); 
-	} 
+		exit(EXIT_FAILURE);
+	}
 	umask(0);
 	if (rc_make_pidfile(SPMD_PID_FILE) < 0) {
 		pid = -1;
 		(void)rc_read_pidfile(&pid, SPMD_PID_FILE);
 		SPMD_PLOG(SPMD_L_INTERR, "Can't write pid file");
 		SPMD_PLOG(SPMD_L_INTERR, "Spmd already running? <pid=%d>", pid);
-		exit(EXIT_FAILURE); 
+		exit(EXIT_FAILURE);
 	}
 	return;
 }
@@ -416,7 +416,7 @@ check_nsswitchconf(void)
 	int met = 0;
 
 	fp = fopen(NSSWITCH_CONF_FILE, "r");
-	if (!fp) 
+	if (!fp)
 		return -1;
 
 	while ( (ap=fgets(buf, sizeof(buf), fp)) ) {
@@ -434,7 +434,7 @@ check_nsswitchconf(void)
 		*cp = '\0';
 		cp++;
 
-		if (strncasecmp(ap, "hosts", strlen(ap))) 
+		if (strncasecmp(ap, "hosts", strlen(ap)))
 			continue;
 
 		while (cp && *cp) {
@@ -488,7 +488,7 @@ check_nsswitchconf(void)
 	};
 
 	fp = fopen(NSSWITCH_CONF_FILE, "r");
-	if (!fp) 
+	if (!fp)
 		return -1;
 
 	while ( (ap=fgets(buf, sizeof(buf), fp)) ) {
@@ -513,9 +513,9 @@ check_nsswitchconf(void)
 		}
 	}
 #elif defined(HAVE_LOOKUP_IN_RESOLV_CONF) /* For OpenBSD */
-	/* 
-	 * If the lookup keyword is not used 
-	 * in the system's resolv.conf file 
+	/*
+	 * If the lookup keyword is not used
+	 * in the system's resolv.conf file
 	 * then the assumed order is "bind file".
 	 */
 	FILE *fp;
@@ -526,8 +526,8 @@ check_nsswitchconf(void)
 
 	fp = fopen(NSSWITCH_CONF_FILE, "r");
 	if (!fp) {
-		/* 
-		 * The system's resolv.conf file does not exist, 
+		/*
+		 * The system's resolv.conf file does not exist,
 		 * then the only database used is "file".
 		 */
 		SPMD_PLOG(SPMD_L_INFO, "Can't open %s file. we will read only hosts file.", NSSWITCH_CONF_FILE);
@@ -550,7 +550,7 @@ check_nsswitchconf(void)
 		*cp = '\0';
 		cp++;
 
-		if (strncasecmp(ap, "lookup", strlen(ap))) 
+		if (strncasecmp(ap, "lookup", strlen(ap)))
 			continue;
 
 		while (cp && *cp) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -96,7 +96,7 @@ mk_qname(void *buf, size_t buflen, char *name, size_t *label_lenp)
 	}
 	*label = i;
 	*p = 0;
-	p++; 
+	p++;
 
 	qname_len = p - (uint8_t *)buf;
 
@@ -106,7 +106,7 @@ err:
 	*label_lenp = 0;
 	return -1;
 }
-		
+
 
 /* Build DNS Query Packet */
 static int
@@ -160,7 +160,7 @@ err:
 /*-----------------------------------------------------------------------*/
 /* reply from DNS server */
 static int
-fqdn_query_response(struct task *t) 
+fqdn_query_response(struct task *t)
 {
 	char data[MAX_UDP_DNS_SIZE];
 
@@ -196,7 +196,7 @@ fqdn_query_send(struct task *t)
  * Why?
  * From responder side, FQDN entry will be never queried by applications
  *
- * If always_query == 0, it means the hosts lookup order in nsswitch.conf is 'files dns'. 
+ * If always_query == 0, it means the hosts lookup order in nsswitch.conf is 'files dns'.
  * In this case, we never send query packets for existing cached entries.
  * (Because at spmd starting time, these entries are stored by hosts_cache_update().)
  */
@@ -208,7 +208,7 @@ fqdn_query_task_register(int always_query)
 	char data[MAX_UDP_DNS_SIZE];
 	size_t pktlen;
 	struct rc_addrlist *proxy = NULL;
-	struct sockaddr *proxy_sa_a = NULL, *proxy_sa_aaaa = NULL; 
+	struct sockaddr *proxy_sa_a = NULL, *proxy_sa_aaaa = NULL;
 	int proxy_sock_a, proxy_sock_aaaa;
 
 	srand(time(NULL)+getpid());
@@ -279,4 +279,4 @@ fqdn_query_task_register(int always_query)
 
 	return 0;
 }
-	
+

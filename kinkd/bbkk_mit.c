@@ -78,9 +78,9 @@ extern void krb5_nfold(unsigned int, const unsigned char *, unsigned int,
 extern void krb5int_nfold(unsigned int, const unsigned char *, unsigned int,
     unsigned char *);
 #endif
-extern krb5_error_code decode_krb5_ap_req(const krb5_data *, krb5_ap_req **); 
+extern krb5_error_code decode_krb5_ap_req(const krb5_data *, krb5_ap_req **);
 extern krb5_error_code decode_krb5_authenticator(const krb5_data *,
-    krb5_authenticator **); 
+    krb5_authenticator **);
 extern krb5_error_code krb5_decrypt_tkt_part(krb5_context,
     const krb5_keyblock *, krb5_ticket * );
 extern void krb5_free_ap_req(krb5_context, krb5_ap_req *);
@@ -865,7 +865,7 @@ void
 bbkk_n_fold(char *dst, size_t dstlen, const char *src, size_t srclen)
 {
 #if defined(HAVE_KRB5_NFOLD)
-	krb5_nfold(srclen * 8, (const unsigned char *)src, dstlen * 8, 
+	krb5_nfold(srclen * 8, (const unsigned char *)src, dstlen * 8,
 		(unsigned char *)dst);
 #else
 	krb5int_nfold(srclen * 8, (const unsigned char *)src, dstlen * 8,
@@ -989,7 +989,7 @@ krb5e_force_get_key(krb5_context context, krb5_auth_context ac,
 #endif
 	if ((ret = decode_krb5_ap_req(inbuf, &ap_req)) != 0) {
 		if (ret == KRB5_BADMSGTYPE)
-			return KRB5KRB_AP_ERR_BADVERSION; 
+			return KRB5KRB_AP_ERR_BADVERSION;
 		else
 			return ret;
 	}

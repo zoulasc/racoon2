@@ -41,7 +41,7 @@
 
 /*
  * Boehm-GC provides GC_malloc(), GC_realloc(), GC_free() functions,
- * but not the traditional entry points.  So what we do is provide  
+ * but not the traditional entry points.  So what we do is provide
  * malloc(), calloc(), realloc(), and free() entry points in the main
  * program and letting the linker do the rest.
  */

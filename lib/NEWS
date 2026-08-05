@@ -6,7 +6,7 @@ $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
 2018-07-02 Christos Zoulas, Chuck Zmudzinski
 
-	* successful port of racoon2 to to NetBSD 8.99.x using github project 
+	* successful port of racoon2 to to NetBSD 8.99.x using github project
 	https://github.com/zoulasc/racoon2-glue
 	iked/ikev1: support for modern L2TP/IPsec clients added
 
@@ -73,7 +73,7 @@ $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
 2007-07-24 FUKUMOTO Atsushi
 
-	* iked: support dead-peer detection for IKEv1 (based on 
+	* iked: support dead-peer detection for IKEv1 (based on
 	patch provided by Scott Lamb).
 
 2007-07-20
@@ -208,7 +208,7 @@ $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 2005-11-29  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
 
 	* iked: add --enable-updateifaddr configuration option
-	to monitor PF_ROUTE socket and reopen isakmp sockets upon 
+	to monitor PF_ROUTE socket and reopen isakmp sockets upon
 	any change of interface addresses.
 
 2005-11-08  FUKUMOTO Atsushi  <atsushi.fukumoto@toshiba.co.jp>
@@ -287,7 +287,7 @@ $Id: NEWS,v 1.26 2010/05/07 19:08:25 kamada Exp $
 
 2005-08-02 Mitsuru KANDA <mk@isl.rdc.toshiba.co.jp>
 
-	* lib/if_pfkeyv2.c lib/if_pfkeyv2.h lib/racoon.h 
+	* lib/if_pfkeyv2.c lib/if_pfkeyv2.h lib/racoon.h
 	lib/rc_type.c lib/rc_type.h: Support 'SADB_X_SPDDUMP'.
 	* spmd/Makefile.in spmd/spmdctl.8 spmd/spmdctl.c:
 	Introduce 'spmdctl policy show'.

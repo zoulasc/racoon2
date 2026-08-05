@@ -9,7 +9,7 @@ Racoon2 仕様
 + 設定ファイル (racoon.conf)
 + 共通ライブラリ (libracoon.a)
 
-
+
 + 概要
 
 o racoon2概要
@@ -155,7 +155,7 @@ o 起動と終了
 	iked, kinkdは個別に起動する。
 	spmdが終了すると各プロトコルデーモンは終了する。
 
-
+
 + ポリシ管理デーモン (spmd)
 
 o ポリシ管理デーモン概要
@@ -212,7 +212,7 @@ o 名前解決処理
 	キャッシュする。
 	既にインストールされているフィルタがあった場合は上書きされる。
 
-	P.HOGE CNAME Z.HOGE 
+	P.HOGE CNAME Z.HOGE
 	Q.HOGE CNAME Z.HOGE
 	R.HOGE CNAME Z.HOGE
 
@@ -261,7 +261,7 @@ o rekeyに関して
 	送信するパケットがないのにrekeyする必要はないことから、
 	rekeyにinitiateはkernelに任せる。
 
-
+
 + IKEv1/v2デーモン (iked)
 
 o IKEv1/v2デーモン概要
@@ -399,7 +399,7 @@ o IKEv2 TS Payload
 		ので、これによりリモート情報をチェックする。
 
 		*セレクタ情報の検索(マッチング)の仕方は、
-		もしTSペイロードが specific なTSで始まっていて、そのTS 
+		もしTSペイロードが specific なTSで始まっていて、そのTS
 		が自分のコンフィギュレーションのセレクタに包含されるか、
 		またはTS ペイロードがTSペイロードの最初が specific な
 		TSではない
@@ -521,7 +521,7 @@ o DH key exchange
 	  使用可能にする。
 	- DH公開情報は KE payloadを使い相手に送信する。
 
-
+
 + KINKデーモン (kinkd)
 
 o KINKデーモン概要
@@ -651,17 +651,17 @@ o KINK Responder
 
 	XXX 3-way の記述
 
-
+
 + 設定ファイル (racoon.conf)
 
 	racoon2-config.txtを参照
 
-
+
 + 共通ライブラリ (libracoon.a)
 
 	racoon2-lib.txtを参照
 
-
+
 + ログ
 	起動時のオプションで出力ファイルを定義できる。定義されていない場合は
 	syslog()に出力する。

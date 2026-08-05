@@ -282,7 +282,7 @@ ipsecdoi_checkph2proposal(struct ph2handle *iph2)
 		plog(LLV_WARNING, LOCATION, NULL,
 			"invalid proposal number:%d received.\n", i);
 	}
-	
+
 
 	if (rpair[n]->tnext != NULL) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -2054,7 +2054,7 @@ ipsecdoi_sockaddr2id(struct sockaddr *saddr, unsigned int prefixlen, unsigned in
  * see, RFC2407 4.6.2.1
  */
 int
-ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr, 
+ipsecdoi_id2sockaddr(rc_vchar_t *buf, struct sockaddr *saddr,
 		     uint8_t *prefixlen, uint16_t *ul_proto)
 {
 	struct ipsecdoi_id_b *id_b = (struct ipsecdoi_id_b *)buf->v;

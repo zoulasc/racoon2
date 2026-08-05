@@ -89,7 +89,7 @@ does not detach itself from the terminal and does not become a daemon.
 Logs are output to the stderr.
 .It Fl P Ar outfile
 Record unencrypted IKE communication packets to the file.
-This option is available only if 
+This option is available only if
 .Nm
 was compiled with --enable-pcap configuration option.
 .It Fl V

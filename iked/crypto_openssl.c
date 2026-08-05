@@ -4,7 +4,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -16,7 +16,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -418,21 +418,21 @@ eay_utctime(struct timeval *t, ASN1_TIME *u)
 	 */
 	/* (RFC3280)
 	 * 4.1.2.5.1  UTCTime
-	 * 
+	 *
 	 * The universal time type, UTCTime, is a standard ASN.1 type intended
 	 * for representation of dates and time.  UTCTime specifies the year
 	 * through the two low order digits and time is specified to the
 	 * precision of one minute or one second.  UTCTime includes either Z
 	 * (for Zulu, or Greenwich Mean Time) or a time differential.
-	 * 
+	 *
 	 * For the purposes of this profile, UTCTime values MUST be expressed
 	 * Greenwich Mean Time (Zulu) and MUST include seconds (i.e., times are
 	 * YYMMDDHHMMSSZ), even where the number of seconds is zero.  Conforming
 	 * systems MUST interpret the year field (YY) as follows:
-	 * 
+	 *
 	 * Where YY is greater than or equal to 50, the year SHALL be
 	 * interpreted as 19YY; and
-	 * 
+	 *
 	 * Where YY is less than 50, the year SHALL be interpreted as 20YY.
 	 */
 
@@ -492,12 +492,12 @@ eay_generalizedtime(struct timeval *t, ASN1_TIME *g)
 	 */
 	/* (RFC3280)
 	 * 4.1.2.5.2  GeneralizedTime
-	 * 
+	 *
 	 * The generalized time type, GeneralizedTime, is a standard ASN.1 type
 	 * for variable precision representation of time.  Optionally, the
 	 * GeneralizedTime field can include a representation of the time
 	 * differential between local and Greenwich Mean Time.
-	 * 
+	 *
 	 * For the purposes of this profile, GeneralizedTime values MUST be
 	 * expressed Greenwich Mean Time (Zulu) and MUST include seconds (i.e.,
 	 * times are YYYYMMDDHHMMSSZ), even where the number of seconds is zero.
@@ -2000,17 +2000,17 @@ eay_aes_ctr(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	 * The size of the requested KEYMAT MUST be four octets longer than is
 	 * needed for the associated AES key.  The keying material is used as
 	 * follows:
-	 * 
+	 *
 	 * AES-CTR with a 128 bit key
 	 * The KEYMAT requested for each AES-CTR key is 20 octets.  The first
 	 * 16 octets are the 128-bit AES key, and the remaining four octets
 	 * are used as the nonce value in the counter block.
-	 * 
+	 *
 	 * AES-CTR with a 192 bit key
 	 * The KEYMAT requested for each AES-CTR key is 28 octets.  The first
 	 * 24 octets are the 192-bit AES key, and the remaining four octets
 	 * are used as the nonce value in the counter block.
-	 * 
+	 *
 	 * AES-CTR with a 256 bit key
 	 * The KEYMAT requested for each AES-CTR key is 36 octets.  The first
 	 * 32 octets are the 256-bit AES key, and the remaining four octets
@@ -2457,7 +2457,7 @@ eay_aes_xcbc_mac_init(rc_vchar_t *key)
 		k = rc_vdup(key);
 	} else if (key->l < aesxcbc_keylen) {
 		k = rc_vmalloc(aesxcbc_keylen);
-		if (!k) 
+		if (!k)
 			return 0;
 		memcpy(k->u, key->u, key->l);
 		memset(k->u + key->l, 0, k->l - key->l);
@@ -2617,7 +2617,7 @@ eay_aes_cmac_init(rc_vchar_t *key)
 		k = rc_vdup(key);
 	} else if (key->l < aescmac_keylen) {
 		k = rc_vmalloc(aescmac_keylen);
-		if (!k) 
+		if (!k)
 			return 0;
 		memcpy(k->u, key->u, key->l);
 		memset(k->u + key->l, 0, k->l - key->l);
@@ -3085,8 +3085,8 @@ eay_dh_generate(rc_vchar_t *prime, uint32_t gg, unsigned int publen, rc_vchar_t 
 	return (error);
 }
 
-int 
-eay_dh_compute (rc_vchar_t *prime, uint32_t gg, rc_vchar_t *pub, 
+int
+eay_dh_compute (rc_vchar_t *prime, uint32_t gg, rc_vchar_t *pub,
 		rc_vchar_t *priv, rc_vchar_t *pub2, rc_vchar_t **key)
 {
 	BIGNUM *dh_pub = NULL, *p = NULL, *g = NULL,

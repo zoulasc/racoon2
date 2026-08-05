@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004-2005 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -113,7 +113,7 @@ ikev2_auth_input(struct ikev2_sa *sa, int i_to_r)
 	/*
 	 * In the case of a pre-shared key, the AUTH
 	 * value is computed as:
-	 * 
+	 *
 	 * AUTH = prf(prf(Shared Secret,"Key Pad for IKEv2"), <msg octets>)
 	 */
 
@@ -126,7 +126,7 @@ ikev2_auth_input(struct ikev2_sa *sa, int i_to_r)
 	 * from EAP is the field from the EAP specification named MSK. The
 	 * shared key generated during an IKE exchange MUST NOT be used for any
 	 * other purpose.
-	 * 
+	 *
 	 * EAP methods that do not establish a shared key SHOULD NOT be used, as
 	 * they are subject to a number of man-in-the-middle attacks [EAPMITM]
 	 * if these EAP methods are used in other protocols that do not use a
@@ -139,14 +139,14 @@ ikev2_auth_input(struct ikev2_sa *sa, int i_to_r)
 
 	/* (draft-eronen-ipsec-ikev2-clarifications-05.txt)
 	 * 3.1  Data included in AUTH payload calculation
-	 * 
+	 *
 	 * Section 2.15 describes how the AUTH payloads are calculated; this
 	 * calculation involves values prf(SK_pi,IDi') and prf(SK_pr,IDr').  The
 	 * text describes the method in words, but does not give clear
 	 * definitions of what is signed or MACed.
-	 * 
+	 *
 	 * The initiator's signed octets can be described as:
-	 * 
+	 *
 	 * InitiatorSignedOctets = RealMessage1 | NonceRData | MACedIDForI
 	 * GenIKEHDR = [ four octets 0 if using port 4500 ] | RealIKEHDR
 	 * RealIKEHDR =  SPIi | SPIr |  . . . | Length
@@ -155,9 +155,9 @@ ikev2_auth_input(struct ikev2_sa *sa, int i_to_r)
 	 * InitiatorIDPayload = PayloadHeader | RestOfIDPayload
 	 * RestOfInitIDPayload = IDType | RESERVED | InitIDData
 	 * MACedIDForI = prf(SK_pi, RestOfInitIDPayload)
-	 * 
+	 *
 	 * The responder's signed octets can be described as:
-	 * 
+	 *
 	 * ResponderSignedOctets = RealMessage2 | NonceIData | MACedIDForR
 	 * GenIKEHDR = [ four octets 0 if using port 4500 ] | RealIKEHDR
 	 * RealIKEHDR =  SPIi | SPIr |  . . . | Length
@@ -309,7 +309,7 @@ ikev2_auth_calculate(struct ikev2_sa *sa, int i_to_r)
 		 * section 2.15 using the shared key associated with the identity
 		 * in the ID payload and the negotiated prf function
 		 */
-		/* (draft-17) 
+		/* (draft-17)
 		 * If the negotiated prf takes a fixed size key, the shared
 		 * secret MUST be of that fixed size.
 		 */
@@ -479,7 +479,7 @@ ikev2_auth_verify(struct ikev2_sa *sa, int i_to_r,
 		 * section 2.15 using the shared key associated with the identity
 		 * in the ID payload and the negotiated prf function
 		 */
-		/* (draft-17) 
+		/* (draft-17)
 		 * If the negotiated prf takes a fixed size key, the shared
 		 * secret MUST be of that fixed size.
 		 */

@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -195,7 +195,7 @@ ipsecdoi_checkph1proposal(rc_vchar_t *sa, struct ph1handle *iph1)
 
 	/* check and get one SA for use */
 	newsa = get_ph1approval(iph1, pair);
-	
+
 	free_proppair(pair);
 
 	if (newsa == NULL)
@@ -415,7 +415,7 @@ get_ph1approvalx(struct prop_pair *p, struct isakmpsa *proposal,
 				break;
 
 			case RCT_PCT_STRICT:
-				if ((s->lifetime != 0 && 
+				if ((s->lifetime != 0 &&
 				     tsap->lifetime > s->lifetime) ||
 				    (s->lifebyte != 0 &&
 				     tsap->lifebyte > s->lifebyte))
@@ -441,7 +441,7 @@ get_ph1approvalx(struct prop_pair *p, struct isakmpsa *proposal,
 				break;
 
 			default:
-				plog(PLOG_PROTOERR, PLOGLOC, NULL, 
+				plog(PLOG_PROTOERR, PLOGLOC, NULL,
 				    "Unexpected proposal_check value\n");
 				continue;
 				break;
@@ -880,7 +880,7 @@ ipsecdoi_checkph2proposal(struct ph2handle *iph2)
 		plog(PLOG_PROTOWARN, PLOGLOC, 0,
 			"invalid proposal number:%d received.\n", i);
 	}
-	
+
 
 	if (rpair[n]->tnext != NULL) {
 		plog(PLOG_PROTOERR, PLOGLOC, NULL,
@@ -2201,7 +2201,7 @@ ahmismatch:
  				if (proto_id == IPSECDOI_PROTO_IPSEC_AH) {
  					if (trns->t_id != IPSECDOI_AH_SHA256)
  						goto ahmismatch;
- 				}	
+ 				}
  				break;
  			case IPSECDOI_ATTR_AUTH_HMAC_SHA2_384:
  				if (proto_id == IPSECDOI_PROTO_IPSEC_AH) {
@@ -2611,7 +2611,7 @@ setph1attr(struct isakmpsa *sa, caddr_t buf)
 
 	if (sa->lifebyte) {
 		uint32_t lifebyte = htonl((uint32_t)sa->lifebyte);
-		
+
 		attrlen += sizeof(struct isakmp_data)
 			+ sizeof(struct isakmp_data);
 		if (sa->lifebyte > 0xffff)
@@ -2689,7 +2689,7 @@ setph1attr(struct isakmpsa *sa, caddr_t buf)
 			plog(PLOG_DEBUG, PLOGLOC, NULL, "gss id attr: len %d, "
 			    "val '%s'\n", sa->gssid->l, sa->gssid->v);
 			p = isakmp_set_attr_v(p, OAKLEY_ATTR_GSS_ID,
-				(caddr_t)sa->gssid->v, 
+				(caddr_t)sa->gssid->v,
 				sa->gssid->l);
 		}
 	}
@@ -2749,7 +2749,7 @@ setph2proposal0(const struct ph2handle *iph2, const struct saprop *pp,
 	np_t = NULL;
 
 	for (tr = pr->head; tr; tr = tr->next) {
-	
+
 		switch (pr->proto_id) {
 		case IPSECDOI_PROTO_IPSEC_ESP:
 			/*

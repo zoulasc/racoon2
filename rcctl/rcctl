@@ -134,13 +134,13 @@ exit 0;
 #
 sub make_conf
 {
-	my ($src_sa, $dst_sa, $src, $dst, $dir_in, $dir_out, $file) = @_; 
+	my ($src_sa, $dst_sa, $src, $dst, $dir_in, $dir_out, $file) = @_;
 
 	$remote_index = sprintf "remote_index_%s", $dst_sa;
 	$selector_index = sprintf "selector_index_%s_%s", $src, $dst;
 	$policy_index = sprintf "policy_index_%s_%s", $src, $dst;
 
-	open(OUT, "> $file") || die "can not open [$file]"; 
+	open(OUT, "> $file") || die "can not open [$file]";
 
 	print OUT <<EOD;
 

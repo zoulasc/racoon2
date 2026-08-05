@@ -5,7 +5,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -17,7 +17,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -161,7 +161,7 @@ rsatest(ac, av)
 "P3kyd2yXHIZ/MN8g1nh4FsB0iTkk8QUCJkkan6FCOBrIeLEsGA5AdodzuR+khnCM\n"
 "t8vO+NFHZYKAQeynyQIDAQAB\n"
 "-----END PUBLIC KEY-----\n\n";
-	char *pubkey_wrong = 
+	char *pubkey_wrong =
 "-----BEGIN PUBLIC KEY-----\n"
 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwDncG2tSokRBhK8la1mO\n"
 "QnUpxg6KvpoFUjEyRiIE1GRap5V6jCCEOmA9ZAz4Oa/97oxewwMWtchIxSBZVCia\n"
@@ -606,7 +606,7 @@ getcerts(path)
 
 typedef vchar_t* (eay_func) (vchar_t *, vchar_t *, vchar_t *);
 
-static int 
+static int
 ciphertest_1 (const char *name,
 	      vchar_t *data,
 	      size_t data_align,
@@ -620,7 +620,7 @@ ciphertest_1 (const char *name,
 	int padlen;
 	vchar_t *buf, *iv, *res1, *res2;
 	iv = vmalloc(iv_length);
-	
+
 	printf("Test for cipher %s\n", name);
 	printf("data:\n");
 	PVDUMP(data);
@@ -689,20 +689,20 @@ ccf2 3044 fada ed03 4cfc 484f 5e78 235f c8c9 f3e5 fad6 da83\
 #endif
 	iv0.v = str2val("26b68c90 9467b4ab 7ec29fa0 0b696b55", 16, &iv0.l);
 
-	if (ciphertest_1 ("DES", 
-			  &data, 8, 
-			  &key, 8, 
-			  &iv0, 8, 
+	if (ciphertest_1 ("DES",
+			  &data, 8,
+			  &key, 8,
+			  &iv0, 8,
 			  eay_des_encrypt, eay_des_decrypt) < 0)
 	  return -1;
-	
+
 	if (ciphertest_1 ("3DES",
 			  &data, 8,
 			  &key, 24,
 			  &iv0, 8,
 			  eay_3des_encrypt, eay_3des_decrypt) < 0)
 	  return -1;
-	
+
 	if (ciphertest_1 ("AES",
 			  &data, 16,
 			  &key, key.l,
@@ -723,7 +723,7 @@ ccf2 3044 fada ed03 4cfc 484f 5e78 235f c8c9 f3e5 fad6 da83\
 			  &iv0, 8,
 			  eay_cast_encrypt, eay_cast_decrypt) < 0)
 	  return -1;
-	
+
 #ifdef HAVE_OPENSSL_IDEA_H
 	if (ciphertest_1 ("IDEA",
 			  &data, 8,

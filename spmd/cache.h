@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,7 +32,7 @@
  * We use fqdn_list{} for 2 purposes.
  * 1) to decide whether this FQDN have to be cached or not.
  *
- * struct fqdn_list {} 
+ * struct fqdn_list {}
  * fqdn_list_top --> fl -------------> fl -----------> NULL
  *                   |                 |
  *                   +fal->fal->NULL   +fal->NULL
@@ -105,9 +105,9 @@ int hosts_cache_update(void);
  * C_TOTAL_FQDN: total # of cached FQDNs (sum of FQDNs each by IP addresses)
  */
 enum ctype { C_ADDRESS, C_FQDN, C_TOTAL_FQDN, C_END };
-typedef struct cache_stat { 
-	enum ctype type; 
-	uint32_t number; 
+typedef struct cache_stat {
+	enum ctype type;
+	uint32_t number;
 	const char *name;
 } cstat_t;
-extern cstat_t cstat[]; 
+extern cstat_t cstat[];

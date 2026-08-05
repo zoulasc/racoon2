@@ -53,9 +53,9 @@ iked(8)
      may NOT be specified in configuration.
 
    + DH negotiation with MODP Group 3072-bit and 6144-bit are broken
-     on x86 machines with some versions of OpenSSL.  It probably appears 
+     on x86 machines with some versions of OpenSSL.  It probably appears
      OpenSSL 0.9.8f and fixed in 0.9.8h.  For more information, please
-     refer to 
+     refer to
      http://www.mail-archive.com/openssl-dev@openssl.org/msg23228.html
 
 

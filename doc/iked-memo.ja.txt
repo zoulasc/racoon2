@@ -49,13 +49,13 @@ racoon2スペックに対して
 
 
 ‐TSペイロードの扱い
-  
+
 
 
 ‐オプショナルなペイロードの詳細
 
 IKE_SA_INIT request
-HDR, SAi1, KEi, Ni [N(NAT_DET_SRC), N(NAT_DET_DST)] 
+HDR, SAi1, KEi, Ni [N(NAT_DET_SRC), N(NAT_DET_DST)]
 
      request send (initiator)
      [N(NAT_DETE_SRC), N(NAT_DET_DST)] nat_traversalがonなら送る（default）
@@ -65,7 +65,7 @@ HDR, SAi1, KEi, Ni [N(NAT_DET_SRC), N(NAT_DET_DST)]
 
 
 IKE_SA_INIT response
-HDR, SAr1, KEr, Nr, [N(NAT_DET_SRC), N(NAT_DET_DST),] [CERTREQ] 
+HDR, SAr1, KEr, Nr, [N(NAT_DET_SRC), N(NAT_DET_DST),] [CERTREQ]
 
      response send (responder)
      [N(NAT_DETE_SRC), N(NAT_DET_DST)] nat_traversalがonなら送る（default）
@@ -110,7 +110,7 @@ HDR, SK {IDi, [CERT,] [CERTREQ,] [IDr,], AUTH, SAi2, TSi, TSr}
      EAP、IRASのメッセージの対応なし
 
 
-IKE_AUTH response 
+IKE_AUTH response
 HDR, SK {IDr, [CERT,] AUTH, SAr2, TSi, TSr}
 
      response send (responder)
@@ -121,7 +121,7 @@ HDR, SK {IDr, [CERT,] AUTH, SAr2, TSi, TSr}
      [N(USE_TRANSPORT_MODE)]  トランスポートモードならば付ける
      [N(HTTP_CERT_LOOKUP_SUPPORTED)]  付けない
      [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  付けない
-     
+
 
      response recv (initiator)
      [CERT]  無視する
@@ -148,7 +148,7 @@ HDR, SK {N(REKEY_SA), SA, Ni, [KEi]}
 
 
      request recv (responder)
-     [KEi]  
+     [KEi]
      [N(USE_TRANSPORT_MODE)]  有ればSAをトランスポートモードとする。（注意：NotifyペイロードのSPIを無視する）
      [N(ESP_TFC_PADDING_NOT_SUPPORTED)]  無視する
      [N(IPCOMP_SUPPORTED)]  無視する

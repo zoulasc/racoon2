@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -616,7 +616,7 @@ quick_i2send(struct ph2handle *iph2, rc_vchar_t *msg0)
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "HASH(3) generate\n");
 
 	tmp = rc_vmalloc(iph2->nonce->l + iph2->nonce_p->l);
-	if (tmp == NULL) { 
+	if (tmp == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get hash buffer.\n");
 		goto end;
@@ -635,7 +635,7 @@ quick_i2send(struct ph2handle *iph2, rc_vchar_t *msg0)
 	tlen = sizeof(struct isakmp)
 		+ sizeof(struct isakmp_gen) + hash->l;
 	buf = rc_vmalloc(tlen);
-	if (buf == NULL) { 
+	if (buf == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		goto end;
@@ -691,7 +691,7 @@ quick_i2send(struct ph2handle *iph2, rc_vchar_t *msg0)
 		goto end;
 	}
 #endif
-	
+
 	/* if there is commit bit don't set up SA now. */
 	if (ISSET(iph2->flags, ISAKMP_FLAG_C)) {
 		iph2->status = PHASE2ST_COMMIT;
@@ -1290,14 +1290,14 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 			+ sizeof(*gen) + iph2->id->l);
 
 	body = rc_vmalloc(tlen);
-	if (body == NULL) { 
+	if (body == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		goto end;
 	}
 	p = body->v;
 
-	/* make SA payload */ 
+	/* make SA payload */
 	p = set_isakmp_payload(body->v, iph2->sa_ret, ISAKMP_NPTYPE_NONCE);
 
 	/* add NONCE payload */
@@ -1378,7 +1378,7 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 	rc_vchar_t *tmp;
 
 	tmp = rc_vmalloc(iph2->nonce_p->l + body->l);
-	if (tmp == NULL) { 
+	if (tmp == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get hash buffer.\n");
 		goto end;
@@ -1504,7 +1504,7 @@ quick_r3recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 	plogdump(PLOG_DEBUG, PLOGLOC, 0, r_hash, get_uint16(&hash->h.len) - sizeof(*hash));
 
 	tmp = rc_vmalloc(iph2->nonce_p->l + iph2->nonce->l);
-	if (tmp == NULL) { 
+	if (tmp == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get hash buffer.\n");
 		goto end;
@@ -1575,7 +1575,7 @@ quick_r3send(struct ph2handle *iph2, rc_vchar_t *msg0)
 	/* XXX What should I do if there are multiple SAs ? */
 	tlen = sizeof(struct isakmp_pl_n) + iph2->approval->head->spisize;
 	notify = rc_vmalloc(tlen);
-	if (notify == NULL) { 
+	if (notify == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get notify buffer.\n");
 		goto end;
@@ -1598,7 +1598,7 @@ quick_r3send(struct ph2handle *iph2, rc_vchar_t *msg0)
 		+ sizeof(struct isakmp_gen) + myhash->l
 		+ notify->l;
 	buf = rc_vmalloc(tlen);
-	if (buf == NULL) { 
+	if (buf == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		goto end;
@@ -1861,7 +1861,7 @@ quick_ir1mx(struct ph2handle *iph2, rc_vchar_t *body, rc_vchar_t *hash)
 		+ sizeof(*gen) + hash->l
 		+ body->l;
 	buf = rc_vmalloc(tlen);
-	if (buf == NULL) { 
+	if (buf == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		goto end;
@@ -2303,7 +2303,7 @@ static uint32_t
 setscopeid(struct sockaddr *sp_addr0, struct sockaddr *sa_addr0)
 {
 	struct sockaddr_in6 *sp_addr, *sa_addr;
-    
+
 	sp_addr = (struct sockaddr_in6 *)sp_addr0;
 	sa_addr = (struct sockaddr_in6 *)sa_addr0;
 

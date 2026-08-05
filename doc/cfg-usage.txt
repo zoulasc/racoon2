@@ -3,7 +3,7 @@ This memo describes how to use it with iked.
 
 1. Introduction
 
-   The Configuration payload is used to exchange configuration 
+   The Configuration payload is used to exchange configuration
    information between IKE peers. There are several kinds of information
    to be exchanged with CP in RFC4306. The current implementation
    however supports only these informations.
@@ -23,7 +23,7 @@ This memo describes how to use it with iked.
 
    The iked of an initiator side sends a request to the responder and it
    receives the reply. Then it parses the reply and validates.
-   The iked exports the information from the Configuration Payload as 
+   The iked exports the information from the Configuration Payload as
    environment variables and call the scripts in the configuration files.
    An administrator can use the information to configure callback scripts.
 

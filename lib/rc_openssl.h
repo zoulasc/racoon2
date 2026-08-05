@@ -8,33 +8,33 @@ static inline EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
         EVP_MD_CTX *ctx = malloc(sizeof(*ctx));
         if (ctx == NULL)
-                return NULL;     
-        EVP_MD_CTX_init(ctx);   
-        return ctx;             
-}   
-    
+                return NULL;
+        EVP_MD_CTX_init(ctx);
+        return ctx;
+}
+
 static inline void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
-{   
-        if (ctx == NULL)        
-                return;         
+{
+        if (ctx == NULL)
+                return;
         EVP_MD_CTX_cleanup(ctx);
         free(ctx);
-}   
-    
+}
+
 static inline RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
-{ 
+{
         if (pkey->type != EVP_PKEY_RSA)
             return NULL;
         return pkey->pkey.rsa;
-}   
-    
+}
+
 static inline DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
-{    
+{
         if (pkey->type != EVP_PKEY_DSA) {
                 return NULL;
         }
         return pkey->pkey.dsa;
-}   
+}
 
 #include <openssl/dh.h>
 
@@ -95,8 +95,8 @@ static inline const char *
 DH_meth_get0_name(const DH_METHOD *meth)
 {
 	return meth->name;
-}   
-    
+}
+
 #include <openssl/hmac.h>
 
 static inline HMAC_CTX *HMAC_CTX_new(void)
@@ -126,7 +126,7 @@ static inline void HMAC_CTX_reset(HMAC_CTX *ctx)
 
 static inline X509 *
 X509_STORE_CTX_get0_cert(X509_STORE_CTX *x)
-{ 
+{
 	return X509_STORE_CTX_get_current_cert(x);
 }
 

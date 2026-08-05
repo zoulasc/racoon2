@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003, 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -381,14 +381,14 @@ login_spmif(int fd)
 		    (int)vpasswd->l, vpasswd->s);
 		goto fail;
 	}
-	plen = vpasswd->l * 2 + 1; 
+	plen = vpasswd->l * 2 + 1;
 	if ((cid.password = rc_malloc(plen)) == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL, "out of memory\n");
 		goto fail;
 	}
 	/* make it string */
 	dp = cid.password;
-	for (i = 0; i < vpasswd->l; i++) { 
+	for (i = 0; i < vpasswd->l; i++) {
 		snprintf(dp, plen, "%02X", ((unsigned char *)vpasswd->v)[i]);
 		dp += 2;
 		plen -= 2;
@@ -451,7 +451,7 @@ spmif_clean(int fd)
 	close(fd);
 }
 
-
+
 /*
  * post messages to spmd
  */
@@ -681,7 +681,7 @@ spmif_cancel_callback(void *tag)
 	(void)job_cancel(&spmifh, tag);
 }
 
-
+
 /*
  * receive responses from spmd
  */
@@ -882,7 +882,7 @@ read_spmif(struct linereader *lr, int fd)
 	return 0;				/* more line to read */
 }
 
-
+
 static void
 job_initqueue(struct spmif_handle *h)
 {
@@ -977,7 +977,7 @@ job_cancel(struct spmif_handle *h, void *tag)
 	return count;
 }
 
-
+
 /*
  * line oriented reader
  */
@@ -1101,7 +1101,7 @@ lr_consume(struct linereader *lr, size_t nline)
 	lr->nline = i;
 }
 
-
+
 int
 spmd_if_login_response(struct spmd_cid *pci)
 {

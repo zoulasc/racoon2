@@ -1,8 +1,8 @@
-/* $Id: shell.c,v 1.114 2008/01/25 06:13:01 mk Exp $ */ 
+/* $Id: shell.c,v 1.114 2008/01/25 06:13:01 mk Exp $ */
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -114,7 +114,7 @@ shell_banner(int s, const char *challenge)
 		}
 		ret = -1;
 	}
-	
+
 	return ret;
 }
 
@@ -129,17 +129,17 @@ shell_sock_open_sa(const struct sockaddr *sa)
 	s = socket(sa->sa_family, SOCK_STREAM, 0);
 	if (s<0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't setup spmd interface socket:%s", strerror(errno));
-		goto fin; 
-	} 
+		goto fin;
+	}
 
 	if (sa->sa_family == AF_INET6) {
-		if (setsockopt(s, IPPROTO_IPV6,IPV6_V6ONLY, &on, sizeof(on)) < 0) { 
+		if (setsockopt(s, IPPROTO_IPV6,IPV6_V6ONLY, &on, sizeof(on)) < 0) {
 			SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(IPV6_V6ONLY):%s", strerror(errno));
 			close(s);
 			s = -1;
 			goto fin;
 		}
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) { 
+		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
 			SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno));
 			close(s);
 			s = -1;
@@ -159,7 +159,7 @@ shell_sock_open_sa(const struct sockaddr *sa)
 		}
 	}
 	else if (sa->sa_family == AF_INET) {
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) { 
+		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
 			SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno));
 			close(s);
 			s = -1;
@@ -246,8 +246,8 @@ shell_sock_open_file(const struct sockaddr *sa)
 	s = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (s<0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Can't setup spmd interface socket:%s", strerror(errno));
-		goto fin; 
-	} 
+		goto fin;
+	}
 
 	if (bind(s, sa, SUN_LEN((const struct sockaddr_un *)sa)) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed: bind():%s", strerror(errno));
@@ -383,7 +383,7 @@ shell_init(void)
 			continue;
 			break;
 		}
-		
+
 		sh = spmd_calloc(sizeof(*sh));
 		sh->s = fd;
 		memcpy(&sh->sock.sa, rcl->a.ipaddr, rcs_getsalen(rcl->a.ipaddr));
@@ -399,10 +399,10 @@ shell_init(void)
 
 	sh = shhead;
 	while (sh) {
-		t = task_alloc(0); 
+		t = task_alloc(0);
 		t->fd = sh->s;
 		t->flags = 0;
-		t->sa = &sh->sock.sa; 
+		t->sa = &sh->sock.sa;
 		t->salen = sizeof(sh->sock);/* cant use SPMD_SALEN() */
 		t->func = shell_accept;
 		task_list_add(t, &spmd_task_root->read);
@@ -549,7 +549,7 @@ shell_interpreter(struct task *t)
 		if (isspace(*(unsigned char *)cp)) {
 			while (*cp && isblank((unsigned char)*cp)) cp++;
 			*buf = '\0';
-			if (*cp == '\r') 
+			if (*cp == '\r')
 				break;
 			buf++;
 			++sh_argc;
@@ -558,7 +558,7 @@ shell_interpreter(struct task *t)
 		if (*cp == '\r') {
 			*buf = '\0';
 			break;
-		} 
+		}
 		*buf++ = *cp++;
 	}
 	sh_argc++;
@@ -596,7 +596,7 @@ readd:
 fin:
 	shell_cid_clean((struct spmd_cid *)t->msg);
 	SPMD_PLOG(SPMD_L_INFO, "Spmd interface closed(fd=%d)", s);
-	close(s); 
+	close(s);
 	return ret;
 }
 
@@ -647,9 +647,9 @@ shell_unknown_handler(int sh_argc, char **sh_argv, struct task *t)
 /* LOGIN Auth */
 /* caller must free() challenge */
 static char *
-shell_gen_challenge(void) 
+shell_gen_challenge(void)
 {
-	char *seed; 
+	char *seed;
 	size_t seed_len = SPMD_CID_SEED_LEN;
 	size_t ret;
 	char *challenge = NULL;
@@ -685,8 +685,8 @@ shell_gen_challenge(void)
 		if (buf) {
 			bp = buf;
 			sp = seed;
-			for (j=0;j<seed_len;j++) { 
-				snprintf(bp, buf_len, "%02X", (unsigned char)sp[j]); 
+			for (j=0;j<seed_len;j++) {
+				snprintf(bp, buf_len, "%02X", (unsigned char)sp[j]);
 				bp += 2;
 				buf_len -= 2;
 			}
@@ -726,7 +726,7 @@ shell_gen_challenge(void)
 	p = challenge;
         for (i = 0; i < digest_len; i++) {
 		snprintf(p, challenge_len, "%02X", digest[i]);
-		p += 2; 
+		p += 2;
 		challenge_len -= 2;
         }
 
@@ -760,7 +760,7 @@ shell_cfg_get_password(void)
 		return NULL;
 	}
 	sp = vpasswd->u;
-	for (i = 0; i < vpasswd->l; i++) { 
+	for (i = 0; i < vpasswd->l; i++) {
 		snprintf(dp, plen, "%02X", sp[i]);
 		dp +=2;
 		plen -= 2;
@@ -817,13 +817,13 @@ spmd_passwd_check(char *str, struct spmd_cid *cid)
 		goto fin;
 	}
 
-	ret = strncmp(cid->hash, str, plen); 
+	ret = strncmp(cid->hash, str, plen);
 
 fin:
 	return ret;
 }
 
-static int 
+static int
 shell_login_handler(int sh_argc, char **sh_argv, struct task *t)
 {
 	char buf[SPMD_SHELL_BUFSIZ];
@@ -868,7 +868,7 @@ fin:
 	shell_cid_clean(cid);
 	t->msg = NULL;
 
-	return ret; 
+	return ret;
 }
 
 static int
@@ -899,12 +899,12 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 		goto wfin;
 	}
 
-	if (sh_argc == 1) { 
-		if (!strncasecmp(sh_argv[0], "LIST", strlen("LIST"))) { 
+	if (sh_argc == 1) {
+		if (!strncasecmp(sh_argv[0], "LIST", strlen("LIST"))) {
 			if (!dsl) { /* resolver off */
 				strlcpy(status, "251 ", sizeof(status));
 				snprintf(buf, sizeof(buf), "%sNo Name Server(resolver off?)\r\n", status);
-				goto wfin; 
+				goto wfin;
 			}
 			dns = dsl->live;
 			do {
@@ -913,9 +913,9 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 				if (err) {
 					strlcpy(status, "550 ", sizeof(status));
 					snprintf(buf, sizeof(buf), "%sInternal Error\r\n", status);
-					goto wfin; 
+					goto wfin;
 				}
-					
+
 				if (dns->next == dsl->live)
 					status[3] = ' ';
 				snprintf(buf, sizeof(buf), "%s%s\r\n", status, addr);
@@ -934,11 +934,11 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 			goto wfin;
 		}
 	} else if (sh_argc == 2) {
-		if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) { 
+		if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) {
 			if (!dsl) { /* resolver off */
 				strlcpy(status, "550 ", sizeof(status));
 				snprintf(buf, sizeof(buf), "%sOperation Failed(resolver off?)\r\n", status);
-				goto wfin; 
+				goto wfin;
 			}
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_socktype = SOCK_DGRAM;
@@ -979,7 +979,7 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 			if (!dsl) { /* resolver off */
 				strlcpy(status, "550 ", sizeof(status));
 				snprintf(buf, sizeof(buf), "%sOperation Failed(resolver off?)\r\n", status);
-				goto wfin; 
+				goto wfin;
 			}
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_socktype = SOCK_DGRAM;
@@ -1011,13 +1011,13 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 				struct task *delt, *delq;
 				delt = dns->t;
 
-				if (spmd_task_root->delq == NULL) { 
-					spmd_task_root->delq = delt; 
-				} else { 
-					delq = spmd_task_root->delq; 
-					while (delq->next) 
-						delq =  delq->next; 
-					delq->next = delt; 
+				if (spmd_task_root->delq == NULL) {
+					spmd_task_root->delq = delt;
+				} else {
+					delq = spmd_task_root->delq;
+					while (delq->next)
+						delq =  delq->next;
+					delq->next = delt;
 				}
 			}
 			dns->t->dns_deleted = 1;
@@ -1028,7 +1028,7 @@ shell_ns_handler(int sh_argc, char **sh_argv, struct task *t)
 			if (!dsl) { /* resolver off */
 				strlcpy(status, "550 ", sizeof(status));
 				snprintf(buf, sizeof(buf), "%sOperation Failed(resolver off?)\r\n", status);
-				goto wfin; 
+				goto wfin;
 			}
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_socktype = SOCK_DGRAM;
@@ -1100,14 +1100,14 @@ shell_fqdn_handler(int sh_argc, char **sh_argv, struct task *t)
 	}
 
 	if (sh_argc == 1) {
-		if (!strncasecmp(sh_argv[0], "LIST", strlen("LIST"))) { 
+		if (!strncasecmp(sh_argv[0], "LIST", strlen("LIST"))) {
 			fl = get_fqdn_db_top();
 			if (!fl) { /* no fqdn registered */
 				strlcpy(status, "251 ", sizeof(status));
 				snprintf(buf, sizeof(buf), "%sNo FQDN Registered\r\n", status);
 				goto fin;
 			}
-			while (fl) { 
+			while (fl) {
 				if (fl->next != NULL) {
 					snprintf(buf, sizeof(buf), "%s%s\r\n", status, fl->fqdn);
 				} else {
@@ -1125,7 +1125,7 @@ shell_fqdn_handler(int sh_argc, char **sh_argv, struct task *t)
 			goto serr;
 		}
 	} else if (sh_argc == 2) {
-		if (!strncasecmp(sh_argv[0], "QUERY", strlen("QUERY"))) { 
+		if (!strncasecmp(sh_argv[0], "QUERY", strlen("QUERY"))) {
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_socktype = SOCK_DGRAM;
 			hints.ai_flags = AI_NUMERICHOST;
@@ -1164,7 +1164,7 @@ shell_fqdn_handler(int sh_argc, char **sh_argv, struct task *t)
 				fl=fl->next;
 			}
 			goto fin2;
-		} else if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) { 
+		} else if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) {
 			fqdn_len = strlen(sh_argv[1]);
 			if (fqdn_len < MAX_NAME_LEN) {
 				strlcpy(fqdn, sh_argv[1], sizeof(fqdn));
@@ -1189,7 +1189,7 @@ shell_fqdn_handler(int sh_argc, char **sh_argv, struct task *t)
 			} else  {
 				goto serr;
 			}
-		} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) { 
+		} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) {
 			fqdn_len = strlen(sh_argv[1]);
 			if (fqdn_len < MAX_NAME_LEN) {
 				strlcpy(fqdn, sh_argv[1], sizeof(fqdn));
@@ -1280,7 +1280,7 @@ shell_slid_handler(int sh_argc, char **sh_argv, struct task *t)
 	}
 
 fin:
-	if (slid) 
+	if (slid)
 		spmd_free(slid);
 
 	len = strlen(buf);
@@ -1292,8 +1292,8 @@ fin:
 }
 
 /* Policy operation
- * POLICY <SP> COMMAND <SP> SELECTOR_INDEX <SP> LIFETIME <SP> SAMODE <SP> SP_SRC <SP> SP_DST 
- * [<SP> SA_SRC <SP> SA_DST] <CRLF> 
+ * POLICY <SP> COMMAND <SP> SELECTOR_INDEX <SP> LIFETIME <SP> SAMODE <SP> SP_SRC <SP> SP_DST
+ * [<SP> SA_SRC <SP> SA_DST] <CRLF>
  */
 static int
 shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
@@ -1335,7 +1335,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		goto fin;
 	}
 
-	if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) { 
+	if (!strncasecmp(sh_argv[0], "ADD", strlen("ADD"))) {
 		if (sh_argc != 6 && sh_argc != 8) {
 			strlcpy(status, "500 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
@@ -1355,7 +1355,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		}
 
 		/* src */
-		src_addrstr = sh_argv[4]; 
+		src_addrstr = sh_argv[4];
 		if ((src_plenstr = strchr(src_addrstr, '/')) != NULL) {
 			*src_plenstr = '\0';
 			src_plenstr++;
@@ -1518,7 +1518,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 
 		if (spmd_spd_update(sl1, rc1, not_urgent)<0) {
 			strlcpy(status, "550 ", sizeof(status));
-			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n", 
+			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n",
 							status, (int)sl1->sl_index->l, sl1->sl_index->s);
 			goto err_fin;
 		}
@@ -1548,16 +1548,16 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		}
 		if (spmd_spd_update(sl2, rc2, not_urgent)<0) {
 			strlcpy(status, "550 ", sizeof(status));
-			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n", 
+			snprintf(buf, sizeof(buf), "%sOperation Failed(sl_index=%.*s)\r\n",
 							status, (int)sl2->sl_index->l, sl2->sl_index->s);
 			goto err_fin;
 		}
 
 		strlcpy(status, "250 ", sizeof(status));
-		snprintf(buf, sizeof(buf), "%sPolicy Added %.*s and %.*s\r\n", 
+		snprintf(buf, sizeof(buf), "%sPolicy Added %.*s and %.*s\r\n",
 			status, (int)sl1->sl_index->l, sl1->sl_index->s, (int)sl2->sl_index->l, sl2->sl_index->s);
 		goto fin;
-	} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) { 
+	} else if (!strncasecmp(sh_argv[0], "DELETE", strlen("DELETE"))) {
 		if (sh_argc != 5 && sh_argc !=7) {
 			strlcpy(status, "500 ", sizeof(status));
 			snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
@@ -1718,7 +1718,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 		strlcpy(status, "250 ", sizeof(status));
 		snprintf(buf, sizeof(buf), "%sPolicy Deleted\r\n", status);
 		goto fin;
-	} else if (!strncasecmp(sh_argv[0], "DUMP", strlen("DUMP"))) { 
+	} else if (!strncasecmp(sh_argv[0], "DUMP", strlen("DUMP"))) {
 		const struct spid_data *top = spid_data_top();
 		const struct spid_data *sd;
 		if (!top) {
@@ -1738,7 +1738,7 @@ shell_policy_handler(int sh_argc, char **sh_argv, struct task *t)
 			n = write(s, buf, len);
 			if (n!=len)
 				ret = -1;
-		} 
+		}
 		goto fin2;
 	} else {
 		strlcpy(status, "500 ", sizeof(status));
@@ -1905,7 +1905,7 @@ shell_migrate_handler(int sh_argc, char **sh_argv, struct task *t)
 	return ret;
 }
 
-static int 
+static int
 shell_stat_handler(int sh_argc, char **sh_argv, struct task *t)
 {
 	char buf[SPMD_SHELL_BUFSIZ];
@@ -1927,7 +1927,7 @@ shell_stat_handler(int sh_argc, char **sh_argv, struct task *t)
 		goto fin;
 	}
 
-	if (sh_argc != 0) { 
+	if (sh_argc != 0) {
 		strlcpy(status, "500 ", sizeof(status));
 		snprintf(buf, sizeof(buf), "%sSyntax Error\r\n", status);
 		len = strlen(buf);
@@ -1986,9 +1986,9 @@ shell_fin(void)
 {
 	struct shell_sock *sh, *next;
 
-	if (shhead) { 
-		sh=shhead; 
-		while (sh) { 
+	if (shhead) {
+		sh=shhead;
+		while (sh) {
 			close(sh->s);
 			next = sh->next;
 			spmd_free(sh);

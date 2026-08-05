@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,9 +49,9 @@ spmd_add_resolver_task(struct resolver_sock *rshead)
 	struct task *t;
 	struct resolver_sock *rs = NULL;
 
-	
+
 	if (!rshead) {
-		SPMD_PLOG(SPMD_L_INTERR, "Argument rshead is NULL"); 
+		SPMD_PLOG(SPMD_L_INTERR, "Argument rshead is NULL");
 		return -1;
 	}
 
@@ -113,7 +113,7 @@ spmd_init_resolver_sock(struct rc_addrlist *ns_bounds)
 
 		if (rshead == NULL) {
 			rshead = rs;
-		} else { 
+		} else {
 			p = rshead;
 			while (p->next)
 				p=p->next;
@@ -147,12 +147,12 @@ setup_udpv6_sock(struct sockaddr *sa)
 		SPMD_PLOG(SPMD_L_INTERR, "Can't setup udpv6 socket:%s", strerror(errno));
 		return -1;
 	}
-	if (setsockopt(s, IPPROTO_IPV6,IPV6_V6ONLY, &on, sizeof(on)) < 0) { 
+	if (setsockopt(s, IPPROTO_IPV6,IPV6_V6ONLY, &on, sizeof(on)) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(IPV6_V6ONLY):%s", strerror(errno));
 		close(s);
 		return -1;
 	}
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) { 
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno));
 		close(s);
 		return -1;
@@ -186,7 +186,7 @@ setup_udpv4_sock(struct sockaddr *sa)
 		SPMD_PLOG(SPMD_L_INTERR, "Can't setup udpv4 socket:%s", strerror(errno));
 		return -1;
 	}
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) { 
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
 		SPMD_PLOG(SPMD_L_INTERR, "Failed: setsockopt(SO_REUSEADDR):%s", strerror(errno));
 		close(s);
 		return -1;

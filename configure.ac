@@ -21,7 +21,7 @@ AC_CONFIG_SUBDIRS([lib spmd])
 AC_MSG_CHECKING(if --enable-kinkd option is specified)
 AC_ARG_ENABLE(kinkd,
 	[ --enable-kinkd	build kinkd [yes]],
-	AC_MSG_RESULT($enable_kinkd), 
+	AC_MSG_RESULT($enable_kinkd),
 	AC_MSG_RESULT(default to yes)
 	enable_kinkd=yes
 	ac_configure_args="$ac_configure_args --enable-kinkd")

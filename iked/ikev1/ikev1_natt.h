@@ -2,7 +2,7 @@
  * Copyright (C) 2004 SuSE Linux AG, Nuernberg, Germany.
  * Contributed by: Michal Ludvig <mludvig@suse.cz>, SUSE Labs
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,7 +49,7 @@
 #define	NON_ESP_MARKER_LEN	sizeof(uint32_t)
 #define	NON_ESP_MARKER_USE(iph1)	((iph1)->natt_flags & NAT_ADD_NON_ESP_MARKER)
 
-/* These are the values from parsing "remote {}" 
+/* These are the values from parsing "remote {}"
    block of the config file. */
 #define NATT_FORCE	0	/* XXX notyet */
 #define NATT_ON		RCT_BOOL_ON

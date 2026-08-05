@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2007 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -122,14 +122,14 @@ ikev2_cfg_attr_len(int type)
 		sizeof(struct ikev2cfg_mip6prefix), /* MIP6_HOME_PREFIX */
 	};
 
-	if (type >= 0 && type < (int)ARRAYLEN(attr_len)) 
+	if (type >= 0 && type < (int)ARRAYLEN(attr_len))
 		return attr_len[type];
 	return 0;
 }
 
 
-/* 
- * set Config attribute header 
+/*
+ * set Config attribute header
  */
 static void
 cfg_attrib_set(struct ikev2cfg_attrib *a, unsigned int type, unsigned int length)
@@ -139,9 +139,9 @@ cfg_attrib_set(struct ikev2cfg_attrib *a, unsigned int type, unsigned int length
 }
 
 
-/* 
+/*
  * create CFG_REQUEST Config payload for Initiator (client)
- */ 
+ */
 void
 ikev2_create_config_request(struct ikev2_child_sa *child_sa)
 {
@@ -311,7 +311,7 @@ ikev2_process_cfg_request_attribs(struct ikev2_sa *ike_sa,
 #ifdef DEBUG_TRACE
 	char addrstr[INET6_ADDRSTRLEN];
 	static const char *attr_str[] = {
-	    "*0*", 
+	    "*0*",
 	    "INTERNAL_IP4_ADDRESS",
 	    "INTERNAL_IP4_NETMASK",
 	    "INTERNAL_IP4_DNS",
@@ -624,14 +624,14 @@ ikev2_create_config_reply(struct ikev2_sa *ike_sa,
 			goto err;
 	}
 
-	if ((param->cfg_ip4_dns || param->cfg_ip6_dns) && 
+	if ((param->cfg_ip4_dns || param->cfg_ip6_dns) &&
 	    ikev2_dns(ike_sa->rmconf)) {
 		struct rc_addrlist	*dnslist;
 		int err;
 
 		TRACE((PLOGLOC, "INTERNAL_DNS:\n"));
 		err = rcs_extend_addrlist(ikev2_dns(ike_sa->rmconf), &dnslist);
-		if (err) 
+		if (err)
 			goto err;
 		ikev2_cfg_add_addrlist(cfg_payload, dnslist,
 		    param->cfg_ip4_dns, IKEV2_CFG_INTERNAL_IP4_DNS,
@@ -702,7 +702,7 @@ ikev2_create_config_reply(struct ikev2_sa *ike_sa,
 			goto err;
 		}
 	}
-		
+
 	if (param->cfg_supported_attributes) {
 #if BYTE_ORDER == BIG_ENDIAN
 #define	const_HTONS(x)	(x)
@@ -948,7 +948,7 @@ ikev2_process_cfg_reply_attribs(struct ikev2_sa *ike_sa,
 			break;
 		case IKEV2_CFG_INTERNAL_IP6_SUBNET:
 			isakmp_log(ike_sa, 0, 0, 0,
-				   PLOG_PROTOWARN, PLOGLOC, 
+				   PLOG_PROTOWARN, PLOGLOC,
 				   "received INTERNAL_IP6_SUBNET, ignored\n");
 			break;
 		case IKEV2_CFG_MIP6_HOME_PREFIX:

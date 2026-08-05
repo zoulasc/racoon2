@@ -63,7 +63,7 @@ o 構造
      |                   (remote_index)                       +-(sa_index)-> sa
      v                         |                              |
 selector -+                    |     +-(ipsec_index)-> ipsec -+-(sa_index)-> sa
-          |                    |     |  
+          |                    |     |
 selector -+-(policy_index)-> policy -+-(ipsec_index)-> ipsec ---(sa_index)-> sa
           |                          |
 selector -+                          +-(ipsec_index)-> ipsec ...
@@ -160,7 +160,7 @@ o IPアドレス表記方法
 
 		以上は '%'を挟んでインターフェイス名を指定できる
 			例. MY_IP%(interface name)
-	
+
 		MY_COA: ※未実装
 		IP_ANY: :: と 0.0.0.0 が帰る
 
@@ -206,7 +206,7 @@ o アルゴリズムの表記方法
 	鍵長はアルゴリズムにより決められている。
 
 	algorithm名と鍵だけを定義したい場合は以下のようにする。
-	
+
 		(algorithm名),,(鍵)
 
 	複数指定するには ';' で区切り列挙する。

@@ -69,7 +69,7 @@
 
 /*
  * ANSI function declarations for private functions (i.e. functions not used
- * elsewhere) and the main() function go at the top of the source module. 
+ * elsewhere) and the main() function go at the top of the source module.
  * Don't associate a name with the types.  I.e. use:
  *	void function(int);
  * Use your discretion on indenting between the return type and the name, and
@@ -356,7 +356,7 @@ vaf(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	STUFF;
-	va_end(ap);	
+	va_end(ap);
 				/* No return needed for void functions. */
 }
 

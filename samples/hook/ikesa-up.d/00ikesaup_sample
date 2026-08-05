@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# This sample script logs environment variables via syslog(3) 
+# This sample script logs environment variables via syslog(3)
 # when IKEv2 IKE_SA is established.
 #
 

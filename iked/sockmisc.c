@@ -4,7 +4,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -16,7 +16,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -163,7 +163,7 @@ getlocaladdr(struct sockaddr *remote, struct sockaddr *hint, int lport)
  * setsockopt() have already performed on socket.
  */
 int
-recvfromto(int s, void *buf, size_t buflen, int flags, 
+recvfromto(int s, void *buf, size_t buflen, int flags,
 	   struct sockaddr *from, socklen_t *fromlen, struct sockaddr *to, socklen_t *tolen)
 {
 	int otolen;
@@ -290,7 +290,7 @@ recvfromto(int s, void *buf, size_t buflen, int flags,
 
 /* send packet, with fixing src/dst address pair. */
 int
-sendfromto(int s, const void *buf, size_t buflen, 
+sendfromto(int s, const void *buf, size_t buflen,
 	   struct sockaddr *src, struct sockaddr *dst, int cnt)
 {
 	struct sockaddr_storage ss;

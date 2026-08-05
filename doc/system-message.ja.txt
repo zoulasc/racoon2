@@ -99,10 +99,10 @@ RC_LOG_CRITICAL
 	"     ID:%#hx", dd->id
 	"     QR:%s", qr_str(dd->qr)
 	" OPCODE:%s", opcode_str(dd->opcode)
-	"     AA:%s <%#hhx>", 
+	"     AA:%s <%#hhx>",
 	"     TC:%s <%#hhx>", dd->tc ? "Truncated" : "Not Truncated", dd->tc
-	"     RD:%s <%#hhx>", 
-	"     RA:%s <%#hhx>", 
+	"     RD:%s <%#hhx>",
+	"     RA:%s <%#hhx>",
 	"  RCODE:%s", rcode_str(dd->rcode)
 	"QDCOUNT:%hu", dd->qdcount
 	"ANCOUNT:%hu", dd->ancount
@@ -167,7 +167,7 @@ RC_LOG_CRITICAL
 	"Failed to initilize internal buffer(rbuf)"
 	=> can not initilize libracoon rbuf
 	"Failed to parse configuration file:%s"
-	=> just parsing error 
+	=> just parsing error
 	"Failed to initialze IPsec Security Poicy(PF_KEY)"
 	=> can not initilize PF_KEY and add initilal Policy
 	"Can't get DNS server address(check your %s)"
@@ -220,7 +220,7 @@ RC_LOG_CRITICAL
 	"Can't forward query response to resolver (sendto:n=%d)"
 	=> can not forward query response (from DNS server) to Resolver(Application)
 [SPMD_L_WARNING]
-	"Invalid query packet, length=%d,(%s)", 
+	"Invalid query packet, length=%d,(%s)",
 	"Unknown Query:id=%#hx",id
 	=> this DNS query packet is unknown (aleady expired ID?)
 [SPMD_L_NOTICE]
@@ -232,7 +232,7 @@ RC_LOG_CRITICAL
 	"id=%#hx expired, remove it."
 [SPMD_L_DEBUG2]
 	"[DNS Query Queue]"
-	" [%02d]{%p} id=%#hx, expiration=%d, next=%p, pre=%p", 
+	" [%02d]{%p} id=%#hx, expiration=%d, next=%p, pre=%p",
 	"DNS Query Queue: flushed"
 
 {shell.c}:
@@ -321,41 +321,41 @@ RC_LOG_CRITICAL
 	"Can't initialize libracoon(PF_KEY part)"
 	"Can't get Selector list in your configuration file"
 	"Can't get Selector list"
-	"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
+	"Can't set suitable SA type, check your configuration file (selector=%.*s)",
 	"Can't set suitable SA mode, check your configuration file (selector=%.*s)",
 	"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
 	"Unknown address type in my_sa_ipaddr, check your configuration file (policy=%.*s)",
-	"No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+	"No my_sa_ipaddr, check your configuration file (policy=%.*s)",
 	"FQDN is not supported on TUNNEL mode, check your configuration file (policy=%.*s)",
 	"Unknown address type in peers_sa_ipaddr, check your configuration file (policy=%.*s)",
 	"No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
-	"IP_ANY macro is not supported in selector source address (selector=%.*s)", 
-	"FQDN macro is not supported in selector source address (selector=%.*s)", 
-	"Unknown address macro in selector source address (selector=%.*s)", 
+	"IP_ANY macro is not supported in selector source address (selector=%.*s)",
+	"FQDN macro is not supported in selector source address (selector=%.*s)",
+	"Unknown address macro in selector source address (selector=%.*s)",
 	"No selector source address (selector=%.*s)", sl->sl_index->l, sl->sl_index->v
-	"FQDN macro is not supported in selector dstination address (selector=%.*s)", 
-	"Unknown address macro in selector dstination address (selector=%.*s)", 
+	"FQDN macro is not supported in selector dstination address (selector=%.*s)",
+	"Unknown address macro in selector dstination address (selector=%.*s)",
 	"No selector destination address (selector=%.*s)", sl->sl_index->l, sl->sl_index->v
 	"Can't set upper layer protocol, check your configuration(selector=%.*s)",
 	"Can't set direction, check your configuration (selector=%.*s)",
 	"Failed: getnameinfo(src):%s", strerror(errno)
 	"Failed: getnameinfo(dst):%s", strerror(errno)
 	"No selector"
-	"No policy found, check your configuration file (selector=%.*s)", 
-	"No IPsec info, check your configuration file (selector=%.*s)", 
+	"No policy found, check your configuration file (selector=%.*s)",
+	"No IPsec info, check your configuration file (selector=%.*s)",
 	"Unknown SA type"
 	"No selector"
-	"No policy found, check your configuration file (selector=%.*s)", 
+	"No policy found, check your configuration file (selector=%.*s)",
 	"No selector"
 	"No selector"
 	"Unknown macro in policy, check config!"
 	"Unknown macro in policy, check config!"
-	"Unknown address family, check your configuration file (selector=%.*s)", 
-	"Unknown address family, check your configuration file (selector=%.*s)", 
-	"Unknown address family, check your configuration file (selector=%.*s)", 
-	"Can't set suitable SA type, check your configuration file (selector=%.*s)", 
-	"Can't set suitable SA mode, check your configuration file (selector=%.*s)", 
-	"No my_sa_ipaddr, check your configuration file (policy=%.*s)", 
+	"Unknown address family, check your configuration file (selector=%.*s)",
+	"Unknown address family, check your configuration file (selector=%.*s)",
+	"Unknown address family, check your configuration file (selector=%.*s)",
+	"Can't set suitable SA type, check your configuration file (selector=%.*s)",
+	"Can't set suitable SA mode, check your configuration file (selector=%.*s)",
+	"No my_sa_ipaddr, check your configuration file (policy=%.*s)",
 	"No peers_sa_ipaddr, check your configuration file (policy=%.*s)",
 	"Can't set upper layer protocol, check your configuration(selector=%.*s)",
 	"Can't set direction, check your configuration (selector=%.*s)",
@@ -370,7 +370,7 @@ RC_LOG_CRITICAL
 	"Out of memory"
 	"No such a selector"
 	"Can't get selector list in your configuration file (selector=%.*s)",
-	"Can't get policy in your configuration file (selector=%.*s)", 
+	"Can't get policy in your configuration file (selector=%.*s)",
 	"Can't get IPsec info in your configuration file (policy=%.*s)",
 	"Can't get selector suitable for spid(%u) in your configuration file", spid
 	"Can't delete IPsec Security Policy: spid=%u", sd->spid
@@ -420,7 +420,7 @@ RC_LOG_CRITICAL
 
 {udp.c}:
 [SPMD_L_ERR]
-	"Argument rshead is NULL"); 
+	"Argument rshead is NULL");
 	"Resolver address must be numeric"
 	"Can't setup IPv6 udp resolver socket(%s)", host
 	"Can't setup IPv4 udp resolver socket(%s)", host

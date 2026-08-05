@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -90,7 +90,7 @@
 #ifdef ENABLE_HYBRID
 #include "isakmp_xauth.h"
 #include "isakmp_unity.h"
-#include "isakmp_cfg.h" 
+#include "isakmp_cfg.h"
 #endif
 #include "isakmp_inf.h"
 #include "oakley.h"
@@ -168,7 +168,7 @@ isakmp_info_recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 
 	/* Safety check */
 	if (msg->l < sizeof(*isakmp) + sizeof(*gen)) {
-		plog(PLOG_PROTOERR, PLOGLOC, NULL, 
+		plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			"ignore information because the "
 			"message is way too short\n");
 		goto end;
@@ -192,10 +192,10 @@ isakmp_info_recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 			    "has not been established yet.\n");
 			goto end;
 		}
-		
+
 		/* Safety check */
 		if (msg->l < sizeof(*isakmp) + get_uint16(&gen->len) + sizeof(*nd)) {
-			plog(PLOG_PROTOERR, PLOGLOC, NULL, 
+			plog(PLOG_PROTOERR, PLOGLOC, NULL,
 				"ignore information because the "
 				"message is too short\n");
 			goto end;
@@ -236,7 +236,7 @@ isakmp_info_recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 			rc_vfree(payload);
 			goto end;
 		}
-		
+
 		if (get_uint16(&gen->len) - sizeof(struct isakmp_gen) != hash->l) {
 			plog(PLOG_PROTOERR, PLOGLOC, NULL,
 			    "ignore information due to hash length mismatch\n");
@@ -282,7 +282,7 @@ isakmp_info_recv(struct ph1handle *iph1, rc_vchar_t *msg0)
 	case ISAKMP_NPTYPE_N:
 		if ( encrypted )
 			isakmp_info_recv_n(iph1, msg);
-		else 
+		else
 			plog(PLOG_PROTOWARN, PLOGLOC, 0,
 			     "received unencrypted Notify payload, ignored\n");
 		break;
@@ -335,7 +335,7 @@ isakmp_info_send_d1(struct ph1handle *iph1)
 	tlen = sizeof(*d) + sizeof(isakmp_index_t);
 	payload = rc_vmalloc(tlen);
 	if (payload == NULL) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer for payload.\n");
 		return errno;
 	}
@@ -378,7 +378,7 @@ isakmp_info_send_d2(struct ph2handle *iph2)
 	 * don't send delete information if there is no phase 1 handler.
 	 * It's nonsensical to negotiate phase 1 to send the information.
 	 */
-	iph1 = getph1byaddr(iph2->src, iph2->dst); 
+	iph1 = getph1byaddr(iph2->src, iph2->dst);
 	if (iph1 == NULL)
 		return 0;
 
@@ -395,7 +395,7 @@ isakmp_info_send_d2(struct ph2handle *iph2)
 		tlen = sizeof(*d) + pr->spisize;
 		payload = rc_vmalloc(tlen);
 		if (payload == NULL) {
-			plog(PLOG_INTERR, PLOGLOC, NULL, 
+			plog(PLOG_INTERR, PLOGLOC, NULL,
 				"failed to get buffer for payload.\n");
 			return errno;
 		}
@@ -428,7 +428,7 @@ isakmp_info_send_d2(struct ph2handle *iph2)
  * send Notification payload (for without ISAKMP SA) in Informational exchange
  */
 int
-isakmp_info_send_nx(struct isakmp *isakmp, struct sockaddr *remote, struct sockaddr *local, 
+isakmp_info_send_nx(struct isakmp *isakmp, struct sockaddr *remote, struct sockaddr *local,
 		    int type, rc_vchar_t *data)
 {
 	struct ph1handle *iph1 = NULL;
@@ -480,7 +480,7 @@ isakmp_info_send_nx(struct isakmp *isakmp, struct sockaddr *remote, struct socka
 	if (data)
 		tlen += data->l;
 	payload = rc_vmalloc(tlen);
-	if (payload == NULL) { 
+	if (payload == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		error = -1;
@@ -540,7 +540,7 @@ isakmp_info_send_n1(struct ph1handle *iph1, int type, rc_vchar_t *data)
 	if (data)
 		tlen += data->l;
 	payload = rc_vmalloc(tlen);
-	if (payload == NULL) { 
+	if (payload == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		return errno;
@@ -587,7 +587,7 @@ isakmp_info_send_n2(struct ph2handle *iph2, int type, rc_vchar_t *data)
 	if (data)
 		tlen += data->l;
 	payload = rc_vmalloc(tlen);
-	if (payload == NULL) { 
+	if (payload == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		return errno;
@@ -685,7 +685,7 @@ isakmp_info_send_common(struct ph1handle *iph1, rc_vchar_t *payload, uint32_t np
 
 	/* create buffer for isakmp payload */
 	iph2->sendbuf = rc_vmalloc(tlen);
-	if (iph2->sendbuf == NULL) { 
+	if (iph2->sendbuf == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		goto err;
@@ -771,7 +771,7 @@ err:
  * XXX Which is SPI to be included, inbound or outbound ?
  */
 rc_vchar_t *
-isakmp_add_pl_n(rc_vchar_t *buf0, uint8_t **np_p, int type, 
+isakmp_add_pl_n(rc_vchar_t *buf0, uint8_t **np_p, int type,
 	        struct saproto *pr, rc_vchar_t *data)
 {
 	rc_vchar_t *buf = NULL;
@@ -972,7 +972,7 @@ info_recv_initialcontact(struct ph1handle *iph1)
 		next_ph2 = LIST_NEXT(ph2, chain);
 
 #ifdef ENABLE_NATT
-		/* 
+		/*
 		 * XXX RFC 3947 says that whe MUST NOT use IP+port to find old SAs
 		 * from this peer !
 		 */
@@ -1104,7 +1104,7 @@ isakmp_info_recv_d(struct ph1handle *iph1, rc_vchar_t *msg)
 			continue;
  #endif
  }
- 
+
 		num_spi = get_uint16(&d->num_spi);
 		tlen = get_uint16(&d->h.len) - sizeof(struct isakmp_pl_d);
 
@@ -1140,7 +1140,7 @@ isakmp_info_recv_d(struct ph1handle *iph1, rc_vchar_t *msg)
 					d->spi_size, d->proto_id);
 				continue;
 			}
-			EVT_PUSH(iph1->local, iph1->remote, 
+			EVT_PUSH(iph1->local, iph1->remote,
 			    EVTT_PEER_DELETE, NULL);
 			purge_ipsec_spi(iph1, iph1->remote, d->proto_id,
 			    (uint32_t *)(d + 1), num_spi);
@@ -1233,7 +1233,7 @@ isakmp_info_recv_r_u (struct ph1handle *iph1, struct isakmp_pl_ru *ru, uint32_t 
 	   Or is this already done by calling function?  */
 	tlen = sizeof(*ru_ack);
 	payload = rc_vmalloc(tlen);
-	if (payload == NULL) { 
+	if (payload == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
 			"failed to get buffer to send.\n");
 		return errno;
@@ -1247,7 +1247,7 @@ isakmp_info_recv_r_u (struct ph1handle *iph1, struct isakmp_pl_ru *ru, uint32_t 
 	ru_ack->proto_id = IPSECDOI_PROTO_ISAKMP; /* XXX ? */
 	ru_ack->spi_size = sizeof(isakmp_index_t);
 	memcpy(ru_ack->i_ck, ru->i_ck, sizeof(isakmp_cookie_t));
-	memcpy(ru_ack->r_ck, ru->r_ck, sizeof(isakmp_cookie_t));	
+	memcpy(ru_ack->r_ck, ru->r_ck, sizeof(isakmp_cookie_t));
 	ru_ack->data = ru->data;
 
 	/* XXX Should we do FLAG_A ?  */
@@ -1262,7 +1262,7 @@ isakmp_info_recv_r_u (struct ph1handle *iph1, struct isakmp_pl_ru *ru, uint32_t 
 }
 
 static int
-isakmp_info_recv_r_u_ack (struct ph1handle *iph1, 
+isakmp_info_recv_r_u_ack (struct ph1handle *iph1,
 			  struct isakmp_pl_ru *ru, uint32_t msgid)
 {
 
@@ -1274,7 +1274,7 @@ isakmp_info_recv_r_u_ack (struct ph1handle *iph1,
 	 *    ru->data >= iph2->dpd_seq - iph2->dpd_fails ? */
 	if (get_uint32(&ru->data) != (uint32_t)(iph1->dpd_seq - 1)) {
 		plog(PLOG_PROTOERR, PLOGLOC, 0,
-			 "Wrong DPD sequence number (%d, %d expected).\n", 
+			 "Wrong DPD sequence number (%d, %d expected).\n",
 			 get_uint32(&ru->data), iph1->dpd_seq-1);
 		return 0;
 	}
@@ -1338,7 +1338,7 @@ isakmp_info_send_r_u(void *arg)
 	if (iph2->status != PHASE2ST_ESTABLISHED)
 		return;
 
-	/* 
+	/*
 	 * DPD is necessary only when peer is idle AND
 	 * self has packets to send
 	 */
@@ -1366,7 +1366,7 @@ isakmp_info_send_r_u(void *arg)
 	tlen = sizeof(*ru);
 	payload = rc_vmalloc(tlen);
 	if (payload == NULL) {
-		plog(PLOG_INTERR, PLOGLOC, NULL, 
+		plog(PLOG_INTERR, PLOGLOC, NULL,
 			 "failed to get buffer for payload.\n");
 		return;
 	}

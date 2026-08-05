@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -1406,7 +1406,7 @@ ikev2_conf_find_by_id(struct ikev2_payload_header *payl)
  *
  * Let a TS be a sequence {TSi} for i=0..N-1
  * where TSi is a tuple of {addrrange, {proto or ANYPROTO}, portrange}
- * 
+ *
  * requirements from the draft:
  *
  * 1. single range (N=1)
@@ -1712,7 +1712,7 @@ ts_within(struct ikev2_traffic_selector *ts0,
 	return TRUE;
 }
 
-/* 
+/*
  * returns TRUE if one TS range is within addr/prefix
  */
 static int
@@ -1783,7 +1783,7 @@ ts_is_within_addr(struct ikev2_traffic_selector *ts, int proto,
 	sport = get_uint16(&ts->start_port);
 	eport = get_uint16(&ts->end_port);
 	port = sockaddr_port(addr);
-	if (!(port == 0 || 
+	if (!(port == 0 ||
 	      (sport == port && eport == port)))
 		return FALSE;
 
@@ -1791,7 +1791,7 @@ ts_is_within_addr(struct ikev2_traffic_selector *ts, int proto,
 
 }
 
-/* 
+/*
  * returns TRUE if TS range contains addr/prefix
  */
 static int
@@ -1883,7 +1883,7 @@ ts_is_matching(struct ikev2_traffic_selector *ts0, int num_ts,
 		return FALSE;
 
 	/*
-	 * if ts[0] is specific, and it is within addr/prefix 
+	 * if ts[0] is specific, and it is within addr/prefix
 	 * or if ts[0] is not specific
 	 * then see if one of ts can be narrowed
 	 */
@@ -2156,7 +2156,7 @@ void
 ikev2_dump_traffic_selector_h(const char *header, void *payload_data)
 {
 	struct ikev2payl_ts_h *tsh;
-	
+
 	tsh = (struct ikev2payl_ts_h *)payload_data;
 	ikev2_dump_traffic_selectors(header,
 				     tsh->num_ts,
@@ -2170,7 +2170,7 @@ void
 ikev2_dump_ts(const char *header, struct ikev2payl_traffic_selector *ts_payload)
 {
 	ikev2_dump_traffic_selectors(header,
-				     ts_payload->tsh.num_ts, 
+				     ts_payload->tsh.num_ts,
 				     (struct ikev2_traffic_selector *)(ts_payload + 1));
 }
 
@@ -2238,7 +2238,7 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 			continue;
 
 #ifdef notyet
-		/* 
+		/*
 		 * if (no corresponding outbound config)
 		 *     continue;
 		 */
@@ -2294,7 +2294,7 @@ ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,
 				goto next_selector;
 			}
 		}
-		/* 
+		/*
 		   else if (! LIST_EMPTY(&child_sa->lease_list)
 		   && ) {
 		   TRACE((PLOGLOC, "skipping non-empty dst selector\n"));
@@ -2394,7 +2394,7 @@ TSi: 0.0.0.0/0, TSr: 0.0.0.0/0
 selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 
 			*/
-			/* 
+			/*
 			 * if peer requested INTERNAL_IP*_ADDR,
 			 * confirm TS matches with allocated address,
 			 * then check if peer requests dual stack
@@ -2476,7 +2476,7 @@ selector: IP_ANY - 192.0.2.0/24, addrpool 192.0.2.200-192.0.2.250
 	 * for Bob to determine which pair of addresses should be included in
 	 * this tunnel, and he would have to make his best guess or reject the
 	 * request with a status of SINGLE_PAIR_REQUIRED.
-	 * 
+	 *
 	 * If Bob's policy does not allow him to accept the entire set of
 	 * traffic selectors in Alice's request, but does allow him to accept
 	 * the first selector of TSi and TSr, then Bob MUST narrow the traffic
@@ -3032,7 +3032,7 @@ ikev2_conf_to_proplist(struct rcf_remote *rminfo, isakmp_cookie_t spi)
 	 */
 
 	/*
-	 * 
+	 *
 	 * #1 --- Proto IKE
 	 *          |
 	 *          Transf-Transf-Transf----Transf
@@ -3041,7 +3041,7 @@ ikev2_conf_to_proplist(struct rcf_remote *rminfo, isakmp_cookie_t spi)
 	 *          |      |       |       |
 	 *          PRF    INTEG  ENCR     DH
 	 *          SHA1   MD5    AESCBC   MODP1024
-	 * 
+	 *
 	 */
 
 	result = proplist_new();
@@ -3165,7 +3165,7 @@ ikev2_ipsec_conf_to_proplist(struct ikev2_child_sa *child_sa,
 				   "Extended Sequence Number unsupported.\n");
 		}
 #endif
-		need_pfs = (is_createchild && 
+		need_pfs = (is_createchild &&
 		    (ikev2_need_pfs(child_sa->parent->rmconf) == RCT_BOOL_ON));
 		if (conf->sa_ah) {
 			*prop_tail = ikev2_ipsec_sa_to_proplist(child_sa,
@@ -3343,7 +3343,7 @@ ikev2_proposal_to_ipsec(struct ikev2_child_sa *child_sa,
 	 * spi, satype, enctype, enckey, enckeylen, authtype, authkey, authkeylen,
 	 *
 	 * not assigned here (apply_func need to assign them if necessary):
-	 * sa_src, pref_src, sa_dst, pref_dst, 
+	 * sa_src, pref_src, sa_dst, pref_dst,
 	 * so, wsize, saflags, lft_hard_time, lft_hard_bytes, lft_soft_time, lft_soft_bytes
 	 */
 
@@ -3693,7 +3693,7 @@ ike_conf_check_ikev1(struct rcf_remote *rmconf, int *err, int *warn,
 				     enc->keylen);
 			}
 		}
-				     
+
 	}
 
 	if (!ikev1_kmp_hash_alg(rmconf)) {

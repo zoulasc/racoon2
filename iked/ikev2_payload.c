@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004-2005 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -231,7 +231,7 @@ ikev2_check_payloads(rc_vchar_t *packet, int before_decrypt)
 			break;
 		case IKEV2_PAYLOAD_ENCRYPTED_AND_AUTHENTICATED_FRAGMENT:
 			{
-			    struct ikev2payl_encrypted_fragment *skf = 
+			    struct ikev2payl_encrypted_fragment *skf =
 				(struct ikev2payl_encrypted_fragment*)p;
 
 			    if (payload_length < sizeof(struct ikev2payl_encrypted_fragment))
@@ -797,7 +797,7 @@ ikev2_construct_sa(struct ikev2_child_sa *child_sa)
 /*
  * encode special upper layer protocol selector into port
  */
-enum start_end { 
+enum start_end {
 	START,
 	END
 };

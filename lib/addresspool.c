@@ -70,7 +70,7 @@ addrbits_incr(int af, uint8_t *octets)
 
 
 struct rcf_address *
-rc_address_new(int af, uint8_t *addr, int prefixlen, struct timeval *expiry, 
+rc_address_new(int af, uint8_t *addr, int prefixlen, struct timeval *expiry,
 	    struct rcf_address_list_head *list)
 {
 	struct rcf_address	*a;
@@ -148,7 +148,7 @@ rc_addrpool_alloc_any(struct rcf_addresspool *conf, int af)
 	}
 
 	addrsize = af_addrsize(af);
-	if (addrsize == 0) 
+	if (addrsize == 0)
 		return 0;
 
 	/*
@@ -160,7 +160,7 @@ rc_addrpool_alloc_any(struct rcf_addresspool *conf, int af)
 
 		/*
 		 * try if it's possible to assign one
-		 * XXX need better algorithm 
+		 * XXX need better algorithm
 		 */
 		for (memcpy(addr, &i->start, addrsize);
 		     memcmp(addr, &i->end, addrsize) <= 0;
@@ -301,7 +301,7 @@ rc_addrpool_move(struct rcf_address_list_head *dest,
 		} else {
 			LIST_INSERT_HEAD(dest, new_a, link_sa);
 		}
-		
+
 		a_next = LIST_NEXT(a, link_sa);
 		rc_addrpool_release_addr(a);
 	}

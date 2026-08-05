@@ -11,7 +11,7 @@ interface
 ## Tunnel mode NAT-T: Uncomment tunnel_ike_natt.conf line below
 ## Transport mode NAT-T: Uncomment transport_ike.conf line below
 ## 			 and uncomment the transport_ike_natt.conf line in
-## 			 the transport_ike.conf file 
+## 			 the transport_ike.conf file
 ## Uncomment to enable NAT-T (initiator and responder, tunnel and transport)
 #		MY_IP port 4500;
 	};
@@ -52,7 +52,7 @@ include "@prefix@/etc/racoon2/default.conf";
 #
 # You can add as many entries as you need
 #
-# This example sets a host specific pre-shared key for IKEv1 
+# This example sets a host specific pre-shared key for IKEv1
 # connections to 192.168.2.67
 #
 # Other hosts can use a wildcard psk if a wildcard psk

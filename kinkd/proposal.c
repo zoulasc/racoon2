@@ -491,7 +491,7 @@ aproppair2saprop(struct prop_pair *p0)
 		}
 
 		/*
-		 * If the peer does not specify encryption mode, use 
+		 * If the peer does not specify encryption mode, use
 		 * transport mode by default.  This is to conform to
 		 * draft-shacham-ippcp-rfc2393bis-08.txt (explicitly specifies
 		 * that unspecified == transport), as well as RFC2407

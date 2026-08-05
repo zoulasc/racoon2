@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -504,7 +504,7 @@ sadb_update_callback(struct rcpfk_msg *param)
 		return -1;
 	}
 
-	req->callback->update_response(req, 
+	req->callback->update_response(req,
 				       param->sa_src, param->sa_dst,
 				       (unsigned int)param->satype,
 				       (unsigned int)param->samode,
@@ -544,7 +544,7 @@ sadb_get_callback(struct rcpfk_msg *param)
 				    (unsigned int)param->satype,
 				    ntohl(param->spi),
 				    &param->lft_current_bytes);
-	
+
 	return 0;
 }
 
@@ -710,7 +710,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 
 	TRACE((PLOGLOC,
 	       "sadb_x_migrate_callback: dir=%s, sa_src=%s, sa_dst=%s, sa2_src=%s, sa2_dst=%s\n",
-	       rct2str(param->dir),	
+	       rct2str(param->dir),
 	       rcs_sa2str(param->sa_src), rcs_sa2str(param->sa_dst),
 	       rcs_sa2str(param->sa2_src), rcs_sa2str(param->sa2_dst)));
 
@@ -742,7 +742,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			case AF_INET6:
 			    if (policy->my_sa_ipaddr->type != RCT_ADDR_INET)
 				break;
-			    memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr, 
+			    memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr,
 				   &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
 				   sizeof(struct in6_addr));
 			    break;
@@ -760,7 +760,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 			case AF_INET6:
 			    if (policy->peers_sa_ipaddr->type != RCT_ADDR_INET)
 				break;
-			    memcpy(&((struct sockaddr_in6 *)policy->peers_sa_ipaddr->a.ipaddr)->sin6_addr, 
+			    memcpy(&((struct sockaddr_in6 *)policy->peers_sa_ipaddr->a.ipaddr)->sin6_addr,
 				   &((struct sockaddr_in6 *)param->sa2_dst)->sin6_addr,
 				   sizeof(struct in6_addr));
 			    break;
@@ -779,7 +779,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		goto v1;
 	plog(PLOG_INFO, PLOGLOC, 0, "move ikev2_sa(%p): from %s -> %s\n",
 	     ike_sa, rcs_sa2str(ike_sa->local), rcs_sa2str(ike_sa->remote));
-	  
+
 	switch (ike_sa->remote->sa_family) {
 	case AF_INET:
 		((struct sockaddr_in *)ike_sa->local)->sin_addr =
@@ -787,7 +787,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		((struct sockaddr_in *)ike_sa->remote)->sin_addr =
 			((struct sockaddr_in *)param->sa2_dst)->sin_addr;
 	case AF_INET6:
-		memcpy(&((struct sockaddr_in6 *)ike_sa->local)->sin6_addr, 
+		memcpy(&((struct sockaddr_in6 *)ike_sa->local)->sin6_addr,
 		       &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
 		       sizeof(struct in6_addr));
 		memcpy(&((struct sockaddr_in6 *)ike_sa->remote)->sin6_addr,
@@ -799,7 +799,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 	}
 	plog(PLOG_INFO, PLOGLOC, 0, "move ikev2_sa(%p): to %s -> %s\n",
 	     ike_sa, rcs_sa2str(ike_sa->local), rcs_sa2str(ike_sa->remote));
-	
+
 	/* migrate children */
 
 	for (child_sa = IKEV2_CHILD_LIST_FIRST(&ike_sa->children);
@@ -890,7 +890,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		return 0;
 	plog(PLOG_INFO, PLOGLOC, 0, "move ikev1_ph1(%p): from %s -> %s\n",
 	     iph1, rcs_sa2str(iph1->local), rcs_sa2str(iph1->remote));
-	  
+
 	switch (iph1->remote->sa_family) {
 	case AF_INET:
 		((struct sockaddr_in *)iph1->local)->sin_addr =
@@ -898,7 +898,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		((struct sockaddr_in *)iph1->remote)->sin_addr =
 			((struct sockaddr_in *)param->sa2_dst)->sin_addr;
 	case AF_INET6:
-		memcpy(&((struct sockaddr_in6 *)iph1->local)->sin6_addr, 
+		memcpy(&((struct sockaddr_in6 *)iph1->local)->sin6_addr,
 		       &((struct sockaddr_in6 *)param->sa2_src)->sin6_addr,
 		       sizeof(struct in6_addr));
 		memcpy(&((struct sockaddr_in6 *)iph1->remote)->sin6_addr,
@@ -910,7 +910,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 	}
 	plog(PLOG_INFO, PLOGLOC, 0, "move ikev1_ph1(%p): to %s -> %s\n",
 	     iph1, rcs_sa2str(iph1->local), rcs_sa2str(iph1->remote));
-	
+
 	/* migrate children aka phases 2 */
 
 	LIST_FOREACH(iph2, &iph1->ph2tree, ph1bind) {
@@ -961,7 +961,7 @@ sadb_x_migrate_callback(struct rcpfk_msg *param)
 		      TRACE((PLOGLOC, "unexpected type\n"));
 		      continue;
 		    }
-		    memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr, 
+		    memcpy(&((struct sockaddr_in6 *)policy->my_sa_ipaddr->a.ipaddr)->sin6_addr,
 			   &((struct sockaddr_in6 *)iph1->local)->sin6_addr,
 			   sizeof(struct in6_addr));
 		  }
@@ -1100,7 +1100,7 @@ dump_param(const char *msg, struct rcpfk_msg *param)
 			      "%02x", ((uint8_t *)param->enckey)[i]));
 		}
 	}
-	DUMP(snprintf(bufp, buflen, "], authkey len=%lu [", 
+	DUMP(snprintf(bufp, buflen, "], authkey len=%lu [",
 		      (unsigned long)param->authkeylen));
 	if (param->authkey) {
 		for (i = 0; i < (int)param->authkeylen; ++i) {

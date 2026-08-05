@@ -38,10 +38,10 @@
  *   A. chained list of transform, only for single proto_id
  *      (this is same as set of transforms in single proposal payload)
  *   B. proposal.  this will point to multiple (A) items (order is important
- *      here so pointer to (A) must be ordered array, or chained list). 
+ *      here so pointer to (A) must be ordered array, or chained list).
  *      this covers multiple proposal on a packet if proposal # is the same.
  *   C. finally, (B) needs to be connected as chained list.
- * 
+ *
  * 	head ---> prop[.......] ---> prop[...] ---> prop[...] ---> ...
  * 	               | | | |
  * 	               | | | +- proto4  <== must preserve order here
@@ -116,9 +116,9 @@ struct satrns {
  *		   (P1', T2')
  *
  * when we convert it to saprop in prop2saprop(), it should become like:
- * 
+ *
  * 		 (next)
- * 	saprop --------------------> saprop	
+ * 	saprop --------------------> saprop
  * 	 | (head)                     | (head)
  * 	 +-> saproto                  +-> saproto
  * 	      | | (head)                     | (head)

@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 2004-2005 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -74,12 +74,12 @@ ikev2_rekey_childsa(struct ikev2_child_sa *old_child_sa, rc_type satype,
 	struct ikev2_child_sa *new_child_sa;
 
 	/* (draft-17)
-	 * 
+	 *
 	 * Initiator                                 Responder
 	 * -----------                               -----------
 	 * HDR, SK {[N], SA, Ni, [KEi],
 	 * [TSi, TSr]}             -->
-	 * 
+	 *
 	 * The initiator sends SA offer(s) in the SA payload, a nonce in the Ni
 	 * payload, optionally a Diffie-Hellman value in the KEi payload, and
 	 * the proposed traffic selectors in the TSi and TSr payloads. If this
@@ -212,7 +212,7 @@ ikev2_rekey_ikesa_initiate(struct ikev2_sa *ike_sa)
 }
 
 static void
-rekey_ikesa_callback(enum request_callback action, 
+rekey_ikesa_callback(enum request_callback action,
 		     struct ikev2_child_sa *child_sa,
 		     void *data)
 {
@@ -265,9 +265,9 @@ ikev2_rekey_ikesa_init_send(struct ikev2_child_sa *child_sa)
 	 * the SPI fields. The TS payloads are omitted when rekeying an IKE_SA.
 	 * SKEYSEED for the new IKE_SA is computed using SK_d from the existing
 	 * IKE_SA as follows:
-	 * 
+	 *
 	 * SKEYSEED = prf(SK_d (old), [g^ir (new)] | Ni | Nr)
-	 * 
+	 *
 	 * where g^ir (new) is the shared secret from the ephemeral Diffie-
 	 * Hellman exchange of this CREATE_CHILD_SA exchange (represented as an
 	 * octet string in big endian order padded with zeros if necessary to
@@ -280,30 +280,30 @@ ikev2_rekey_ikesa_init_send(struct ikev2_child_sa *child_sa)
 
 	/* (draft-eronen-ipsec-ikev2-clarifications-05.txt)
 	 * NEW-1.3.2 Rekeying IKE_SAs with the CREATE_CHILD_SA Exchange
-	 * 
+	 *
 	 * The CREATE_CHILD_SA request for rekeying an IKE_SA is:
-	 * 
+	 *
 	 * Initiator                                 Responder
 	 * -----------                               -----------
 	 * HDR, SK {SA, Ni, KEi} -->
-	 * 
+	 *
 	 * The initiator sends SA offer(s) in the SA payload, a nonce in
 	 * the Ni payload, and a Diffie-Hellman value in the KEi payload.
 	 * New initiator and responder SPIs are supplied in the SPI fields.
-	 * 
+	 *
 	 * The CREATE_CHILD_SA response for rekeying an IKE_SA is:
-	 * 
+	 *
 	 * <--    HDR, SK {SA, Nr, KEr}
-	 * 
+	 *
 	 * The responder replies (using the same Message ID to respond)
 	 * with the accepted offer in an SA payload, and a Diffie-Hellman
 	 * value in the KEr payload if the selected cryptographic suite
 	 * includes that group.
-	 * 
+	 *
 	 * The new IKE_SA has its message counters set to 0, regardless of
 	 * what they were in the earlier IKE_SA. The window size starts at
 	 * 1 for any new IKE_SA.
-	 * 
+	 *
 	 * KEi and KEr are required for rekeying an IKE_SA.
 	 */
 
@@ -615,9 +615,9 @@ ikev2_rekey_ikesa_responder(rc_vchar_t *request,
 		pkt = 0;
 	}
 
-	/* 
+	/*
 	 * Choose pending child_sa adopted by new ike_sa, if there is no
-	 * rekey conflict. Otherwise, it would be done in 
+	 * rekey conflict. Otherwise, it would be done in
 	 * ikev2_rekey_ikesa_init_recv().
 	 */
 	if (!old_sa->rekey_duplicate) {
@@ -965,21 +965,21 @@ rekey_skeyseed(struct ikev2_sa *new_sa, struct ikev2_sa *old_sa, rc_vchar_t *g_i
 {
 	/* (draft-eronen-ipsec-ikev2-clarifications-09.txt)
 	 * 5.5.  Changing PRFs when rekeying the IKE_SA
-	 * 
+	 *
 	 * When rekeying the IKE_SA, Section 2.18 says that "SKEYSEED for the
 	 * new IKE_SA is computed using SK_d from the existing IKE_SA as
 	 * follows:
-	 * 
+	 *
 	 * SKEYSEED = prf(SK_d (old), [g^ir (new)] | Ni | Nr)"
-	 * 
+	 *
 	 * If the old and new IKE_SA selected a different PRF, it is not totally
 	 * clear which PRF should be used.
-	 * 
+	 *
 	 * Since the rekeying exchange belongs to the old IKE_SA, it is the old
 	 * IKE_SA's PRF that is used.  This also follows the principle that the
 	 * same key (the old SK_d) should not be used with multiple
 	 * cryptographic algorithms.
-	 * 
+	 *
 	 * Note that this may work poorly if the new IKE_SA's PRF has a fixed
 	 * key size, since the output of the PRF may not be of the correct size.
 	 * This supports our opinion earlier in the document that the use of

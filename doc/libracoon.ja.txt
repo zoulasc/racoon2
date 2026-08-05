@@ -707,7 +707,7 @@ o ネットワークに関するユーティリティ
 
 	void rcs_free_addrlist(struct rc_addrlist *alist);
 		rc_addrlistを解放する。
-		
+
 	int rcs_getifaddrlist(struct rc_addrlist **alist);
 		インターフェイスについている使えそうなアドレスを全て取得する。
 

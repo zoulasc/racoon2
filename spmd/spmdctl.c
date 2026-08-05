@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2004 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -238,18 +238,18 @@ sc_interactive(int s)
 
 	is_display |= DISPLAY_RD;
 
-	while (fgets(wbuf, sizeof(wbuf), stdin) != NULL) { 
+	while (fgets(wbuf, sizeof(wbuf), stdin) != NULL) {
 		if (sc_trim(wbuf)<0) {
 			fprintf(stderr, "can't trim CRLF\n");
 			return -1;
 		}
 		strlcat(wbuf, "\r\n", sizeof(wbuf));
-		n = strlen(wbuf); 
-		do { 
-			n = write(s, wbuf, n); 
-		} while (n<0 && errno==EINTR); 
+		n = strlen(wbuf);
+		do {
+			n = write(s, wbuf, n);
+		} while (n<0 && errno==EINTR);
 
-		while ( sc_getline(s, rbuf, sizeof(rbuf)) > 0) { 
+		while ( sc_getline(s, rbuf, sizeof(rbuf)) > 0) {
 			if (rbuf[3] == ' ') {
 				break;
 			}
@@ -366,7 +366,7 @@ sc_sa2portstr(struct sockaddr *sa, char *port, size_t portlen)
 		if (sin6->sin6_port == 0) {
 			strlcpy(port, "any", portlen);
 		} else {
-			snprintf(port, portlen, "%hu", 
+			snprintf(port, portlen, "%hu",
 				ntohs(((struct sockaddr_in6 *)sa)->sin6_port));
 		}
 	}
@@ -394,7 +394,7 @@ sc_ulproto2str(int ulproto)
 }
 
 static char *
-sc_lft2str(uint64_t lt, char *buf, size_t buflen) 
+sc_lft2str(uint64_t lt, char *buf, size_t buflen)
 {
 	struct tm *t;
 
@@ -454,7 +454,7 @@ sc_satype2str(int satype)
 {
 	static char str[32];
 
-	if (satype == RCT_SATYPE_AH_ESP_IPCOMP) { 
+	if (satype == RCT_SATYPE_AH_ESP_IPCOMP) {
 		strlcpy(str, "ah|esp|ipcomp", sizeof(str));
 	} else if (satype == RCT_SATYPE_AH_ESP) {
 		strlcpy(str, "ah|esp", sizeof(str));
@@ -621,20 +621,20 @@ sc_policy_fmt(struct sp_entry *spe)
 			"%s/%d[%s] %s/%d[%s] %s\n" /* src/plen[port] dst/plen[port] ul_proto */
 			"\t%s %s\n"      /* direction policy_type */
 			"\t%s %s %s\n"      /* satype samode level */
-			"\tcreated: %s lastused: %s\n" 
+			"\tcreated: %s lastused: %s\n"
 			"\tlifetime: %" PRIu64 "(s) validtime: %" PRIu64 "(s)\n"
 			"\tselector=%s spid=%u\n",
 			sc_sa2str(spe->sp_src, sastr1, sizeof(sastr1)), spe->pref_src,
-			sc_sa2portstr(spe->sp_src, portstr1, sizeof(portstr1)), 
+			sc_sa2portstr(spe->sp_src, portstr1, sizeof(portstr1)),
 			sc_sa2str(spe->sp_dst, sastr2, sizeof(sastr2)), spe->pref_dst,
 			sc_sa2portstr(spe->sp_dst, portstr2, sizeof(portstr2)),
 			sc_ulproto2str(spe->ul_proto),
 			sc_dir2str(spe->dir), sc_pl2str(spe->pltype),
 			sc_satype2str(spe->satype), sc_samode2str(spe->samode), sc_level2str(spe->ipsec_level),
 			sc_lft2str(spe->lft_current_add, lft_ca_str, sizeof(lft_ca_str)),
-			spe->lft_current_use == 0 ? "" : 
+			spe->lft_current_use == 0 ? "" :
 				sc_lft2str(spe->lft_current_use, lft_cu_str, sizeof(lft_cu_str)),
-			spe->lft_hard_time, spe->lft_soft_time, 
+			spe->lft_hard_time, spe->lft_soft_time,
 			(spe->slid == NULL ? "" : spe->slid), spe->spid
 			);
 	} else if (spe->samode == RCT_IPSM_TUNNEL) {
@@ -642,23 +642,23 @@ sc_policy_fmt(struct sp_entry *spe)
 			"%s/%d[%s] %s/%d[%s] %s\n" /* src/plen[port] dst/plen[port] ul_proto */
 			"\t%s %s\n"      /* direction policy_type src-dst */
 			"\t%s %s %s-%s %s\n"      /* satype samode */
-			"\tcreated: %s lastused: %s\n" 
+			"\tcreated: %s lastused: %s\n"
 			"\tlifetime: %" PRIu64 "(s) validtime: %" PRIu64 "(s)\n"
 			"\tselector=%s spid=%u\n",
 			sc_sa2str(spe->sp_src, sastr1, sizeof(sastr1)), spe->pref_src,
-			sc_sa2portstr(spe->sp_src, portstr1, sizeof(portstr1)), 
+			sc_sa2portstr(spe->sp_src, portstr1, sizeof(portstr1)),
 			sc_sa2str(spe->sp_dst, sastr2, sizeof(sastr2)), spe->pref_dst,
 			sc_sa2portstr(spe->sp_dst, portstr2, sizeof(portstr2)),
 			sc_ulproto2str(spe->ul_proto),
 			sc_dir2str(spe->dir), sc_pl2str(spe->pltype),
-			sc_satype2str(spe->satype), sc_samode2str(spe->samode), 
+			sc_satype2str(spe->satype), sc_samode2str(spe->samode),
 			sc_sa2str(spe->sa_src, sastr3, sizeof(sastr3)),
 			sc_sa2str(spe->sa_dst, sastr4, sizeof(sastr4)),
 			sc_level2str(spe->ipsec_level),
 			sc_lft2str(spe->lft_current_add, lft_ca_str, sizeof(lft_ca_str)),
-			spe->lft_current_use == 0 ? "" : 
+			spe->lft_current_use == 0 ? "" :
 				sc_lft2str(spe->lft_current_use, lft_cu_str, sizeof(lft_cu_str)),
-			spe->lft_hard_time, spe->lft_soft_time, 
+			spe->lft_hard_time, spe->lft_soft_time,
 			(spe->slid == NULL ? "" : spe->slid), spe->spid
 			);
 	} else {
@@ -670,7 +670,7 @@ sc_policy_fmt(struct sp_entry *spe)
 
 /* *_src, *_dst must be normalized */
 static int
-sc_policy(int s, char *selector_index, uint64_t lifetime, sa_mode_t samode, 
+sc_policy(int s, char *selector_index, uint64_t lifetime, sa_mode_t samode,
 	const char *sp_src, const char *sp_dst, const char *sa_src, const char *sa_dst, int flag)
 {
 	char rbuf[BUFSIZ];
@@ -730,7 +730,7 @@ dump:	/* DUMP */
 	}
 
 	while ( sc_getline(s, rbuf, sizeof(rbuf)) > 0) {
-		if (rbuf[0] != '2') 
+		if (rbuf[0] != '2')
 			return -1;
 		if (rbuf[2] == '1') /* 251 */
 			break;
@@ -904,22 +904,22 @@ sc_sock_open_sa(const struct sockaddr *sa)
 	if (s<0) {
 		fprintf(stderr, "%s", strerror(errno));
 		s = -1;
-		goto fin; 
-	} 
+		goto fin;
+	}
 
 	rtn = setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof (on));
 	if (rtn < 0 && (sa->sa_family != AF_UNIX) ) {
 		fprintf(stderr, "setsockopt(TCP_NODELAY) failed");
 		close(s);
 		s = -1;
-		goto fin; 
+		goto fin;
 	}
 
 	if (connect(s, sa, SPMD_SALEN(sa))<0) {
 		fprintf(stderr, "can not connect spmd interface socket:%s\n", strerror(errno));
 		close(s);
 		s = -1;
-	} 
+	}
 
 fin:
 	return s;
@@ -966,15 +966,15 @@ sc_sock_open_file(const struct sockaddr *sa)
 	if (s<0) {
 		fprintf(stderr, "%s", strerror(errno));
 		s = -1;
-		goto fin; 
-	} 
+		goto fin;
+	}
 
 	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof (on));
 
 	if (connect(s, sa, SUN_LEN((const struct sockaddr_un *)sa))<0) {
 		close(s);
 		s = -1;
-	} 
+	}
 
 fin:
 	return s;
@@ -1076,7 +1076,7 @@ sc_login(void)
 			break;
 		}
 	}
-		
+
 connect_ok:
 	if (s<0) {
 		fprintf(stderr, "can't setup spmd interface\n");
@@ -1161,7 +1161,7 @@ sc_quit(int s)
 static void
 sc_print_help(void)
 {
-	fprintf(stdout, 
+	fprintf(stdout,
 		"usage: spmdctl [-d] [-f RACOON2_CONF_FILE] COMMAND\n"
 		"\t\t-d                      : display messages corresponded with spmd\n"
 		"\t\t-f RACOON2_CONF_FILE    : specify racoon2 configuration file\n"
@@ -1339,37 +1339,37 @@ main(int argc, char **argv)
 		case TYPE_NS_ADD:
 			s = sc_login();
 			ret = sc_ns(s, addr, TYPE_NS_ADD);
-			if (ret<0) 
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;
 		case TYPE_NS_DEL:
 			s = sc_login();
 			ret = sc_ns(s, addr, TYPE_NS_DEL);
-			if (ret<0) 
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;
 		case TYPE_NS_LST:
 			s = sc_login();
 			ret = sc_ns(s, NULL, TYPE_NS_LST);
-			if (ret<0) 
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;
 		case TYPE_POLICY_ADD:
 			s = sc_login();
-			ret = sc_policy(s, selector_index, lifetime, samode, 
+			ret = sc_policy(s, selector_index, lifetime, samode,
 				sp_src, sp_dst, sa_src, sa_dst, TYPE_POLICY_ADD);
-			if (ret<0) 
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;
 		case TYPE_POLICY_DEL:
 			s = sc_login();
-			ret = sc_policy(s, selector_index, 
-				0, 0, NULL, NULL, NULL, NULL, TYPE_POLICY_DEL); 
-			if (ret<0) 
+			ret = sc_policy(s, selector_index,
+				0, 0, NULL, NULL, NULL, NULL, TYPE_POLICY_DEL);
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;
@@ -1391,7 +1391,7 @@ main(int argc, char **argv)
 		case TYPE_STAT:
 			s = sc_login();
 			ret = sc_status(s);
-			if (ret<0) 
+			if (ret<0)
 				fprintf(stderr, "operation failed\n");
 			sc_quit(s);
 			break;

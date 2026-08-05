@@ -95,13 +95,13 @@ getlocaladdr(remote)
 		kinkd_log(KLLV_SYSERR, "failed to get address buffer.\n");
 		goto err;
 	}
-	
+
 	/* get real interface received packet */
 	if ((s = socket(remote->sa_family, SOCK_DGRAM, 0)) < 0) {
 		kinkd_log(KLLV_SYSERR, "socket (%s)\n", strerror(errno));
 		goto err;
 	}
-	
+
 	if (connect(s, remote, COMPAT_SA_LEN(remote)) < 0) {
 		kinkd_log(KLLV_SYSERR, "connect (%s)\n", strerror(errno));
 		close(s);

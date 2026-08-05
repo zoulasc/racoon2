@@ -52,7 +52,7 @@ o Structure
      |                   (remote_index)                       +-(sa_index)-> sa
      v                         |                              |
 selector -+                    |     +-(ipsec_index)-> ipsec -+-(sa_index)-> sa
-          |                    |     |  
+          |                    |     |
 selector -+-(policy_index)-> policy -+-(ipsec_index)-> ipsec ---(sa_index)-> sa
           |                          |
 selector -+                          +-(ipsec_index)-> ipsec ...
@@ -122,7 +122,7 @@ o Representation of IP addresses
 		An interface name can be specified with a percentage-mark (%)
 		followed by the interface name.
 			e.g. MY_IPV6%fxp0
-	
+
 		Note: IPv6 support is enabled by default. The INET6 build
 		option has been removed; IPv4 and IPv6 are always available.
 
@@ -206,7 +206,7 @@ o Cryptographic algorithm and its representation
 	Note that some algorithm specify length of key.
 
 	If you do not specify size of key, you can define like below:
-	
+
 		(algorithm name),,(key)
 
 	If you need to specify multiple algorithms, defining an algorithm list
@@ -354,7 +354,7 @@ o Directives details
 	A directive consts of a string, a value and ";"(semi-colon) like
 		string value ;
 
-	Values can be closed by "{" and "}" like 
+	Values can be closed by "{" and "}" like
 		directive {
 			value ;
 			value ;
@@ -735,7 +735,7 @@ remote
 		For IKEv1, the default value is 0, which disables DPD
 		monitoring, but still negotiates DPD support.  For
 		IKEv2, the default value is 3600 (1 hour).
-	
+
 	dpd_retry (number) ;
 		(available with IKEv1 only)
 		If dpd_delay is set, this sets the delay (in seconds) to wait
@@ -763,7 +763,7 @@ remote
 		   phase1_rekey (script_path) ;
 		   phase2_rekey (script_path) ;
 		   migration (script_path) ;
-	
+
 		Also, ike_sa_up, ike_sa_down, ike_sa_rekey, child_up,
 		child_down, child_rekey are synonymous to phase1_up,
 		phase1_down, phase1_rekey, phase2_up, phase2_down,

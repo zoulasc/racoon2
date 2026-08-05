@@ -145,7 +145,7 @@ int main()
 	cf = calloc(sizeof(struct conf), 1);
 	cf->l1 = genlist_init();
 	cf->l2 = genlist_init();
-	
+
 	genlist_insert(cf->l1, "Ahoj");
 	genlist_insert(cf->l1, "Cau");
 	genlist_insert(cf->l1, "Nazdar");

@@ -1,6 +1,6 @@
-#!/bin/sh 
-# 
-# run_hook(), run_hookdir(), are derived from dhcp3-client script 
+#!/bin/sh
+#
+# run_hook(), run_hookdir(), are derived from dhcp3-client script
 # (debian etch dhcp3-client 3.0.4-13).
 # The original notice is attached below:
 # dhclient-script for Linux. Dan Halbert, March, 1997.

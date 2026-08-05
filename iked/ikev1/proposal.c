@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -193,7 +193,7 @@ inssatrns(struct saproto *pr, struct satrns *new)
  * XXX cannot understand the comment!
  */
 struct saprop *
-cmpsaprop_alloc(struct ph1handle *ph1, const struct saprop *pp1, 
+cmpsaprop_alloc(struct ph1handle *ph1, const struct saprop *pp1,
 		const struct saprop *pp2, int side)
 {
 	struct saprop *newpp = NULL;
@@ -394,7 +394,7 @@ cmpsaprop_alloc(struct ph1handle *ph1, const struct saprop *pp1,
 		}
 
 #ifdef ENABLE_NATT
-		if ((ph1->natt_flags & NAT_DETECTED) && 
+		if ((ph1->natt_flags & NAT_DETECTED) &&
 		    ikev1_natt_udp_encap (pr2->encmode))
 		{
 			plog(PLOG_INFO, PLOGLOC, NULL, "Adjusting my encmode %s->%s\n",
@@ -589,7 +589,7 @@ ipsec_encdef_doi_keylen(rc_type type, int keylen)
 	return klen;
 }
 
-static int 
+static int
 set_satrnsbyconf(struct saproto *pr, struct rcf_sa *sa)
 {
 	int	t;
@@ -720,7 +720,7 @@ set_satrnsbysainfo(pr, sainfo)
 
 			if (a->alg == IPSECDOI_ATTR_AUTH_NONE)
 				continue;
-				
+
 			/* allocate satrns */
 			newtr = newsatrns();
 			if (newtr == NULL) {
@@ -890,7 +890,7 @@ aproppair2saprop(struct prop_pair *p0)
 		}
 
 		/*
-		 * If the peer does not specify encryption mode, use 
+		 * If the peer does not specify encryption mode, use
 		 * transport mode by default.  This is to conform to
 		 * draft-shacham-ippcp-rfc2393bis-08.txt (explicitly specifies
 		 * that unspecified == transport), as well as RFC2407
@@ -1102,7 +1102,7 @@ proto(struct rcf_sa *sa, int proto, int encmode, struct ph2handle *iph2, uint32_
 		newpr->reqid_in = reqid;
 
 	if (set_satrnsbyconf(newpr, sa) < 0) {
-		plog(PLOG_INTERR, PLOGLOC, 0, 
+		plog(PLOG_INTERR, PLOGLOC, 0,
 		     "failed to create algorithm list\n");
 		return -1;
 	}
@@ -1375,7 +1375,7 @@ set_proposal_from_proposal(struct ph2handle* iph2)
 			/*FALLTHROUGH*/
 		}
 
-		for (pr = pp_peer->head; pr; pr = pr->next) { 
+		for (pr = pp_peer->head; pr; pr = pr->next) {
 
 			newpr = newsaproto();
 			if (newpr == NULL) {
@@ -1421,7 +1421,7 @@ set_proposal_from_proposal(struct ph2handle* iph2)
 	}
 
 	plog(PLOG_DEBUG, PLOGLOC, NULL, "make a proposal from peer's:\n");
-	printsaprop0(PLOG_DEBUG, newpp);  
+	printsaprop0(PLOG_DEBUG, newpp);
 
 	iph2->proposal = newpp;
 

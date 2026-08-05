@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -268,28 +268,28 @@ static struct misc_algorithm oakley_authdef[] = {
     OAKLEY_ATTR_AUTH_METHOD_GSSAPI_KRB, },
 
 #ifdef ENABLE_HYBRID
-{ "hybrid_rsa_server",	algtype_hybrid_rsa_s,	
+{ "hybrid_rsa_server",	algtype_hybrid_rsa_s,
     OAKLEY_ATTR_AUTH_METHOD_HYBRID_RSA_R, },
 
-{ "hybrid_dss_server",	algtype_hybrid_dss_s,	
+{ "hybrid_dss_server",	algtype_hybrid_dss_s,
     OAKLEY_ATTR_AUTH_METHOD_HYBRID_DSS_R, },
 
-{ "xauth_psk_server", 	algtype_xauth_psk_s,	
+{ "xauth_psk_server", 	algtype_xauth_psk_s,
     OAKLEY_ATTR_AUTH_METHOD_XAUTH_PSKEY_R, },
 
-{ "xauth_rsa_server", 	algtype_xauth_rsa_s,	
+{ "xauth_rsa_server", 	algtype_xauth_rsa_s,
     OAKLEY_ATTR_AUTH_METHOD_XAUTH_RSASIG_R, },
 
-{ "hybrid_rsa_client",	algtype_hybrid_rsa_c,	
+{ "hybrid_rsa_client",	algtype_hybrid_rsa_c,
     OAKLEY_ATTR_AUTH_METHOD_HYBRID_RSA_I, },
 
-{ "hybrid_dss_client",	algtype_hybrid_dss_c,	
+{ "hybrid_dss_client",	algtype_hybrid_dss_c,
     OAKLEY_ATTR_AUTH_METHOD_HYBRID_DSS_I, },
 
-{ "xauth_psk_client",	algtype_xauth_psk_c,	
+{ "xauth_psk_client",	algtype_xauth_psk_c,
     OAKLEY_ATTR_AUTH_METHOD_XAUTH_PSKEY_I, },
 
-{ "xauth_rsa_client",	algtype_xauth_rsa_c,	
+{ "xauth_rsa_client",	algtype_xauth_rsa_c,
     OAKLEY_ATTR_AUTH_METHOD_XAUTH_RSASIG_I, },
 #endif
 };
@@ -765,7 +765,7 @@ const char *
 alg_oakley_dhdef_name(int doi)
 {
 	struct dh_algorithm *f;
-	
+
 	f = alg_oakley_dhdef(doi);
 	if (f == NULL)
 		return "*UNKNOWN*";

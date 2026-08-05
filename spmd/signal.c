@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2003 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -60,7 +60,7 @@ init_signal(void)
 {
 	int i;
 
-	for (i=0; sig_array[i].signum != 0; i++) 
+	for (i=0; sig_array[i].signum != 0; i++)
 		set_signal(sig_array[i].signum, sig_array[i].func);
 
 	return;
@@ -79,7 +79,7 @@ set_signal(int signum, void (*func)(int signum))
 	act.sa_handler = func;
 	act.sa_mask = smask;
 
-	if (signum != SIGALRM) 
+	if (signum != SIGALRM)
 		act.sa_flags = SA_RESTART;
 
 	sigaction(signum, &act, NULL);
@@ -87,7 +87,7 @@ set_signal(int signum, void (*func)(int signum))
 	return 0;
 }
 
-static void 
+static void
 dflt_sighandler(int sig)
 {
 	int err;
@@ -107,7 +107,7 @@ dflt_sighandler(int sig)
 	exit(EXIT_SUCCESS);
 }
 
-static void 
+static void
 sig_chld(int signo)
 {
 	pid_t pid;

@@ -57,9 +57,9 @@ iked/ikev1/evt.h
  */
 
 ------------------------------------------------------------------------------
-iked/ikev1/genlist.c 
-iked/ikev1/genlist.h 
-iked/ikev1/ikev1_natt.c 
+iked/ikev1/genlist.c
+iked/ikev1/genlist.h
+iked/ikev1/ikev1_natt.c
 iked/ikev1/ikev1_natt.h
 /*
  * Copyright (C) 2004 SuSE Linux AG, Nuernberg, Germany.

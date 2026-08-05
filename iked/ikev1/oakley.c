@@ -3,7 +3,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -15,7 +15,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,8 +72,8 @@
 #include "isakmp_var.h"
 #ifdef ENABLE_HYBRID
 #include "isakmp_xauth.h"
-#include "isakmp_cfg.h" 
-#endif                
+#include "isakmp_cfg.h"
+#endif
 #include "oakley.h"
 /* #include "admin.h" */
 /* #include "privsep.h" */
@@ -332,7 +332,7 @@ oakley_compute_keymat_x(struct ph2handle *iph2, int side, int sa_dir)
 	int encklen, authklen, l;
 
 	pfs = ((iph2->approval->pfs_group && iph2->dhgxy) ? 1 : 0);
-	
+
 	len = pfs ? iph2->dhgxy->l : 0;
 	len += (1
 		+ sizeof(uint32_t)	/* XXX SPI size */
@@ -1260,15 +1260,15 @@ oakley_validate_auth(struct ph1handle *iph1)
 				char *ca;
 
 				if (ikev1_certtype(iph1->rmconf) != NULL) {
-					getpathname(path, sizeof(path), 
-					    LC_PATHTYPE_CERT, 
+					getpathname(path, sizeof(path),
+					    LC_PATHTYPE_CERT,
 					    iph1->rmconf->cacertfile);
 					ca = path;
 				} else {
 					ca = NULL;
 				}
 				error = eay_check_x509cert(&iph1->cert_p->cert,
-					lcconf->pathinfo[LC_PATHTYPE_CERT], 
+					lcconf->pathinfo[LC_PATHTYPE_CERT],
 					ca, 0);
 #else
 				error = eay_check_x509cert(&iph1->cert_p->cert,
@@ -1276,7 +1276,7 @@ oakley_validate_auth(struct ph1handle *iph1)
 #endif
 				break;
 			}
-			
+
 			default:
 				plog(PLOG_PROTOERR, PLOGLOC, NULL,
 					"no supported certtype %d\n", certtype);
@@ -1914,7 +1914,7 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 		return -1;
 	}
 
-	/* XXX choice the 1th cert, ignore after the cert. */ 
+	/* XXX choice the 1th cert, ignore after the cert. */
 	/* XXX should be processed. */
 	if (*c) {
 		plog(PLOG_PROTOWARN, PLOGLOC, NULL,
@@ -1928,11 +1928,11 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 
 		/* Skip the header */
 		bp = (unsigned char *)(gen + 1);
-		/* And the first byte is the certificate type, 
+		/* And the first byte is the certificate type,
 		 * we know that already
 		 */
 		bp++;
-		p7 = d2i_PKCS7(NULL, (void *)&bp, 
+		p7 = d2i_PKCS7(NULL, (void *)&bp,
 		    get_uint16(&gen->len) - sizeof(*gen) - 1);
 
 		if (!p7) {
@@ -1945,7 +1945,7 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 		 * there"s little by way of documentation for any of
 		 * it. I can only presume it"s correct.
 		 */
-		
+
 		i = OBJ_obj2nid(p7->type);
 		switch (i) {
 		case NID_pkcs7_signed:
@@ -1968,7 +1968,7 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 		for (i = 0; i < sk_X509_num(certs); i++) {
 			X509 *cert = sk_X509_value(certs,i);
 
-			plog(PLOG_DEBUG, PLOGLOC, NULL, 
+			plog(PLOG_DEBUG, PLOGLOC, NULL,
 			     "Trying PKCS#7 cert %d.\n", i);
 
 			/* We'll just try each cert in turn */
@@ -1997,7 +1997,7 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 				char *p = eay_get_x509text(&(*c)->cert);
 				plog(PLOG_DEBUG, PLOGLOC, NULL, "CERT saved:\n");
 				plogdump(PLOG_DEBUG, PLOGLOC, 0, (*c)->cert.v, (*c)->cert.l);
-				plog(PLOG_DEBUG, PLOGLOC, NULL, "%s", 
+				plog(PLOG_DEBUG, PLOGLOC, NULL, "%s",
 				     p ? p : "\n");
 				racoon_free(p);
 			}
@@ -2058,7 +2058,7 @@ oakley_savecert(struct ph1handle *iph1, struct isakmp_gen *gen)
 			return 0;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -2271,7 +2271,7 @@ oakley_skeyid(struct ph1handle *iph1)
 	char *p;
 	int len;
 	int error = -1;
-	
+
 	/* SKEYID */
 	switch (AUTHMETHOD(iph1)) {
 	case OAKLEY_ATTR_AUTH_METHOD_PSKEY:
@@ -2879,7 +2879,7 @@ oakley_delivm(struct isakmp_ivm *ivm)
  *   save new iv and old iv.
  */
 rc_vchar_t *
-oakley_do_decrypt(struct ph1handle *iph1, rc_vchar_t *msg, 
+oakley_do_decrypt(struct ph1handle *iph1, rc_vchar_t *msg,
 	          rc_vchar_t *ivdp, rc_vchar_t *ivep)
 {
 	rc_vchar_t *buf = NULL, *new = NULL;
@@ -3003,7 +3003,7 @@ end:
  * encrypt packet.
  */
 rc_vchar_t *
-oakley_do_encrypt(struct ph1handle *iph1, 
+oakley_do_encrypt(struct ph1handle *iph1,
 		  rc_vchar_t *msg, rc_vchar_t *ivep, rc_vchar_t *ivp)
 {
 	rc_vchar_t *buf = 0, *new = 0;

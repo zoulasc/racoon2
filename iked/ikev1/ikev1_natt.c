@@ -441,8 +441,8 @@ natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst)
 
 			TAILQ_REMOVE(&ka_tree, ka, chain);
 			racoon_free(ka);
-			/* Should we break here? Every pair of addresses should 
-			 * be inserted only once, but who knows :-) Lets traverse 
+			/* Should we break here? Every pair of addresses should
+			 * be inserted only once, but who knows :-) Lets traverse
 			 * the whole list... */
 		}
 	}

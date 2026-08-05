@@ -138,17 +138,17 @@ printf("%zu\n", (size_t)-1);
   CFLAGS=$saved_CFLAGS
 fi
 
-dnl Checks getifaddrs() bug 
+dnl Checks getifaddrs() bug
 dnl At least glibc version which is 2.3.3 or less doesn't set correct ipv6
 dnl scope id.  But I don't know how to get glibc sub-minor version number.
 dnl See=> http://sourceware.org/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/linux/ifaddrs.c?cvsroot=glibc
-AC_ARG_ENABLE(fix-glibc-getifaddrs, 
+AC_ARG_ENABLE(fix-glibc-getifaddrs,
 dnl help
 [  --disable-fix-glibc-getifaddrs
                           doesn't workaround a bug of IPv6 scope ID
                           (glibc-2.3.3 or less).],
 dnl fix-glibc-getifaddrs GIVEN
-[ 
+[
   AC_MSG_CHECKING([if --enable-fix-glibc-getifaddrs is specified])
   case "$enableval" in
   yes)
@@ -158,7 +158,7 @@ dnl fix-glibc-getifaddrs GIVEN
   AC_MSG_RESULT($enableval)
 ],
 dnl fix-glibc-getifaddrs NOT GIVEN
-[ 
+[
 if test x"$ipv6" = xyes && test x"$ac_cv_func_getifaddrs" = xyes ; then
   case $host_os in
   *linux*)

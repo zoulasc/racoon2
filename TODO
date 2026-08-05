@@ -13,12 +13,12 @@ List of work needed on the racoon2 package
    to the peer. Fix this for IKEv1.
 
 2. Debug generate policy for IKEv1. This is supposed to be enabled
-   with peers ip address set to IP_RW and also both my and peers 
+   with peers ip address set to IP_RW and also both my and peers
    sa_ipaddress set to IP_RW in the policy specification, but it is not
    functioning.
 
-3. IPv6 support- it is not clear why iked is not using IPv6 addresses 
-   when ike is set to use MY_IP, which is supposed to use all addresses 
+3. IPv6 support- it is not clear why iked is not using IPv6 addresses
+   when ike is set to use MY_IP, which is supposed to use all addresses
    not just IPv4 addresses. Now, iked is behaving as if we set ike in
    the interface section of racoon2.conf to MY_IPV4 instead of MY_IP. It
    would be desireable to get iked to use IPv6 addresses so we can test

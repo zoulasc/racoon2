@@ -104,8 +104,8 @@ This document describes the basic usage to run the Racoon2 system.
 
     nameserver	0.0.0.0;
 
-  NOTE: 
-  If you want to add/change the name server IP address dynamically 
+  NOTE:
+  If you want to add/change the name server IP address dynamically
   to spmd(8), please try to use spmdctl(8) command as follows:
 
   # spmdctl ns add NAME_SERVER_IP_ADDRESS
@@ -205,7 +205,7 @@ o Create pre-shared key file for IKE authentication (if necessary)
   newline in the file.  Also It is important that only superuser can
   access to this file.  You have to specify the file in full path.
 
-  For example, 
+  For example,
 
     ikev2 {
       kmp_auth_method { psk; };
@@ -640,7 +640,7 @@ C) With DNS FQDN names
     # iked
 
   Or you can run racoon2 daemons via start-stop scripts.
-  For example, 
+  For example,
 
   on Linux system:
 
