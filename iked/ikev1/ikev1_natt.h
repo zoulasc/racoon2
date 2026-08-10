@@ -76,6 +76,14 @@ struct ph2natt {
 	struct sockaddr *oa;
 };
 
+struct ph2natoa
+{
+    struct isakmp_gen h;
+    uint8_t type;
+    uint8_t reserved;
+    struct sockaddr* oa;
+};
+
 int natt_vendorid(int vid);
 rc_vchar_t *ikev1_natt_hash_addr(struct ph1handle *iph1,
 				 struct sockaddr *addr);

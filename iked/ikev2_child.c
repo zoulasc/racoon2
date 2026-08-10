@@ -518,7 +518,7 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 	child_sa->remote = rcs_sadup(remote);
 
 #ifdef ENABLE_NATT
-	plog(PLOG_INTERR, PLOGLOC, 0,
+	plog(PLOG_INTWARN, PLOGLOC, 0,
 	     "parent-local %s parent-remote %s local %s remote %s\n",
 		rcs_sa2str(child_sa->parent->local),
 		rcs_sa2str(child_sa->parent->remote),
