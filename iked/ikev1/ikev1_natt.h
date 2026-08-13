@@ -78,7 +78,6 @@ struct ph2natt {
 
 struct ph2natoa
 {
-    struct isakmp_gen h;
     uint8_t type;
     uint8_t reserved;
     struct sockaddr* oa;
@@ -107,5 +106,6 @@ void natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst);
 
 /* Walk through all rmconfigs and tell if NAT-T is enabled in at least one. */
 int natt_enabled_in_rmconf(void);
+int ph2natoa_set(struct ph2handle *iph2);
 
 #endif				/* _IKEV1_NATT_H */
