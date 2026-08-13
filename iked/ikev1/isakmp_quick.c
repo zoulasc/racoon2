@@ -99,6 +99,10 @@
 
 #include "ike_conf.h"
 
+#ifdef ENABLE_NATT
+    #include "ikev1_natt.h"
+#endif
+
 /* quick mode */
 static rc_vchar_t *quick_ir1mx (struct ph2handle *, rc_vchar_t *, rc_vchar_t *);
 static int get_sainfo_r (struct ph2handle *);
@@ -197,6 +201,11 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
 	int np;
 	struct ipsecdoi_id_b *id, *id_p;
 
+#ifdef ENABLE_NATT
+	int natoai, natoar;
+	struct ph2natoa *natoa, *natoa_p;
+#endif
+
 	/* validity check */
 	if (msg != NULL) {
 		plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -270,9 +279,32 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
 	} else
 		idci = idcr = 1;
 
+#ifdef ENABLE_NATT
+	if (ph2natoa_set(iph2) < 0)
+	{
+	    plog(PLOG_INTERR, PLOGLOC, NULL,
+		    "failed to get NAT-OA\n");
+	    goto end;
+	}
+
+	natoa = (struct ph2natoa *)iph2->natoa->v;
+	natoa_p = (struct ph2natoa *)iph2->natoa_p->v;
+
+	if (natoa != NULL && natoa_p != NULL)
+	    natoai = natoar = 1;
+#endif
+
 	/* create SA;NONCE payload, and KE if need, and IDii, IDir. */
 	tlen = + sizeof(*gen) + iph2->sa->l
 		+ sizeof(*gen) + iph2->nonce->l;
+
+#ifdef ENABLE_NATT
+	if(natoai)
+	    tlen += sizeof(*gen) + iph2->natoa->l;
+	if (natoa_p)
+	    tlen += sizeof(*gen) + iph2->natoa_p->l;
+#endif
+
 	if (pfsgroup)
 		tlen += (sizeof(*gen) + iph2->dhpub->l);
 	if (idci)
@@ -313,7 +345,27 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
 
 	/* IDcr */
 	if (idcr)
-		p = set_isakmp_payload(p, iph2->id_p, ISAKMP_NPTYPE_NONE);
+	{
+#ifdef ENABLE_NATT
+
+	    if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 ||
+		    ike_ipsec_mode(iph2->selector->pl) != RCT_IPSM_TRANSPORT)
+		goto end;
+
+	    np = (natoa_p) ? ISAKMP_NPTYPE_NATOA_RFC : ISAKMP_NPTYPE_NONE;
+
+	    p = set_isakmp_payload(p, iph2->id_p, np);
+	    
+	    if (natoa)
+		p = set_isakmp_payload(p, iph2->natoa, ISAKMP_NPTYPE_NATOA_RFC);
+
+	    if (natoa_p)
+		p = set_isakmp_payload(p, iph2->natoa_p, ISAKMP_NPTYPE_NONE);
+
+#else
+	    p = set_isakmp_payload(p, iph2->id_p, ISAKMP_NPTYPE_NONE);
+#endif
+	}
 
 	/* generate HASH(1) */
 	hash = oakley_compute_hash1(iph2->ph1, iph2->msgid, body);
@@ -971,6 +1023,12 @@ quick_r1recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 	iph2->dhpub_p = NULL;
 	iph2->id_p = NULL;
 	iph2->id = NULL;
+
+#ifdef ENABLE_NATT
+	iph2->natoa = NULL;
+	iph2->natoa_p = NULL;
+#endif
+
 	tlen = 0;	/* count payload length except of HASH payload. */
 
 	/*
@@ -1046,7 +1104,23 @@ quick_r1recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 #ifdef ENABLE_NATT
 		case ISAKMP_NPTYPE_NATOA_DRAFT:
 		case ISAKMP_NPTYPE_NATOA_RFC:
-			/* Ignore original source/destination messages */
+			if (iph2->natoa_p == NULL)
+			{
+
+			    if (isakmp_p2ph(&iph2->natoa_p, pa->ptr) < 0)
+				goto end; 
+
+			} else if (iph2->natoa == NULL)
+			{
+
+			    if (isakmp_p2ph(&iph2->natoa, pa->ptr) < 0)
+				goto end;
+
+			} else
+			{
+			    plog(PLOG_INTWARN, PLOGLOC, NULL,
+				    "received extra NAT-OA payload, ignored\n");
+			}
 			break;
 #endif
 

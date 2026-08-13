@@ -14,7 +14,6 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -446,6 +445,110 @@ natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst)
 			 * the whole list... */
 		}
 	}
+}
+
+static rc_vchar_t* ph2satonatoa(struct sockaddr* saddr, int prefixlen, int proto)
+{
+    rc_vchar_t* new;
+    caddr_t* sa;
+    size_t len;
+    size_t hdr_len = sizeof(struct ph2natoa);
+
+    switch(proto)
+    {
+	case AF_INET:
+	    if (prefixlen == sizeof(struct in_addr) << 3)
+	    {
+		len = sizeof(struct in_addr);
+		sa = (caddr_t*)&((struct sockaddr_in*)(saddr))->sin_addr;
+	    }
+	    break;
+	case AF_INET6:
+	    if (prefixlen == sizeof(struct in6_addr) << 3)
+	    {
+		len = sizeof(struct in6_addr);
+		sa = (caddr_t*)&((struct sockaddr_in6*)(saddr))->sin6_addr;
+	    }
+	    break;
+	default:
+	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported protocol family %d\n", proto);
+	    return NULL;
+    }
+
+    new = rc_vmalloc(hdr_len + len);
+
+    if (!new)
+    {
+	plog(PLOG_INTERR, PLOGLOC, NULL,
+		"failed to allocate new buffer\n");
+	return NULL;
+    }
+
+    memset(new->v, 0, new->l);
+
+    ((struct ph2natoa*)new->v)->type = proto;
+    ((struct ph2natoa*)new->v)->reserved = 0;
+    memcpy(new->u + sizeof(struct ph2natoa), sa, len);
+
+    return new;
+
+}
+
+int ph2natoa_set(struct ph2handle* iph2)
+{
+    struct sockaddr* oa_i, *oa_r;
+    int proto, prefixlen;
+    int retval = -1;
+
+    oa_i = rcs_sadup(iph2->ph1->local);
+    oa_r = rcs_sadup(iph2->ph1->remote);
+
+    if (oa_i == NULL || oa_r == NULL)
+    {
+	plog(PLOG_INTERR, PLOGLOC, NULL,
+		"could not dup oa_i\n");
+	goto out_free;
+    }
+
+    proto = oa_i->sa_family;
+
+    switch(proto)
+    {
+	case AF_INET:
+	    prefixlen = 32;
+	    break;
+	case AF_INET6:
+	    prefixlen = 128;
+	    break;
+	default:
+	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported address family: %d\n", proto);
+	    goto out_free;
+    }
+
+    iph2->natoa = ph2satonatoa(oa_i, prefixlen, proto);
+
+    if (iph2->natoa == NULL)
+    {
+	plog(PLOG_INTERR, PLOGLOC, NULL,
+		"failed to get NAT-OA buffer\n");
+	goto out_free;
+    }
+
+    iph2->natoa_p = ph2satonatoa(oa_r, prefixlen, proto);
+
+    if (iph2->natoa_p == NULL)
+    {
+	plog(PLOG_INTERR, PLOGLOC, NULL,
+		"failed to get NAT-OA buffer\n");
+	goto out_free;
+    }
+
+    retval = 0;
+
+out_free:
+    if (oa_i) rc_free(oa_i);
+    if (oa_r) rc_free(oa_r);
+    return retval;
 }
 
 #ifdef notyet

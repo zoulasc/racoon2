@@ -289,6 +289,11 @@ struct ph2handle {
 	rc_vchar_t *nonce;	/* nonce value in phase 2 */
 	rc_vchar_t *nonce_p;	/* partner's nonce value in phase 2 */
 
+#ifdef ENABLE_NATT
+	rc_vchar_t *natoa; 	/* NAT original address */
+	rc_vchar_t *natoa_p;	/* peers's NAT original address */
+#endif
+
 	rc_vchar_t *sa;		/* whole SA payload to send/to be sent */
 	/* to calculate HASH */
 	/* NOT INCLUDING general header. */
