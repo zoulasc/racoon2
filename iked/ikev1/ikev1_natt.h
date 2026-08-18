@@ -79,7 +79,7 @@ struct ph2natt {
 struct ph2natoa
 {
     uint8_t type; // ID Type
-    uint16_t reserved; // Reserved
+    uint8_t reserved[3]; // Reserved
     
     // Followed by IPv4 (4 octets) or IPv6 address (16 octets)
 }__attribute__((__packed__));
