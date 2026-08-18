@@ -78,10 +78,11 @@ struct ph2natt {
 
 struct ph2natoa
 {
-    uint8_t type;
-    uint8_t reserved;
-    struct sockaddr* oa;
-};
+    uint8_t type; // ID Type
+    uint16_t reserved; // Reserved
+    
+    // Followed by IPv4 (4 octets) or IPv6 address (16 octets)
+}__attribute__((__packed__));
 
 int natt_vendorid(int vid);
 rc_vchar_t *ikev1_natt_hash_addr(struct ph1handle *iph1,
@@ -106,6 +107,6 @@ void natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst);
 
 /* Walk through all rmconfigs and tell if NAT-T is enabled in at least one. */
 int natt_enabled_in_rmconf(void);
-int ph2natoa_set(struct ph2handle *iph2);
+int ph2natoa_set(struct ph2handle *iph2, int side);
 
 #endif				/* _IKEV1_NATT_H */
