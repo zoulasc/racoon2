@@ -456,20 +456,35 @@ static rc_vchar_t* ph2satonatoa(struct sockaddr* saddr, int prefixlen, int proto
 
     switch(proto)
     {
-	case AF_INET:
-	    if (prefixlen == sizeof(struct in_addr) << 3)
+	case IPSECDOI_ID_IPV4_ADDR:
 	    {
+		if (prefixlen != sizeof(struct in_addr) << 3)
+		{
+		    plog(PLOG_INTERR, PLOGLOC, NULL,
+			    "prefixlen is not suitable for IPv4\n");
+		    return NULL;
+		}
+
 		len = sizeof(struct in_addr);
 		sa = (caddr_t*)&((struct sockaddr_in*)(saddr))->sin_addr;
+
+		break;
 	    }
-	    break;
-	case AF_INET6:
-	    if (prefixlen == sizeof(struct in6_addr) << 3)
+
+	case IPSECDOI_ID_IPV6_ADDR:
 	    {
+		if (prefixlen != sizeof(struct in6_addr) << 3)
+		{
+		    plog(PLOG_INTERR, PLOGLOC, NULL,
+			    "prefixlen is not suitable for IPv6\n");
+		    return NULL;
+		}
+
 		len = sizeof(struct in6_addr);
 		sa = (caddr_t*)&((struct sockaddr_in6*)(saddr))->sin6_addr;
+		break;
+
 	    }
-	    break;
 	default:
 	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported protocol family %d\n", proto);
 	    return NULL;
@@ -487,21 +502,143 @@ static rc_vchar_t* ph2satonatoa(struct sockaddr* saddr, int prefixlen, int proto
     memset(new->v, 0, new->l);
 
     ((struct ph2natoa*)new->v)->type = proto;
-    ((struct ph2natoa*)new->v)->reserved = 0;
+    memset(&((struct ph2natoa *)new->v)->reserved, 0, sizeof(((struct ph2natoa *)new->v)->reserved));
     memcpy(new->u + sizeof(struct ph2natoa), sa, len);
 
     return new;
 
 }
 
-int ph2natoa_set(struct ph2handle* iph2)
+static 
+int parse_natoa(void *packet, size_t packet_len, struct sockaddr_storage *ss)
 {
-    struct sockaddr* oa_i, *oa_r;
+    struct ipsecdoi_id_b *id_b;
+    int proto, retval = -1;
+    size_t plen = 0;
+    caddr_t sa;
+
+    if (packet == NULL || ss == NULL)
+        return retval;
+
+    id_b = (struct ipsecdoi_id_b*)packet;
+
+    proto = id_b->type;
+
+    memset(ss, 0, sizeof(*ss));
+
+    switch(proto)
+    {
+        case IPSECDOI_ID_IPV4_ADDR:
+        {
+            struct sockaddr_in* sin;
+
+            sin = (struct sockaddr_in*)ss;
+            
+            plen += sizeof(struct ipsecdoi_id_b);
+            plen += sizeof(struct in_addr);
+
+            if (plen > packet_len)
+            {
+                plog(PLOG_INTERR, PLOGLOC, NULL,
+                     "invalid size of packet\n");
+                return retval;
+            }
+
+            sin->sin_family = AF_INET;
+
+            sa = (caddr_t)((char *)id_b + sizeof(*id_b));
+
+            memcpy(&sin->sin_addr, (struct in_addr*)sa, sizeof(struct in_addr));
+
+            retval = 0;
+
+            break; 
+        }
+
+        case IPSECDOI_ID_IPV6_ADDR:
+        {   
+            struct sockaddr_in6* sin6;
+
+            sin6 = (struct sockaddr_in6*)ss;
+            
+            plen += sizeof(struct ipsecdoi_id_b);
+            plen += sizeof(struct in6_addr);
+
+            if (plen > packet_len)
+            {
+                plog(PLOG_INTERR, PLOGLOC, NULL,
+                     "invalid size of packet\n");
+                return retval;
+            }
+
+            sin6->sin6_family = AF_INET6;
+
+            sa = (caddr_t)((char *)id_b + sizeof(*id_b));
+
+            memcpy(&sin6->sin6_addr, (struct in_addr *)sa, sizeof(struct in6_addr));
+
+            retval = 0;
+
+            break;   
+        }
+
+        default:
+            plog(PLOG_INTERR, PLOGLOC, NULL,
+                 "unknown address family\n");
+            return retval;
+    }
+
+    return retval;
+
+}
+
+int ph2natoa_set(struct ph2handle* iph2, int side)
+{
+    struct sockaddr *oa_i, *oa_r;
+    struct sockaddr_storage ss;
     int proto, prefixlen;
     int retval = -1;
+ 
+    if (side == INITIATOR)
+    {
 
-    oa_i = rcs_sadup(iph2->ph1->local);
-    oa_r = rcs_sadup(iph2->ph1->remote);
+    oa_i = rcs_sadup(iph2->src);
+
+    if(parse_natoa(iph2->id_p->v, iph2->id_p->l, &ss) != 0)
+    {
+            plog(PLOG_INTERR, PLOGLOC, NULL,
+                 "failed to get NAT-OAr\n");
+            return retval;
+    }
+
+    oa_r = (struct sockaddr*)&ss;
+
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"NAT-OAi :"
+		" initiator: %s"
+		" responder: %s", rcs_sa2str(oa_i), rcs_sa2str(oa_r));
+
+    } else if (side == RESPONDER)
+    {
+
+    oa_i = rcs_sadup(iph2->src);
+
+    if (parse_natoa(iph2->id->v, iph2->id->l, &ss) != 0)
+    {
+        plog(PLOG_INTERR, PLOGLOC, NULL,
+                "failed to get NAT-OAi: %d", side);
+        return retval;
+    }
+
+	oa_r = (struct sockaddr*)&ss;
+
+	plog(PLOG_INFO, PLOGLOC, NULL,
+		"NAT-OAr :"
+		" initiator: %s"
+		" responder: %s", rcs_sa2str(oa_i), rcs_sa2str(oa_r));
+    }
+    else
+	return retval;	
 
     if (oa_i == NULL || oa_r == NULL)
     {
@@ -510,15 +647,19 @@ int ph2natoa_set(struct ph2handle* iph2)
 	goto out_free;
     }
 
-    proto = oa_i->sa_family;
-
-    switch(proto)
+    switch(oa_i->sa_family)
     {
-	case AF_INET:
-	    prefixlen = 32;
-	    break;
-	case AF_INET6:
-	    prefixlen = 128;
+        case AF_INET:
+            {
+                proto = IPSECDOI_ID_IPV4_ADDR;
+                prefixlen = 32;
+            }
+            break;
+        case AF_INET6:
+            {
+                proto = IPSECDOI_ID_IPV6_ADDR;
+                prefixlen = 128;
+	    }
 	    break;
 	default:
 	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported address family: %d\n", proto);
