@@ -129,7 +129,7 @@ static int rcpfk_set_sadbxtag (rc_vchar_t **, struct rcpfk_msg *);
 static int rcpfk_set_sadb_x_nattype (rc_vchar_t **, struct rcpfk_msg *);
 static int rcpfk_set_sadb_x_natport (rc_vchar_t **, struct rcpfk_msg *,
 					 int);
-static int rcpfk_set_sadb_x_natoa (rc_vchar_t **, struct rcpfk_msg*);
+static int rcpfk_set_sadb_x_natoa (rc_vchar_t **, struct rcpfk_msg*, struct sockaddr* natoa);
 #endif
 
 static int rcpfk_recv_getspi (uint8_t **, struct rcpfk_msg *);
@@ -650,8 +650,11 @@ rcpfk_send_addx(struct rcpfk_msg *rc, int type)
 		if (rcpfk_set_sadb_x_natport(&buf, rc, SADB_X_EXT_NAT_T_DPORT))
 			goto err;
 
-		if (rcpfk_set_sadb_x_natoa(&buf, rc))
+		if (rcpfk_set_sadb_x_natoa(&buf, rc, rc->sa_natoa_src))
 		    goto err;
+
+        if (rcpfk_set_sadb_x_natoa(&buf, rc, rc->sa_natoa_dst))
+            goto err;
 	}
 #endif
 
@@ -1717,37 +1720,33 @@ rcpfk_set_sadb_x_natport(rc_vchar_t **msg, struct rcpfk_msg *rc, int type)
 }
 
 static int
-rcpfk_set_sadb_x_natoa(rc_vchar_t **msg, struct rcpfk_msg *rc)
+rcpfk_set_sadb_x_natoa(rc_vchar_t **msg, struct rcpfk_msg *rc, struct sockaddr* natoa)
 {
     rc_vchar_t* buf = NULL;
     struct sadb_address* addr;
-    struct sockaddr *sa;
     size_t prevlen, extlen, len;
     int pref;
 
-    sa = rc->sa_src;
-    pref = rc->pref_src;
+    if (natoa == NULL)
+        return 0;
 
-    if (sa == NULL)
-    {
-	rcpfk_seterror(rc, EINVAL, "sa is NULL=");
-	return -1;
-    }
+    pref = (natoa->sa_family == AF_INET) ? 32 : 128;
 
-    extlen = sizeof(struct sadb_address) + PFKEY_ALIGN8(SA_LEN(sa));
+    extlen = sizeof(struct sadb_address) + PFKEY_ALIGN8(SA_LEN(natoa));
     prevlen = (*msg)->l;
     len = extlen + prevlen;
 
     if ((buf = rc_vrealloc(*msg, len)) == NULL)
 	return -1;
 
-    addr = (void*)((uint8_t*)buf->l + prevlen);
+    addr = (void*)((uint8_t*)buf->v + prevlen);
 
-    addr->sadb_address_len = extlen;
+	addr->sadb_address_len = PFKEY_UNIT64_U16(extlen);
     addr->sadb_address_exttype = SADB_X_EXT_NAT_T_OA;
     addr->sadb_address_proto = rct2pfk_proto(rc->ul_proto) & 0xff;
     addr->sadb_address_prefixlen = pref;
     addr->sadb_address_reserved = 0;
+    memcpy(addr + 1, natoa, SA_LEN(natoa));
 
     *msg = buf;
 

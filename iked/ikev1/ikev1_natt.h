@@ -108,5 +108,7 @@ void natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst);
 /* Walk through all rmconfigs and tell if NAT-T is enabled in at least one. */
 int natt_enabled_in_rmconf(void);
 int ph2natoa_set(struct ph2handle *iph2, int side);
+struct sockaddr *natoa_vbuf_to_sockaddr(struct sockaddr_storage *ss, rc_vchar_t *vbuf);
+
 
 #endif				/* _IKEV1_NATT_H */
