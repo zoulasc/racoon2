@@ -1010,6 +1010,23 @@ pk_sendupdate(struct ph2handle *iph2)
 			/* (*update_inbound)() logs error message */
 			return -1;
 		}
+
+#ifdef ENABLE_NATT
+        if (iph2->ph1->natt_flags & NAT_DETECTED && iph2->natoa_p)
+        {
+            struct sockaddr* sa;
+            struct sockaddr_storage *ss = &param.sa_natoa_dst_storage;
+
+            if ((sa = natoa_vbuf_to_sockaddr(ss, iph2->natoa_p)) == NULL)
+            {
+                plog(PLOG_INTERR, PLOGLOC, NULL,
+                     "could not retrieve NAT-OA\n");
+                return 0;
+            }
+
+            param.sa_natoa_dst = sa;
+        }
+#endif
 #if 0
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "call pfkey_send_update\n");
 		if (pfkey_send_update
@@ -1280,6 +1297,23 @@ pk_sendadd(struct ph2handle *iph2)
 			/* (*update_outbound)() logs error message */
 			return -1;
 		}
+
+#ifdef ENABLE_NATT
+        if (iph2->ph1->natt_flags & NAT_DETECTED && iph2->natoa)
+        {
+            struct sockaddr* sa;
+            struct sockaddr_storage *ss = &param.sa_natoa_src_storage;
+
+            if ((sa = natoa_vbuf_to_sockaddr(ss, iph2->natoa)) == NULL)
+            {
+                plog(PLOG_INTERR, PLOGLOC, NULL,
+                     "could not retrieve NAT-OA\n");
+                return 0;
+            }
+
+            param.sa_natoa_src = sa;
+        }
+#endif
 #if 0
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "call pfkey_send_add\n");
 		if (pfkey_send_add

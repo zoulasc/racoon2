@@ -575,7 +575,7 @@ int parse_natoa(void *packet, size_t packet_len, struct sockaddr_storage *ss)
 
             sa = (caddr_t)((char *)id_b + sizeof(*id_b));
 
-            memcpy(&sin6->sin6_addr, (struct in_addr *)sa, sizeof(struct in6_addr));
+            memcpy(&sin6->sin6_addr, (struct in6_addr *)sa, sizeof(struct in6_addr));
 
             retval = 0;
 
@@ -621,7 +621,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     } else if (side == RESPONDER)
     {
 
-    oa_i = rcs_sadup(iph2->src);
+    oa_i = rcs_sadup(iph2->dst);
 
     if (parse_natoa(iph2->id->v, iph2->id->l, &ss) != 0)
     {
@@ -662,7 +662,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
 	    }
 	    break;
 	default:
-	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported address family: %d\n", proto);
+	    plog(PLOG_INTERR, PLOGLOC, NULL, "unsupported address family: %d\n", oa_i->sa_family);
 	    goto out_free;
     }
 
@@ -688,8 +688,42 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
 
 out_free:
     if (oa_i) rc_free(oa_i);
-    if (oa_r) rc_free(oa_r);
+    //if (oa_r) rc_free(oa_r);
     return retval;
+}
+
+struct sockaddr *
+natoa_vbuf_to_sockaddr(struct sockaddr_storage *ss, rc_vchar_t *vbuf)
+{
+    if (vbuf == NULL)
+        return NULL;
+
+    struct ph2natoa *hdr = (struct ph2natoa *)vbuf->v;
+    memset(ss, 0, sizeof(*ss));
+
+    switch (hdr->type) {
+    case IPSECDOI_ID_IPV4_ADDR:
+        {
+            struct sockaddr_in *sin = (struct sockaddr_in *)ss;
+            sin->sin_family = AF_INET;
+            sin->sin_port = 0;
+            memcpy(&sin->sin_addr, vbuf->v + sizeof(struct ph2natoa),
+                   sizeof(struct in_addr));
+        }
+        break;
+    case IPSECDOI_ID_IPV6_ADDR:
+        {
+            struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)ss;
+            sin6->sin6_family = AF_INET6;
+            sin6->sin6_port = 0;
+            memcpy(&sin6->sin6_addr, vbuf->v + sizeof(struct ph2natoa),
+                   sizeof(struct in6_addr));
+        }
+        break;
+    default:
+        return NULL;
+    }
+    return (struct sockaddr *)ss;
 }
 
 #ifdef notyet
