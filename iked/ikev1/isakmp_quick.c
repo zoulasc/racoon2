@@ -284,11 +284,10 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
 	iph2->natoa_p = NULL;
 
     if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
-			/*(iph2->ph1->natt_options->mode_udp_transport 
-			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) == 0 &&  */
+		(iph2->ph1->natt_options->mode_udp_transport 
+			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) != 0 &&  
 			ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT)
     {
-
         if (ph2natoa_set(iph2, iph2->side) < 0)
         {
             plog(PLOG_INTERR, PLOGLOC, NULL,
@@ -304,7 +303,7 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
     } 
     else
         plog(PLOG_INTWARN, PLOGLOC, NULL,
-         "configuration does not match requirements for NAT-OA payload, skip\n");
+         "configuration does not match requirements for NAT-OA, skip\n");
 #endif
 
 	/* create SA;NONCE payload, and KE if need, and IDii, IDir. */
@@ -358,9 +357,6 @@ quick_i1send(struct ph2handle *iph2, rc_vchar_t *msg /* must be null pointer */)
 
 #ifdef ENABLE_NATT
     np = (natoa || natoa_p) ? ISAKMP_NPTYPE_NATOA_RFC : ISAKMP_NPTYPE_NONE;
-
-    plog(PLOG_INFO, PLOGLOC, NULL,
-         "NAT-OA np:%d\n", np);
 
     /* IDcr */
     if (idcr)
@@ -1348,8 +1344,10 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 
 #ifdef ENABLE_NATT
 	struct ph2natoa *natoa = NULL, *natoa_p = NULL;
-
 	int natoa_i = 0, natoa_r = 0;
+
+    iph2->natoa = NULL;
+    iph2->natoa_p = NULL;
 #endif
 
 	/* validity check */
@@ -1393,12 +1391,9 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 
 
 #ifdef ENABLE_NATT
-	iph2->natoa = NULL;
-	iph2->natoa_p = NULL;
-
     if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
-			/*(iph2->ph1->natt_options->mode_udp_transport 
-			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) == 0 &&  */
+		(iph2->ph1->natt_options->mode_udp_transport 
+			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) != 0 &&  
 			ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT)
     {
         if (ph2natoa_set(iph2, iph2->side) < 0)
@@ -1416,7 +1411,7 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
     } 
     else 
         plog(PLOG_INTWARN, PLOGLOC, NULL,
-             "configuration is not suitable for NAT-OA payload, skip\n");
+             "configuration is not suitable for NAT-OA, skip\n");
 #endif
 
 	/* create SA;NONCE payload, and KE and ID if need */
@@ -1491,9 +1486,7 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
         np_p = &((struct isakmp_gen *)p)->np;
 
         if (iph2->natoa)
-        {
-            plog(PLOG_INFO, PLOGLOC, NULL,
-                 "adding NAT-OAi payload\n");
+        { 
             np_p = &((struct isakmp_gen *)p)->np;
 
             p = set_isakmp_payload(p, iph2->natoa, 
@@ -1503,8 +1496,6 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 
         if (iph2->natoa_p)
         {
-            plog(PLOG_INFO, PLOGLOC, NULL,
-                 "adding NAT-OAr payload\n");
             np_p = &((struct isakmp_gen *)p)->np;
 
             p = set_isakmp_payload(p, iph2->natoa_p, ISAKMP_NPTYPE_NONE);
