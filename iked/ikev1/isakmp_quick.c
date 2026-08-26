@@ -411,7 +411,7 @@ end:
 
 /*
  * receive from responder
- * 	HDR*, HASH(2), SA, Nr [, KE ] [, IDi2, IDr2 ]
+ * 	HDR*, HASH(2), SA, Nr [, KE ] [, IDi2, IDr2 ] [, NAT-OAi, NAT-OAr (if NAT-T enabled)]
  */
 int
 quick_i2recv(struct ph2handle *iph2, rc_vchar_t *msg0)
@@ -1328,7 +1328,7 @@ end:
 
 /*
  * send to initiator
- * 	HDR*, HASH(2), SA, Nr [, KE ] [, IDi2, IDr2 ]
+ * 	HDR*, HASH(2), SA, Nr [, KE ] [, IDi2, IDr2 ] [, NAT-OAi, NAT-OAr (if NAT-T enabled)]
  */
 int
 quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
