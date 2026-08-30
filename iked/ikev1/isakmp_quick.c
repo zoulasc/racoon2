@@ -1133,13 +1133,11 @@ quick_r1recv(struct ph2handle *iph2, rc_vchar_t *msg0)
 		case ISAKMP_NPTYPE_NATOA_RFC:
 			if (iph2->natoa_p == NULL)
 			{
-
 			    if (isakmp_p2ph(&iph2->natoa_p, pa->ptr) < 0)
 				goto end; 
 
 			} else if (iph2->natoa == NULL)
 			{
-
 			    if (isakmp_p2ph(&iph2->natoa, pa->ptr) < 0)
 				goto end;
 
@@ -1389,6 +1387,28 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 		}
 	}
 
+#ifdef ENABLE_NATT
+    if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
+        ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT && 
+        (iph2->src != iph2->src_id || iph2->dst != iph2->dst_id))
+    {
+        if (iph2->src != iph2->src_id)
+        {
+            if (natt_addr_substitution(iph2, NAT_INIT_BEHIND_NAT) != 0)
+                return -1;
+        }
+        else if (iph2->dst != iph2->dst_id)
+        {
+            if (natt_addr_substitution(iph2, NAT_RSP_BEHIND_NAT) != 0)
+                return -1;
+        }
+        else
+        {
+            if (natt_addr_substitution(iph2, NAT_BOTH_BEHIND_NAT) != 0)
+                return -1;
+        }            
+    }
+#endif
 
 #ifdef ENABLE_NATT
     if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
