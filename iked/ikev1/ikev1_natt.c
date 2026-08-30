@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #include "racoon.h"
 
@@ -447,6 +448,84 @@ natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst)
 	}
 }
 
+static int switch_id_pl_addr(struct sockaddr *src, struct sockaddr *dst, int proto)
+{
+    switch(proto)
+    {
+        case IPSECDOI_ID_IPV4_ADDR:
+        {
+            ((struct sockaddr_in*)dst)->sin_addr = 
+                    ((struct sockaddr_in*)src)->sin_addr;
+
+            break;
+        }
+        case IPSECDOI_ID_IPV6_ADDR:
+        {
+            ((struct sockaddr_in6*)dst)->sin6_addr =
+                    ((struct sockaddr_in6*)src)->sin6_addr;
+            break;
+        }
+        default:
+            return -1;
+    }
+    return 0;
+}
+
+int
+natt_addr_substitution(struct ph2handle *iph2, int flag)
+{
+    struct ipsecdoi_id_b *id_b;
+    struct sockaddr *sa;
+    struct sockaddr *src;
+    int proto;
+
+    if (iph2 == NULL || flag == 0)
+        return -1;
+
+    switch (flag) {
+    case NAT_INIT_BEHIND_NAT:
+        id_b = (struct ipsecdoi_id_b *)iph2->id->v;
+        src = iph2->ph1->local;
+        break;
+
+    case NAT_RSP_BEHIND_NAT:
+        id_b = (struct ipsecdoi_id_b *)iph2->id_p->v;
+        src = iph2->ph1->remote;
+        break;
+    case NAT_BOTH_BEHIND_NAT:
+        {
+            struct ipsecdoi_id_b *id_b_p;
+            struct sockaddr *sa_dst;
+            struct sockaddr *dst;
+
+            id_b = (struct ipsecdoi_id_b *)iph2->id->v;
+            src = iph2->ph1->local;
+
+            id_b_p = (struct ipsecdoi_id_b*)iph2->id_p->v;
+            dst = iph2->ph1->remote;
+
+            sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
+            sa_dst = (struct sockaddr *)((char *)id_b_p + sizeof(*id_b_p));
+
+            if (switch_id_pl_addr(src, sa, id_b->type) != 0)
+                return -1;
+
+            if (switch_id_pl_addr(dst, sa_dst, id_b_p->type) != 0)
+                return -1;
+
+            break;
+        }
+
+    default:
+        return -1;
+    }
+
+    sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
+    proto = id_b->type;
+
+    return switch_id_pl_addr(src, sa, proto);
+}
+
 static rc_vchar_t* ph2satonatoa(struct sockaddr* saddr, int prefixlen, int proto)
 {
     rc_vchar_t* new;
@@ -612,6 +691,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     }
 
     oa_r = (struct sockaddr*)&ss;
+    iph2->oa = (struct sockaddr*)&ss;
 
 	plog(PLOG_INFO, PLOGLOC, NULL,
 		"NAT-OAi :"
@@ -631,6 +711,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     }
 
 	oa_r = (struct sockaddr*)&ss;
+    iph2->oa = (struct sockaddr*)&ss;
 
 	plog(PLOG_INFO, PLOGLOC, NULL,
 		"NAT-OAr :"
