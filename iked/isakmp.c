@@ -291,6 +291,10 @@ isakmp_open(void)
 			     "ignoring prefix in interface spec\n");
 #endif
 
+#ifdef ENABLE_NATT
+        isakmp_open_address(addr->a.ipaddr, RC_PORT_IKE_NATT);
+#endif
+
 		isakmp_open_address(addr->a.ipaddr, addr->port);
 	}
 
@@ -388,8 +392,11 @@ isakmp_reopen(void)
 			SOCKET_LIST_REMOVE(item);
 			SOCKET_LIST_LINK(&socket_list_head, item);
 			continue;
-		}
+        }
 
+#ifdef ENABLE_NATT
+        isakmp_open_address(addr->a.ipaddr, RC_PORT_IKE_NATT);
+#endif
 		isakmp_open_address(addr->a.ipaddr, addr->port);
 	}
 
