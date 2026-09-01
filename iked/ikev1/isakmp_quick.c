@@ -1389,29 +1389,6 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 
 #ifdef ENABLE_NATT
     if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
-        ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT && 
-        (iph2->src != iph2->src_id || iph2->dst != iph2->dst_id))
-    {
-        if (iph2->src != iph2->src_id)
-        {
-            if (natt_addr_substitution(iph2, NAT_INIT_BEHIND_NAT) != 0)
-                return -1;
-        }
-        else if (iph2->dst != iph2->dst_id)
-        {
-            if (natt_addr_substitution(iph2, NAT_RSP_BEHIND_NAT) != 0)
-                return -1;
-        }
-        else
-        {
-            if (natt_addr_substitution(iph2, NAT_BOTH_BEHIND_NAT) != 0)
-                return -1;
-        }            
-    }
-#endif
-
-#ifdef ENABLE_NATT
-    if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
 		(iph2->ph1->natt_options->mode_udp_transport 
 			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) != 0 &&  
 			ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT)
@@ -2172,7 +2149,39 @@ get_sainfo_r(struct ph2handle *iph2)
 	}
 
 	iph2->selector = ike_conf_find_ikev1sel_by_id(idsrc, iddst);
-	if (! iph2->selector) {
+#ifdef ENABLE_NATT
+    if (!iph2->selector && iph2->id_p != NULL && (iph2->ph1->natt_flags & NAT_DETECTED) != 0)
+    {
+        struct sockaddr *sa_nat;
+        rc_vchar_t *iddst_nat;
+        int prefixlen_nat;
+
+        switch(iph2->ph1->remote->sa_family)
+        {
+            case AF_INET:
+                prefixlen_nat = sizeof(struct in_addr) << 3;
+                break;
+            case AF_INET6:
+                prefixlen_nat = sizeof(struct in6_addr) << 3;
+                break;
+            default:
+                goto end;
+        }
+
+        sa_nat = rcs_sadup(iph2->ph1->remote);
+        set_port(sa_nat, 0);
+
+        iddst_nat = ipsecdoi_sockaddr2id(sa_nat, prefixlen_nat, IPSEC_ULPROTO_ANY);
+
+        iph2->selector = ike_conf_find_ikev1sel_by_id(idsrc, iddst_nat);
+
+        if (iph2->selector)
+            natt_addr_substitution(iph2, NAT_INIT_BEHIND_NAT);
+
+        rc_free(sa_nat);
+    }
+#endif
+	if (!iph2->selector) {
 		plog(PLOG_INTERR, PLOGLOC, 0,
 		     "can't find matching selector src=%s dst=%s\n",
 		     rcs_sa2str_wop(iph2->src),
