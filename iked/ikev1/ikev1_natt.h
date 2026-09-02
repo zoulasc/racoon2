@@ -38,12 +38,10 @@
 #define	NAT_ANNOUNCED		    (1L<<0)
 #define	NAT_DETECTED_ME		    (1L<<1)
 #define	NAT_DETECTED_PEER	    (1L<<2)
-#define	NAT_PORTS_CHANGED	    (1L<<3)
-#define	NAT_KA_QUEUED		    (1L<<4)
-#define	NAT_ADD_NON_ESP_MARKER	(1L<<5)
-#define NAT_INIT_BEHIND_NAT     (1L << 6)
-#define NAT_RSP_BEHIND_NAT      (1L << 7)
-#define NAT_BOTH_BEHIND_NAT     (1L << 8)
+#define NAT_DETECTED_BOTH       (NAT_DETECTED_ME | NAT_DETECTED_PEER)
+#define	NAT_PORTS_CHANGED	    (1L<<4)
+#define	NAT_KA_QUEUED		    (1L<<5)
+#define	NAT_ADD_NON_ESP_MARKER	(1L<<6)
 
 #define	NATT_AVAILABLE(ph1)	((iph1)->natt_flags & NAT_ANNOUNCED)
 
@@ -108,6 +106,7 @@ int natt_keepalive_add(struct sockaddr *src, struct sockaddr *dst);
 int natt_keepalive_add_ph1(struct ph1handle *iph1);
 void natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst);
 int natt_addr_substitution(struct ph2handle *sa, int flag);
+int idpl_addr2sa(int id_type, caddr_t data, struct sockaddr_storage *ss);
 
 /* Walk through all rmconfigs and tell if NAT-T is enabled in at least one. */
 int natt_enabled_in_rmconf(void);
