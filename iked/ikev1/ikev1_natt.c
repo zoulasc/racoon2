@@ -448,11 +448,43 @@ natt_keepalive_remove(struct sockaddr *src, struct sockaddr *dst)
 	}
 }
 
+/*
+ * Convert the address data of an ID payload (IPv4/IPv6 address or
+ * subnet) into a sockaddr, for logging and comparison purposes.
+ * Returns 0 on success, -1 for non-address ID types.
+ */
+int
+idpl_addr2sa(int id_type, caddr_t data, struct sockaddr_storage* ss)
+{
+    memset(ss, 0, sizeof(*ss));
+
+    switch(id_type)
+    {
+        case IPSECDOI_ID_IPV4_ADDR:
+        case IPSECDOI_ID_IPV4_ADDR_SUBNET:
+        {
+            ((struct sockaddr_in*)ss)->sin_family = AF_INET;
+            memcpy(&((struct sockaddr_in*)ss)->sin_addr, data, sizeof(struct in_addr));
+            return 0;
+        }
+        case IPSECDOI_ID_IPV6_ADDR:
+        case IPSECDOI_ID_IPV6_ADDR_SUBNET:
+        {
+            ((struct sockaddr_in6*)ss)->sin6_family = AF_INET6;
+            memcpy(&((struct sockaddr_in6*)ss)->sin6_addr, data, sizeof(struct in6_addr));
+            return 0;
+        }
+        default:
+            return -1;
+    }
+}
+
 static int switch_id_pl_addr(struct sockaddr *src, struct sockaddr *dst, int proto)
 {
     switch(proto)
     {
         case IPSECDOI_ID_IPV4_ADDR:
+        case IPSECDOI_ID_IPV4_ADDR_SUBNET:
         {
             ((struct sockaddr_in*)dst)->sin_addr = 
                     ((struct sockaddr_in*)src)->sin_addr;
@@ -460,6 +492,7 @@ static int switch_id_pl_addr(struct sockaddr *src, struct sockaddr *dst, int pro
             break;
         }
         case IPSECDOI_ID_IPV6_ADDR:
+        case IPSECDOI_ID_IPV6_ADDR_SUBNET:
         {
             ((struct sockaddr_in6*)dst)->sin6_addr =
                     ((struct sockaddr_in6*)src)->sin6_addr;
@@ -479,51 +512,42 @@ natt_addr_substitution(struct ph2handle *iph2, int flag)
     struct sockaddr *src;
     int proto;
 
-    if (iph2 == NULL || flag == 0)
+    if (iph2 == NULL || iph2->ph1 == NULL || flag == 0)
         return -1;
 
-    switch (flag) {
-    case NAT_INIT_BEHIND_NAT:
-        id_b = (struct ipsecdoi_id_b *)iph2->id->v;
-        src = iph2->ph1->local;
-        break;
-
-    case NAT_RSP_BEHIND_NAT:
+    if (flag & NAT_DETECTED_PEER)
+    {
+        if (iph2->id_p == NULL
+         || iph2->id_p->l < sizeof(struct ipsecdoi_id_b))
+            return -1;
         id_b = (struct ipsecdoi_id_b *)iph2->id_p->v;
         src = iph2->ph1->remote;
-        break;
-    case NAT_BOTH_BEHIND_NAT:
-        {
-            struct ipsecdoi_id_b *id_b_p;
-            struct sockaddr *sa_dst;
-            struct sockaddr *dst;
-
-            id_b = (struct ipsecdoi_id_b *)iph2->id->v;
-            src = iph2->ph1->local;
-
-            id_b_p = (struct ipsecdoi_id_b*)iph2->id_p->v;
-            dst = iph2->ph1->remote;
-
-            sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
-            sa_dst = (struct sockaddr *)((char *)id_b_p + sizeof(*id_b_p));
-
-            if (switch_id_pl_addr(src, sa, id_b->type) != 0)
-                return -1;
-
-            if (switch_id_pl_addr(dst, sa_dst, id_b_p->type) != 0)
-                return -1;
-
-            break;
-        }
-
-    default:
-        return -1;
+        sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
+        proto = id_b->type;
+        plog(PLOG_INFO, PLOGLOC, NULL,
+             "NAT-T address substitution (IDi2) -> %s\n",
+             rcs_sa2str_wop(src));
+        if (switch_id_pl_addr(src, sa, proto) != 0)
+            return -1;
     }
 
-    sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
-    proto = id_b->type;
+    if (flag & NAT_DETECTED_ME)
+    {
+        if (iph2->id == NULL
+         || iph2->id->l < sizeof(struct ipsecdoi_id_b))
+            return -1;
+        id_b = (struct ipsecdoi_id_b *)iph2->id->v;
+        src = iph2->ph1->local;
+        sa = (struct sockaddr *)((char *)id_b + sizeof(*id_b));
+        proto = id_b->type;
+        plog(PLOG_INFO, PLOGLOC, NULL,
+             "NAT-T address substitution (IDr2) -> %s\n",
+             rcs_sa2str_wop(src));
+        if (switch_id_pl_addr(src, sa, proto) != 0)
+            return -1;
+    }
 
-    return switch_id_pl_addr(src, sa, proto);
+    return 0;
 }
 
 static rc_vchar_t* ph2satonatoa(struct sockaddr* saddr, int prefixlen, int proto)
@@ -691,7 +715,6 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     }
 
     oa_r = (struct sockaddr*)&ss;
-    iph2->oa = (struct sockaddr*)&ss;
 
 	plog(PLOG_INFO, PLOGLOC, NULL,
 		"NAT-OAi :"
@@ -711,7 +734,6 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     }
 
 	oa_r = (struct sockaddr*)&ss;
-    iph2->oa = (struct sockaddr*)&ss;
 
 	plog(PLOG_INFO, PLOGLOC, NULL,
 		"NAT-OAr :"
@@ -780,6 +802,9 @@ natoa_vbuf_to_sockaddr(struct sockaddr_storage *ss, rc_vchar_t *vbuf)
         return NULL;
 
     struct ph2natoa *hdr = (struct ph2natoa *)vbuf->v;
+
+    if (!hdr) return NULL;
+
     memset(ss, 0, sizeof(*ss));
 
     switch (hdr->type) {

@@ -1389,29 +1389,6 @@ quick_r2send(struct ph2handle *iph2, rc_vchar_t *msg)
 
 #ifdef ENABLE_NATT
     if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
-        ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT && 
-        (iph2->src != iph2->src_id || iph2->dst != iph2->dst_id))
-    {
-        if (iph2->src != iph2->src_id)
-        {
-            if (natt_addr_substitution(iph2, NAT_INIT_BEHIND_NAT) != 0)
-                return -1;
-        }
-        else if (iph2->dst != iph2->dst_id)
-        {
-            if (natt_addr_substitution(iph2, NAT_RSP_BEHIND_NAT) != 0)
-                return -1;
-        }
-        else
-        {
-            if (natt_addr_substitution(iph2, NAT_BOTH_BEHIND_NAT) != 0)
-                return -1;
-        }            
-    }
-#endif
-
-#ifdef ENABLE_NATT
-    if ((iph2->ph1->natt_flags & NAT_DETECTED) != 0 &&
 		(iph2->ph1->natt_options->mode_udp_transport 
 			 & IPSECDOI_ATTR_ENC_MODE_UDPTRNS_RFC) != 0 &&  
 			ike_ipsec_mode(iph2->selector->pl) == RCT_IPSM_TRANSPORT)
@@ -2172,7 +2149,78 @@ get_sainfo_r(struct ph2handle *iph2)
 	}
 
 	iph2->selector = ike_conf_find_ikev1sel_by_id(idsrc, iddst);
-	if (! iph2->selector) {
+#ifdef ENABLE_NATT
+    if (!iph2->selector && iph2->id_p != NULL && 
+        (iph2->ph1->natt_flags & NAT_DETECTED) != 0)
+    {
+        struct sockaddr_storage ss;
+        struct sockaddr *sa_nat;
+        int nat_flag = 0, nat_prefixlen = 0;
+        rc_vchar_t *idsrc_nat, *iddst_nat;
+
+        int id_type = (((struct ipsecdoi_id_b*)iph2->id_p->v)->type);
+        caddr_t data = iph2->id_p->v + sizeof(struct ipsecdoi_id_b);
+
+        nat_prefixlen = (iph2->ph1->remote->sa_family == AF_INET6)
+            ? sizeof(struct in6_addr) << 3 : sizeof(struct in_addr) << 3;
+
+        if (idpl_addr2sa(id_type, data, &ss) == 0 &&
+            rcs_cmpsa_wop((struct sockaddr*)&ss, iph2->ph1->remote) != 0)
+            nat_flag |= NAT_DETECTED_PEER;
+
+        if (iph2->id != NULL)
+        {
+            caddr_t src_data = iph2->id->v + sizeof(struct ipsecdoi_id_b);
+            int id_type_src = (((struct ipsecdoi_id_b*)iph2->id->v)->type);
+            if (idpl_addr2sa(id_type_src, src_data, &ss) == 0 &&
+                rcs_cmpsa_wop((struct sockaddr*)&ss, iph2->ph1->local) != 0)
+                nat_flag |= NAT_DETECTED_ME;
+        }
+
+        if (nat_flag != 0)
+        {
+           if (nat_flag & NAT_DETECTED_ME) {
+               sa_nat = rcs_sadup(iph2->ph1->local);
+               if (sa_nat == NULL)
+                   goto end;
+               set_port(sa_nat, 0);
+               idsrc_nat = ipsecdoi_sockaddr2id(sa_nat, nat_prefixlen,
+                                                IPSEC_ULPROTO_ANY);
+               rc_free(sa_nat);
+           } else
+               idsrc_nat = rc_vdup(idsrc);
+
+           if (nat_flag & NAT_DETECTED_PEER) {
+               sa_nat = rcs_sadup(iph2->ph1->remote);
+               if (sa_nat == NULL)
+                   goto end;
+               set_port(sa_nat, 0);
+               iddst_nat = ipsecdoi_sockaddr2id(sa_nat, nat_prefixlen,
+                                                IPSEC_ULPROTO_ANY);
+               rc_free(sa_nat);
+           } else
+               iddst_nat = rc_vdup(iddst);
+
+           if (idsrc_nat == NULL || iddst_nat == NULL) {
+               if (idsrc_nat != NULL)
+                   rc_vfree(idsrc_nat);
+               if (iddst_nat != NULL)
+                   rc_vfree(iddst_nat);
+               goto end;
+           }
+
+            iph2->selector = ike_conf_find_ikev1sel_by_id(idsrc_nat, iddst_nat);
+
+            rc_vfree(idsrc_nat);
+            rc_vfree(iddst_nat);
+
+            if (iph2->selector)
+                natt_addr_substitution(iph2, nat_flag);
+        }
+
+    }
+#endif
+	if (!iph2->selector) {
 		plog(PLOG_INTERR, PLOGLOC, 0,
 		     "can't find matching selector src=%s dst=%s\n",
 		     rcs_sa2str_wop(iph2->src),

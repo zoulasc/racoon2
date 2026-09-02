@@ -1005,11 +1005,6 @@ pk_sendupdate(struct ph2handle *iph2)
 		param.enckey = pr->keymat->v;
 		param.enckeylen = e_keylen;
 		param.authkey = pr->keymat->s + e_keylen;
-		param.authkeylen = a_keylen;
-		if (iph2->sadb_request.method->update_inbound(&param)) {
-			/* (*update_inbound)() logs error message */
-			return -1;
-		}
 
 #ifdef ENABLE_NATT
         if (iph2->ph1->natt_flags & NAT_DETECTED && iph2->natoa_p)
@@ -1027,6 +1022,13 @@ pk_sendupdate(struct ph2handle *iph2)
             param.sa_natoa_dst = sa;
         }
 #endif
+
+        param.authkeylen = a_keylen;
+        if (iph2->sadb_request.method->update_inbound(&param)) {
+            /* (*update_inbound)() logs error message */
+            return -1;
+        }
+
 #if 0
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "call pfkey_send_update\n");
 		if (pfkey_send_update
@@ -1199,6 +1201,8 @@ pk_sendadd(struct ph2handle *iph2)
 #endif
 	struct rcpfk_msg param;
 
+    memset(&param, 0, sizeof(param));
+
 	/* sanity check */
 	if (iph2->approval == NULL) {
 		plog(PLOG_INTERR, PLOGLOC, 0, "no approvaled SAs found.\n");
@@ -1293,10 +1297,6 @@ pk_sendadd(struct ph2handle *iph2)
 		param.enckeylen = e_keylen;
 		param.authkey = pr->keymat_p->s + e_keylen;
 		param.authkeylen = a_keylen;
-		if (iph2->sadb_request.method->add_outbound(&param)) {
-			/* (*update_outbound)() logs error message */
-			return -1;
-		}
 
 #ifdef ENABLE_NATT
         if (iph2->ph1->natt_flags & NAT_DETECTED && iph2->natoa)
@@ -1314,6 +1314,10 @@ pk_sendadd(struct ph2handle *iph2)
             param.sa_natoa_src = sa;
         }
 #endif
+		if (iph2->sadb_request.method->add_outbound(&param)) {
+			/* (*update_outbound)() logs error message */
+			return -1;
+		}
 #if 0
 		plog(PLOG_DEBUG, PLOGLOC, NULL, "call pfkey_send_add\n");
 		if (pfkey_send_add
