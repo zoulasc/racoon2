@@ -211,12 +211,7 @@ find_addrmacro(const char *buf)
 			continue;
 		if (memcmp(buf, rcs_addrmacro_list[i].macro, len) == 0)
 		    return &rcs_addrmacro_list[i];
-
 	}
-
-	plog(PLOG_DEBUG, PLOGLOC, 0,
-		"unknown addrmacro: %s\n", buf);
-
 	return NULL;
 }
 
