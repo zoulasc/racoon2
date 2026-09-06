@@ -1142,6 +1142,41 @@ ike_identifier_data(struct rc_idlist *id, int *id_type)
 	return data;
 }
 
+int ikev2_handle_ip_rw(rc_vchar_t *id_val, struct rc_idlist *id)
+{
+    rc_vchar_t *data, *p;
+    size_t data_size;
+
+    if (id_val == NULL || id == NULL)
+        return -1;
+
+    p = id->id;
+
+    data_size = id_val->l;
+
+    data = rc_vmalloc(sizeof(rc_vchar_t));
+
+    if (!data)
+        return -1;
+
+    data->s = rc_malloc(data_size);
+
+    if (!data->s)
+    {
+        rc_vfree(data);
+        return -1;
+    }
+
+    memcpy(data->s, id_val->s, data_size);
+    data->l = data_size;
+
+    *p = *data;
+
+    rc_vfree(data);
+
+    return 0;
+}
+
 /*
  * compare id (type id_type, value id_val) with idlist entry id
  * returns 0 if equal, non-0 otherwise
@@ -1158,8 +1193,24 @@ int
 ike_compare_id(rc_type rc_id_type, rc_vchar_t *id_val, struct rc_idlist *id)
 {
 	rc_vchar_t *data;
+    char* is_ip_rw;
 	int cmp;
 	int dummy;
+
+    is_ip_rw = (char*)rc_vmem2str(id->id);
+
+    if (is_ip_rw)
+    {
+        if (strncmp(is_ip_rw, "IP_RW", strlen(is_ip_rw)) == 0)
+        {
+            if (ikev2_handle_ip_rw(id_val, id) != 0)
+            {
+                plog(PLOG_INTERR, PLOGLOC, NULL,
+                     "could not handle IP_RW macro\n");
+                return -1;
+            }
+        }
+    }
 
 	if (rc_id_type != id->idtype)
 		return -1;
