@@ -558,9 +558,35 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 					   child_sa, AF_INET6,
 					   ike_sa->rmconf);
 	if (!sel4 && !sel6) {
-		/* additional_ts_possible? */
-		/* single_pair_required? */
-		goto ts_unacceptable;
+#ifdef ENABLE_NATT
+
+        /*if (ike_ipsec_mode(ike_sa->rmconf->s->pl) != RCT_IPSM_TRANSPORT)
+        {
+            plog(PLOG_INTERR, PLOGLOC, NULL,
+                 "Transport mode should be used for address substitution\n");
+            goto ts_unacceptable;
+        }*/
+
+        if (ikev2_addr_substitute(ike_sa, proposed_ts_i, proposed_ts_r) != 0)
+        {
+            plog(PLOG_INTERR, PLOGLOC, NULL,
+                 "Could not perform address substitution\n");
+            goto ts_unacceptable;
+        }
+
+        sel4 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+                                            child_sa, AF_INET,
+                                            ike_sa->rmconf);
+        sel6 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+                                            child_sa, AF_INET6,
+                                            ike_sa->rmconf);
+
+        if (!sel4 && !sel6)
+            goto ts_unacceptable;
+
+#else
+        goto ts_unacceptable;
+#endif
 	}
 	if (sel4)
 		child_sa->selector = sel4;
