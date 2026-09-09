@@ -263,7 +263,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 			policy = selector->pl;
 		if (rvrs_selector)
 			rvrs_selector->next = 0;
-		if (selector->next && rvrs_selector) {
+		if (selector && selector->next && rvrs_selector) {
 			if (rcf_get_rvrs_selector(selector->next, &(rvrs_selector->next))<0) {
 				isakmp_log(0, 0, 0, 0,
 					   PLOG_INTERR, PLOGLOC,
@@ -394,7 +394,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 					   "failed to send delete policy request to spmd\n");
 			}
 		}
-		if (rvrs_selector->next)
+		if (rvrs_selector && rvrs_selector->next)
 			rcf_free_selector(rvrs_selector->next);
 		if (rvrs_selector)
 			rcf_free_selector(rvrs_selector);
@@ -419,7 +419,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 		rc_vfree(sa->ts_i);
 	if (sa->ts_r)
 		rc_vfree(sa->ts_r);
-	if (sa->selector->next)
+	if (sa->selector && sa->selector->next)
 		rcf_free_selector(sa->selector->next);
 	if (sa->selector)
 		rcf_free_selector(sa->selector);
