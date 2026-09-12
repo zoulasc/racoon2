@@ -263,7 +263,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 			policy = selector->pl;
 		if (rvrs_selector)
 			rvrs_selector->next = 0;
-		if (selector->next && rvrs_selector) {
+		if (selector && selector->next && rvrs_selector) {
 			if (rcf_get_rvrs_selector(selector->next, &(rvrs_selector->next))<0) {
 				isakmp_log(0, 0, 0, 0,
 					   PLOG_INTERR, PLOGLOC,
@@ -394,7 +394,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 					   "failed to send delete policy request to spmd\n");
 			}
 		}
-		if (rvrs_selector->next)
+		if (rvrs_selector && rvrs_selector->next)
 			rcf_free_selector(rvrs_selector->next);
 		if (rvrs_selector)
 			rcf_free_selector(rvrs_selector);
@@ -419,7 +419,7 @@ ikev2_destroy_child_sa(struct ikev2_child_sa *sa)
 		rc_vfree(sa->ts_i);
 	if (sa->ts_r)
 		rc_vfree(sa->ts_r);
-	if (sa->selector->next)
+	if (sa->selector && sa->selector->next)
 		rcf_free_selector(sa->selector->next);
 	if (sa->selector)
 		rcf_free_selector(sa->selector);
@@ -558,9 +558,27 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 					   child_sa, AF_INET6,
 					   ike_sa->rmconf);
 	if (!sel4 && !sel6) {
-		/* additional_ts_possible? */
-		/* single_pair_required? */
-		goto ts_unacceptable;
+#ifdef ENABLE_NATT
+        if (ikev2_addr_substitute(child_sa, proposed_ts_i, proposed_ts_r) != 0)
+        {
+            plog(PLOG_INTERR, PLOGLOC, NULL,
+                 "Could not perform address substitution on responder's side\n");
+            goto ts_unacceptable;
+        }
+
+        sel4 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+                                            child_sa, AF_INET,
+                                            ike_sa->rmconf);
+        sel6 = ike_conf_find_ikev2sel_by_ts(proposed_ts_i, proposed_ts_r,
+                                            child_sa, AF_INET6,
+                                            ike_sa->rmconf);
+
+        if (!sel4 && !sel6)
+            goto ts_unacceptable;
+
+#else
+        goto ts_unacceptable;
+#endif
 	}
 	if (sel4)
 		child_sa->selector = sel4;
@@ -1566,6 +1584,16 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 		err = -1;
 		goto abort;
 	}
+
+#ifdef ENABLE_NATT
+    if (ikev2_addr_substitute(child_sa, ts_i, ts_r) != 0)
+    {
+        plog(PLOG_INFO, PLOGLOC, NULL,
+             "Could not perform address substitution on initiator's side\n");
+        err = -1;
+        goto abort;
+    }
+#endif
 
 	/* confirm TSi and TSr do not contradict with my proposal */
 	switch (ikev2_confirm_ts(ts_i, ts_r, child_sa->selector)) {

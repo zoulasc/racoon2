@@ -1172,8 +1172,6 @@ int ikev2_handle_ip_rw(rc_vchar_t *id_val, struct rc_idlist *id)
 
     *p = *data;
 
-    rc_vfree(data);
-
     return 0;
 }
 
@@ -2232,10 +2230,165 @@ free_selectorlist(struct rcf_selector *s)
 
 	for (; s; s = s_next) {
 		s_next = s->next;
+        s->next = 0;
 		rcf_free_selector(s);
-		s->next = 0;
 	}
 }
+
+#ifdef ENABLE_NATT
+
+static int ikev2_retreive_ts_addr(struct ikev2_traffic_selector* ts,
+                           struct sockaddr **saddr, struct sockaddr **eaddr)
+{
+    struct sockaddr_storage ss, es;
+    int ts_type;
+    size_t addrlen;
+
+    if (ts == NULL)
+    {
+        plog(PLOG_INTERR, PLOGLOC, NULL,
+             "Traffic Selector payload must not be null\n");
+        return -1;
+    }
+
+    memset(&ss, 0, sizeof(struct sockaddr_storage));
+    memset(&es, 0, sizeof(struct sockaddr_storage));
+
+    ts_type = ts->ts_type;
+
+    switch(ts_type)
+    {
+        case IKEV2_TS_IPV4_ADDR_RANGE:
+        {
+            addrlen = sizeof(struct in_addr);
+            uint8_t *addr = (uint8_t*)(ts + 1);
+            ((struct sockaddr_in*)&ss)->sin_family = AF_INET;
+            ((struct sockaddr_in*)&es)->sin_family = AF_INET;
+            memcpy(&((struct sockaddr_in*)&ss)->sin_addr, addr, sizeof(struct in_addr));
+            memcpy(&((struct sockaddr_in*)&es)->sin_addr, addr + addrlen, sizeof(struct in_addr));
+            break; 
+        }
+        case IKEV2_TS_IPV6_ADDR_RANGE:
+        {
+            addrlen = sizeof(struct in6_addr);
+            uint8_t *addr = (uint8_t*)(ts + 1);
+            ((struct sockaddr_in6*)&ss)->sin6_family = AF_INET6;
+            ((struct sockaddr_in6*)&es)->sin6_family = AF_INET6;
+            memcpy(&((struct sockaddr_in6*)&ss)->sin6_addr, addr, sizeof(struct in6_addr));
+            memcpy(&((struct sockaddr_in6*)&es)->sin6_addr, addr + addrlen, sizeof(struct in6_addr));
+            break;
+        }
+        default:
+            return -1;
+    }
+
+    *saddr = rcs_sadup((struct sockaddr*)&ss);
+    *eaddr = rcs_sadup((struct sockaddr*)&es);
+
+    if (*saddr == NULL || *eaddr == NULL)
+        return -1;
+
+    return 0;
+}
+
+static 
+int ts_substitute(struct ikev2_traffic_selector *ts, struct sockaddr *sub)
+{
+    struct sockaddr *curr_saddr, *curr_eaddr;
+    uint8_t *addr, *saddr;
+    size_t addrlen;
+    int ts_type;
+
+    if (ts == NULL)
+        return -1;
+
+    if (ikev2_retreive_ts_addr(ts, &curr_saddr, &curr_eaddr) != 0)
+    {
+        plog(PLOG_INTERR, PLOGLOC, NULL,
+             "Could not retreive current addresses from TS payload\n");
+        return -1;
+    }
+
+    if (rcs_cmpsa_wop(curr_saddr, sub) == 0)
+        return 0;                       
+
+    if (rcs_cmpsa_wop(curr_saddr, curr_eaddr) != 0)
+    {
+        plog(PLOG_INTWARN, PLOGLOC, NULL,
+             "IP addresses are range, skipping address substitution\n");
+        return -1;
+    }
+
+    ts_type = ts->ts_type;
+
+    switch(ts_type)
+    {
+        case IKEV2_TS_IPV4_ADDR_RANGE:
+            {
+                addrlen = sizeof(struct in_addr);
+                addr = (uint8_t*)&((struct sockaddr_in*)sub)->sin_addr;
+                break;
+            }
+        case IKEV2_TS_IPV6_ADDR_RANGE:
+            {
+                addrlen = sizeof(struct in6_addr);
+                addr = (uint8_t*)&((struct sockaddr_in6*)sub)->sin6_addr;
+                break;
+            }
+        default: return -1;
+    }
+
+    saddr = (uint8_t*)(ts + 1);
+    memcpy(saddr, addr, addrlen);
+    memcpy(saddr + addrlen, addr, addrlen);
+
+    return 0;
+}
+
+int ikev2_addr_substitute(struct ikev2_child_sa *child_sa, 
+                          struct ikev2_payload_header *ts_i_pl,
+                          struct ikev2_payload_header *ts_r_pl)
+{
+    struct ikev2payl_traffic_selector *ts_i_payl, *ts_r_payl;
+    struct ikev2_traffic_selector *ts_i, *ts_r;
+    struct sockaddr *sub_i, *sub_r;
+    struct ikev2_sa* ike_sa = child_sa->parent;
+    int err = -1;
+
+    if (child_sa == NULL || ts_i_pl == NULL || ts_r_pl == NULL)
+        return err;
+
+    if (ike_sa->behind_nat == 0 && ike_sa->peer_behind_nat == 0)
+        return 0;
+    
+    if (ike_sa->is_initiator) 
+    {                                                                                                                                                              
+        if (child_sa->selector == NULL || ike_ipsec_mode(child_sa->selector->pl) != RCT_IPSM_TRANSPORT)                                                                                                                    
+            return 0;                                                                                                                                                                        
+    }else 
+    {                                                                                                                                                                                 
+        if (!child_sa->child_param.use_transport_mode)                                                                                                                                       
+            return 0;                                                                                                                                                                        
+    }
+
+    ts_i_payl = (struct ikev2payl_traffic_selector*)ts_i_pl;
+    ts_r_payl = (struct ikev2payl_traffic_selector*)ts_r_pl;
+
+    ts_i = (struct ikev2_traffic_selector*)(ts_i_payl + 1);
+    ts_r = (struct ikev2_traffic_selector*)(ts_r_payl + 1);
+
+    sub_i = ike_sa->is_initiator ? ike_sa->local : ike_sa->remote;
+    sub_r = ike_sa->is_initiator ? ike_sa->remote : ike_sa->local; 
+
+    err = ts_substitute(ts_i, sub_i);
+
+    if (err == 0)
+        err = ts_substitute(ts_r, sub_r);
+
+    return err;
+}
+
+#endif
 
 struct rcf_selector *
 ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *ts_remoteside,

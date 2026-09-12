@@ -254,6 +254,11 @@ struct rcf_remote *ikev1_conf_find_by_id(rc_vchar_t *);
 struct rcf_remote *ikev2_conf_find_by_id(struct ikev2_payload_header *);
 void ike_conf_release(struct rcf_remote *);
 /* rc_vchar_t * ikev2_conf_sa(struct ikev2_sa *, struct rcf_remote *); */
+#ifdef ENABLE_NATT
+int ikev2_addr_substitute(struct ikev2_child_sa *,
+                          struct ikev2_payload_header *,
+                          struct ikev2_payload_header *);
+#endif
 struct rcf_selector *ike_conf_find_ikev2sel_by_ts(struct ikev2_payload_header *,
 						  struct ikev2_payload_header *,
 						  struct ikev2_child_sa *, sa_family_t,

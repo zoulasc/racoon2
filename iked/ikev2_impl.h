@@ -143,6 +143,11 @@ struct ikev2_sa {
 	struct sockaddr *remote;
 	struct sockaddr *local;
 
+#ifdef ENABLE_NATT
+    struct sockaddr *oa_i; /* These addresses can be used for checksum fixup */
+    struct sockaddr *oa_r; /* if NAT address substitution has been performed (RFC 7296 2.23.1) */
+#endif
+
 	struct rcf_remote *rmconf;
 
 	uint32_t send_message_id;	/* for sending request */
