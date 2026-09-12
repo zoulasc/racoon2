@@ -559,18 +559,10 @@ ikev2_create_child_responder(struct ikev2_sa *ike_sa,
 					   ike_sa->rmconf);
 	if (!sel4 && !sel6) {
 #ifdef ENABLE_NATT
-
-        /*if (ike_ipsec_mode(ike_sa->rmconf->s->pl) != RCT_IPSM_TRANSPORT)
+        if (ikev2_addr_substitute(child_sa, proposed_ts_i, proposed_ts_r) != 0)
         {
             plog(PLOG_INTERR, PLOGLOC, NULL,
-                 "Transport mode should be used for address substitution\n");
-            goto ts_unacceptable;
-        }*/
-
-        if (ikev2_addr_substitute(ike_sa, proposed_ts_i, proposed_ts_r) != 0)
-        {
-            plog(PLOG_INTERR, PLOGLOC, NULL,
-                 "Could not perform address substitution\n");
+                 "Could not perform address substitution on responder's side\n");
             goto ts_unacceptable;
         }
 
@@ -1592,6 +1584,16 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
 		err = -1;
 		goto abort;
 	}
+
+#ifdef ENABLE_NATT
+    if (ikev2_addr_substitute(child_sa, ts_i, ts_r) != 0)
+    {
+        plog(PLOG_INFO, PLOGLOC, NULL,
+             "Could not perform address substitution on initiator's side\n");
+        err = -1;
+        goto abort;
+    }
+#endif
 
 	/* confirm TSi and TSr do not contradict with my proposal */
 	switch (ikev2_confirm_ts(ts_i, ts_r, child_sa->selector)) {
