@@ -2237,99 +2237,7 @@ free_selectorlist(struct rcf_selector *s)
 
 #ifdef ENABLE_NATT
 
-int ikev2_natt_check_addrs(struct ikev2_sa *ike_sa,
-                      struct sockaddr *ts_i_saddr,
-                      struct sockaddr *ts_r_saddr,
-                      int *flags)
-{
-    struct sockaddr *local, *remote;
-    int retval = -1;
-
-    if (ike_sa == NULL || ts_i_saddr == NULL || ts_r_saddr == NULL)
-        return retval;
-
-    local = ike_sa->local;
-    remote = ike_sa->remote;
- 
-    if (rcs_cmpsa_wop(remote, ts_i_saddr) != 0)
-        *flags |= NAT_DETECTED_PEER;
-    if (rcs_cmpsa_wop(local, ts_r_saddr) != 0)
-        *flags |= NAT_DETECTED_ME;
-
-    retval = 0;
-
-    return retval;
-}
-
-void switch_ts_pl_addr(struct ikev2_sa *ike_sa,
-                       struct ikev2_traffic_selector *ts, int flag)
-{
-    uint8_t *saddr, *eaddr;
-    size_t addrlen;
-    int ts_type;
-
-    if (ike_sa == NULL || ts == NULL)
-        return;
-
-    saddr = (uint8_t*)(ts + 1);
-    ts_type = ts->ts_type;
-
-    if (flag & NAT_DETECTED_ME)
-    {
-        switch(ts_type)
-        {
-            case IKEV2_TS_IPV4_ADDR_RANGE:
-                {
-                    addrlen = sizeof(struct in_addr);
-                    eaddr = (uint8_t*)(saddr + addrlen);
-                    struct sockaddr_in *sin = (struct sockaddr_in*)ike_sa->local;
-                    memcpy(&((struct sockaddr_in*)saddr)->sin_addr, &sin->sin_addr, sizeof(struct in_addr));
-                    memcpy(eaddr, &sin->sin_addr, sizeof(struct in_addr));
-                    break;
-                }
-            case IKEV2_TS_IPV6_ADDR_RANGE:
-                {
-                    addrlen = sizeof(struct in6_addr);
-                    eaddr = (uint8_t*)(saddr + addrlen);
-                    struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)ike_sa->local;
-                    memcpy(&((struct sockaddr_in6*)saddr)->sin6_addr, &sin6->sin6_addr, sizeof(struct in6_addr));
-                    memcpy(eaddr, &sin6->sin6_addr, sizeof(struct in6_addr));
-                    break;
-                }
-            default: return;
-        }
-    }
-
-    if (flag & NAT_DETECTED_PEER)
-    {
-        switch(ts_type)
-        {
-            case IKEV2_TS_IPV4_ADDR_RANGE:
-            {
-                    addrlen = sizeof(struct in_addr);
-                    eaddr = (uint8_t*)(saddr + addrlen);
-                    struct sockaddr_in *sin = (struct sockaddr_in*)ike_sa->remote;
-                    memcpy(&((struct sockaddr_in*)saddr)->sin_addr, &sin->sin_addr, sizeof(struct in_addr));
-                    memcpy(eaddr, &sin->sin_addr, sizeof(struct in_addr));
-                    break;
-            }
-            case IKEV2_TS_IPV6_ADDR_RANGE:
-            {
-                    addrlen = sizeof(struct in6_addr);
-                    eaddr = (uint8_t*)(saddr + addrlen);
-                    struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)ike_sa->remote;
-                    memcpy(&((struct sockaddr_in6*)saddr)->sin6_addr, &sin6->sin6_addr, sizeof(struct in6_addr));
-                    memcpy(eaddr, &sin6->sin6_addr, sizeof(struct in_addr));
-                    break;
-            }
-            default: return;
-        }
-
-    }
-    return;
-}
-
-int ikev2_retreive_ts_addr(struct ikev2_traffic_selector* ts,
+static int ikev2_retreive_ts_addr(struct ikev2_traffic_selector* ts,
                            struct sockaddr **saddr, struct sockaddr **eaddr)
 {
     struct sockaddr_storage ss, es;
@@ -2383,18 +2291,85 @@ int ikev2_retreive_ts_addr(struct ikev2_traffic_selector* ts,
     return 0;
 }
 
-int ikev2_addr_substitute(struct ikev2_sa *ike_sa, 
+static 
+int ts_substitute(struct ikev2_traffic_selector *ts, struct sockaddr *sub)
+{
+    struct sockaddr *curr_saddr, *curr_eaddr;
+    uint8_t *addr, *saddr;
+    size_t addrlen;
+    int ts_type;
+
+    if (ts == NULL)
+        return -1;
+
+    if (ikev2_retreive_ts_addr(ts, &curr_saddr, &curr_eaddr) != 0)
+    {
+        plog(PLOG_INTERR, PLOGLOC, NULL,
+             "Could not retreive current addresses from TS payload\n");
+        return -1;
+    }
+
+    if (rcs_cmpsa_wop(curr_saddr, sub) == 0)
+        return 0;                       
+
+    if (rcs_cmpsa_wop(curr_saddr, curr_eaddr) != 0)
+    {
+        plog(PLOG_INTWARN, PLOGLOC, NULL,
+             "IP addresses are range, skipping address substitution\n");
+        return -1;
+    }
+
+    ts_type = ts->ts_type;
+
+    switch(ts_type)
+    {
+        case IKEV2_TS_IPV4_ADDR_RANGE:
+            {
+                addrlen = sizeof(struct in_addr);
+                addr = (uint8_t*)&((struct sockaddr_in*)sub)->sin_addr;
+                break;
+            }
+        case IKEV2_TS_IPV6_ADDR_RANGE:
+            {
+                addrlen = sizeof(struct in6_addr);
+                addr = (uint8_t*)&((struct sockaddr_in6*)sub)->sin6_addr;
+                break;
+            }
+        default: return -1;
+    }
+
+    saddr = (uint8_t*)(ts + 1);
+    memcpy(saddr, addr, addrlen);
+    memcpy(saddr + addrlen, addr, addrlen);
+
+    return 0;
+}
+
+int ikev2_addr_substitute(struct ikev2_child_sa *child_sa, 
                           struct ikev2_payload_header *ts_i_pl,
                           struct ikev2_payload_header *ts_r_pl)
 {
     struct ikev2payl_traffic_selector *ts_i_payl, *ts_r_payl;
     struct ikev2_traffic_selector *ts_i, *ts_r;
-    struct sockaddr* ts_i_saddr = NULL, *ts_i_eaddr = NULL;
-    struct sockaddr* ts_r_saddr = NULL, *ts_r_eaddr = NULL;
-    int flags = 0, retval = -1;
+    struct sockaddr *sub_i, *sub_r;
+    struct ikev2_sa* ike_sa = child_sa->parent;
+    int err = -1;
 
-    if (ike_sa == NULL || ts_i_pl == NULL || ts_r_pl == NULL)
-        return retval;
+    if (child_sa == NULL || ts_i_pl == NULL || ts_r_pl == NULL)
+        return err;
+
+    if (ike_sa->behind_nat == 0 && ike_sa->peer_behind_nat == 0)
+        return 0;
+    
+    if (ike_sa->is_initiator) 
+    {                                                                                                                                                              
+        if (child_sa->selector == NULL || ike_ipsec_mode(child_sa->selector->pl) != RCT_IPSM_TRANSPORT)                                                                                                                    
+            return 0;                                                                                                                                                                        
+    }else 
+    {                                                                                                                                                                                 
+        if (!child_sa->child_param.use_transport_mode)                                                                                                                                       
+            return 0;                                                                                                                                                                        
+    }
 
     ts_i_payl = (struct ikev2payl_traffic_selector*)ts_i_pl;
     ts_r_payl = (struct ikev2payl_traffic_selector*)ts_r_pl;
@@ -2402,55 +2377,17 @@ int ikev2_addr_substitute(struct ikev2_sa *ike_sa,
     ts_i = (struct ikev2_traffic_selector*)(ts_i_payl + 1);
     ts_r = (struct ikev2_traffic_selector*)(ts_r_payl + 1);
 
-    if (ikev2_retreive_ts_addr(ts_i, &ts_i_saddr, &ts_i_eaddr) != 0 ||
-        ikev2_retreive_ts_addr(ts_r, &ts_r_saddr, &ts_r_eaddr) != 0)
-    {
-        plog(PLOG_INTERR, PLOGLOC, NULL,
-             "Could not retreive ts addresses\n");
-        return retval;
-    }
+    sub_i = ike_sa->is_initiator ? ike_sa->local : ike_sa->remote;
+    sub_r = ike_sa->is_initiator ? ike_sa->remote : ike_sa->local; 
 
-    plog(PLOG_INFO, PLOGLOC, NULL,
-         "ts_i_saddr:%s, ts_i_eaddr:%s\n",
-         rcs_sa2str(ts_i_saddr),
-         rcs_sa2str(ts_i_eaddr));
+    err = ts_substitute(ts_i, sub_i);
 
-    plog(PLOG_INFO, PLOGLOC, NULL,
-         "ts_r_saddr:%s, ts_r_eaddr:%s\n",
-         rcs_sa2str(ts_r_saddr),
-         rcs_sa2str(ts_r_eaddr));
+    if (err == 0)
+        err = ts_substitute(ts_r, sub_r);
 
-    if (ikev2_natt_check_addrs(ike_sa, ts_i_saddr, ts_r_saddr, &flags) != 0)
-    {
-        plog(PLOG_INTERR, PLOGLOC, NULL,
-             "Could not find appropriate addresses\n");
-        goto out;
-    }
-
-    if (flags & NAT_DETECTED_ME)
-    {
-        ike_sa->oa_i = ts_i_saddr;
-
-        switch_ts_pl_addr(ike_sa, ts_r, NAT_DETECTED_ME);
-    }
-
-    if (flags & NAT_DETECTED_PEER)
-    {
-        ike_sa->oa_r = ts_r_saddr;
-
-        switch_ts_pl_addr(ike_sa, ts_i, NAT_DETECTED_PEER);
-    }
-
-    retval = 0;
-
-out:
-    //free(ts_i_saddr);
-    //free(ts_i_eaddr);
-    //free(ts_r_saddr);
-    //free(ts_r_eaddr);
-
-    return retval;
+    return err;
 }
+
 #endif
 
 struct rcf_selector *
