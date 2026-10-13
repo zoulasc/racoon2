@@ -90,7 +90,7 @@ ikev2_frag_send(struct ikev2_sa *ike_sa, rc_vchar_t **packet)
 	uint8_t *enc_start;		/* points to SK payload header */
 	uint8_t *iv_ptr;
 	uint8_t *ciphertext;
-	size_t iv_len, icv_len, block_len;
+	size_t iv_len, icv_len;
 	size_t ciphertext_len;
 	size_t decrypted_len;
 	rc_vchar_t *decrypted = NULL;
@@ -114,7 +114,6 @@ ikev2_frag_send(struct ikev2_sa *ike_sa, rc_vchar_t **packet)
 		return -1;
 	}
 
-	block_len = encryptor_block_length(ike_sa->encryptor);
 	iv_len = encryptor_iv_length(ike_sa->encryptor);
 	icv_len = auth_output_length(ike_sa->authenticator);
 
