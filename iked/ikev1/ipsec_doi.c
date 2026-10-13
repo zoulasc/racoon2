@@ -591,6 +591,12 @@ t2isakmpsa(struct isakmp_pl_t *trns, struct isakmpsa *sa)
 				len = get_uint16(&d->lorv);
 				p = (unsigned char *)(d + 1);
 			}
+			if (sizeof(*d) + len > tlen) {
+				plog(PLOG_PROTOERR, PLOGLOC, NULL,
+					"attr len %d overflows packet\n",
+					len);
+				goto err;
+			}
 			val = rc_vmalloc(len);
 			if (!val)
 				return -1;
