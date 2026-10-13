@@ -176,8 +176,8 @@ recvfromto(int s, void *buf, size_t buflen, int flags,
 	unsigned char cmsgbuf[256];
 #if defined(INET6) && defined(ADVAPI)
 	struct in6_pktinfo *pi;
-#endif	 /*ADVAPI*/
 	struct sockaddr_in6 *sin6;
+#endif	 /*ADVAPI*/
 
 	sslen = sizeof(ss);
 	if (getsockname(s, (struct sockaddr *)&ss, &sslen) < 0) {
