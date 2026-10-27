@@ -2271,7 +2271,15 @@ static int ikev2_retreive_ts_addr(struct ikev2_traffic_selector* ts,
     *eaddr = rcs_sadup((struct sockaddr*)&es);
 
     if (*saddr == NULL || *eaddr == NULL)
+    {
+        if (*saddr != NULL)
+            rc_free(*saddr);
+        if (*eaddr != NULL)
+            rc_free(*eaddr);
+        *saddr = NULL;
+        *eaddr = NULL;
         return -1;
+    }
 
     return 0;
 }
@@ -2295,12 +2303,18 @@ int ikev2_ts_substitute(struct ikev2_traffic_selector *ts, struct sockaddr *sub)
     }
 
     if (rcs_cmpsa_wop(curr_saddr, sub) == 0)
-        return 0;                       
+    {
+        rc_free(curr_saddr);
+        rc_free(curr_eaddr);
+        return 0;
+    }
 
     if (rcs_cmpsa_wop(curr_saddr, curr_eaddr) != 0)
     {
         plog(PLOG_INTWARN, PLOGLOC, NULL,
              "IP addresses are range, skipping address substitution\n");
+        rc_free(curr_saddr);
+        rc_free(curr_eaddr);
         return -1;
     }
 
@@ -2320,13 +2334,18 @@ int ikev2_ts_substitute(struct ikev2_traffic_selector *ts, struct sockaddr *sub)
                 addr = (uint8_t*)&((struct sockaddr_in6*)sub)->sin6_addr;
                 break;
             }
-        default: return -1;
+        default:
+            rc_free(curr_saddr);
+            rc_free(curr_eaddr);
+            return -1;
     }
 
     saddr = (uint8_t*)(ts + 1);
     memcpy(saddr, addr, addrlen);
     memcpy(saddr + addrlen, addr, addrlen);
 
+    rc_free(curr_saddr);
+    rc_free(curr_eaddr);
     return 0;
 }
 
@@ -2337,11 +2356,13 @@ int ikev2_addr_substitute(struct ikev2_child_sa *child_sa,
     struct ikev2payl_traffic_selector *ts_i_payl, *ts_r_payl;
     struct ikev2_traffic_selector *ts_i, *ts_r;
     struct sockaddr *sub_i, *sub_r;
-    struct ikev2_sa* ike_sa = child_sa->parent;
+    struct ikev2_sa* ike_sa;
     int err = -1;
 
     if (child_sa == NULL || ts_i_pl == NULL || ts_r_pl == NULL)
         return err;
+
+    ike_sa = child_sa->parent;
 
     if (ike_sa->behind_nat == 0 && ike_sa->peer_behind_nat == 0)
         return 0;
