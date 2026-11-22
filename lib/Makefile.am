@@ -24,9 +24,9 @@ TESTS = test_rcnet
 check_PROGRAMS = sample test_rcnet
 sample_SOURCES = sample.c
 sample_LDADD = libracoon.la
-test_rcnet_SOURCES = test_rcnet.c
+test_rcnet_SOURCES = ../tests/library/test_rcnet.c
 test_rcnet_LDADD = libracoon.la
 
-EXTRA_DIST = test_rcnet.conf
+EXTRA_DIST = ../tests/library/test_rcnet.conf
 
 BUILT_SOURCES = cfparse.h
