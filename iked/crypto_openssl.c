@@ -1492,12 +1492,16 @@ eay_des_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	if (data->l % 8)
 		return NULL;
 
+	/* DES parity bits are ignored by the algorithm itself; the key
+	 * material comes from the negotiation and may have arbitrary parity,
+	 * so the unchecked schedule must be used (DES_key_sched() would
+	 * reject such keys).  Weak keys are reported by eay_des_weakkey(). */
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->v, &ks) != 0)
+	DES_set_key_unchecked((void *)key->v, &ks);
 #else
 	if (des_key_sched((void *)key->v, ks) != 0)
-#endif
 		return NULL;
+#endif
 
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL)
@@ -1525,12 +1529,14 @@ eay_des_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	des_key_schedule ks;
 #endif
 
+	/* see eay_des_encrypt(): the parity of negotiated key material is
+	 * arbitrary, so use the unchecked schedule */
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->v, &ks) != 0)
+	DES_set_key_unchecked((void *)key->v, &ks);
 #else
 	if (des_key_sched((void *)key->v, ks) != 0)
-#endif
 		return NULL;
+#endif
 
 	/* allocate buffer for result */
 	if ((res = rc_vmalloc(data->l)) == NULL)
@@ -1760,13 +1766,12 @@ eay_3des_encrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	if (key->l < 24)
 		return NULL;
 
+	/* parity of negotiated key material is arbitrary: use the unchecked
+	 * schedule, weak keys are reported by eay_3des_weakkey() */
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->u, &ks1) != 0)
-		return NULL;
-	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
-		return NULL;
-	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
-		return NULL;
+	DES_set_key_unchecked((void *)key->u, &ks1);
+	DES_set_key_unchecked((void *)(key->u + 8), &ks2);
+	DES_set_key_unchecked((void *)(key->u + 16), &ks3);
 #else
 	if (des_key_sched((void *)key->u, ks1) != 0)
 		return NULL;
@@ -1805,13 +1810,12 @@ eay_3des_decrypt(rc_vchar_t *data, rc_vchar_t *key, rc_vchar_t *iv)
 	if (key->l < 24)
 		return NULL;
 
+	/* see eay_3des_encrypt(): use the unchecked schedule for negotiated
+	 * key material with arbitrary parity */
 #ifdef USE_NEW_DES_API
-	if (DES_key_sched((void *)key->u, &ks1) != 0)
-		return NULL;
-	if (DES_key_sched((void *)(key->u + 8), &ks2) != 0)
-		return NULL;
-	if (DES_key_sched((void *)(key->u + 16), &ks3) != 0)
-		return NULL;
+	DES_set_key_unchecked((void *)key->u, &ks1);
+	DES_set_key_unchecked((void *)(key->u + 8), &ks2);
+	DES_set_key_unchecked((void *)(key->u + 16), &ks3);
 #else
 	if (des_key_sched((void *)key->u, ks1) != 0)
 		return NULL;
