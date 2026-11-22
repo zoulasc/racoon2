@@ -701,10 +701,7 @@ isakmp_frag_detach(struct isakmp_frag_item *head,
 	return head;
 }
 
-/*
- * Receive a single IKEv1 fragment.
- */
-static rc_vchar_t *
+rc_vchar_t *
 isakmp_frag_recv(struct ph1handle *iph1, rc_vchar_t *packet)
 {
 	struct isakmp *ih;
