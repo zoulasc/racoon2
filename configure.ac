@@ -15,9 +15,29 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_MAKE_SET
 RC_IF_INSTALL_OPTS
+builddirs="lib spmd"
 
-AC_CONFIG_SUBDIRS([lib spmd iked kinkd])
+AC_MSG_CHECKING(if --enable-kinkd option is specified)
+AC_ARG_ENABLE(kinkd,
+    [ --enable-kinkd           enable kinkd[yes]],
+    AC_MSG_RESULT($enable_kinkd), 
+    AC_MSG_RESULT(default to yes)
+    enable_kinkd=yes
+    ac_configure_args="$ac_configure_args --enable-kinkd")
 
+if test "x$enable_kinkd" = xyes; then 
+   builddirs="$builddirs kinkd"
+fi
+AC_MSG_CHECKING(if --enable-iked option is specified)
+AC_ARG_ENABLE(iked, [  --enable-iked           build iked [yes]],
+       , [enable_iked=yes])
+AC_MSG_RESULT($enable_iked)
+if test x"$enable_iked" = xyes; then
+       builddirs="$builddirs iked"
+fi
+
+
+AC_CONFIG_SUBDIRS([$builddirs])
 dnl Set the debug option by default for now.
 AC_MSG_CHECKING(if --enable-debug option is specified)
 AC_ARG_ENABLE(debug,
