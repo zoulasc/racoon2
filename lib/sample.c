@@ -45,6 +45,18 @@
 void al2str(struct rc_addrlist *);
 void macrotest(char *);
 
+
+static int
+cmp_peers_id(rc_type id_type, rc_vchar_t *id_val, struct rc_idlist *id)
+{
+	if (id == NULL || id->id == NULL || id_val == NULL)
+		return -1;
+	if (id->idtype != id_type)
+		return -1;
+
+	return rc_vmemcmp(id->id, id_val);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -133,7 +145,8 @@ main(int argc, char **argv)
 	id_val.l = strlen(v);
 	id_val.v = v;
 
-	if (rcf_get_remotebypeersid(id_type, &id_val, RCT_KMP_IKEV2, &rm))
+	if (rcf_get_remotebypeersid(id_type, &id_val, RCT_KMP_IKEV2,
+				    cmp_peers_id, &rm))
 		plog(PLOG_INFO, PLOGLOC, NULL, "no remote [%s] found\n", v);
 	else
 		plog(PLOG_INFO, PLOGLOC, NULL, "remote [%s] found\n", v);

@@ -463,17 +463,13 @@ ikev2_frag_recv(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 	if (item) {
 		/* Existing assembly context found */
 
-		/* Check for duplicate / retransmission */
-		if (frag_no <= item->total_fragments &&
-		    item->parts[frag_no] != NULL) {
-			TRACE((PLOGLOC,
-			       "ikev2_frag_recv: duplicate frag "
-			       "%u/%u msgid=%u\n",
-			       frag_no, total_frags, msgid));
-			return NULL;
-		}
-
-		/* PMTU probe: larger total_frags means smaller fragments */
+		/*
+		 * PMTU probe: larger total_frags means smaller fragments.
+		 * This must be checked before the duplicate test below,
+		 * otherwise fragment 1 of the new set is rejected as a
+		 * retransmission of the stale assembly and the reassembly
+		 * is never restarted.
+		 */
 		if (total_frags > item->total_fragments) {
 			int i;
 			TRACE((PLOGLOC,
@@ -490,6 +486,16 @@ ikev2_frag_recv(struct ikev2_sa *ike_sa, rc_vchar_t *packet,
 			item->total_data_len = 0;
 			item->total_fragments = total_frags;
 			item->timeout = time(NULL) + 60;
+		}
+
+		/* Check for duplicate / retransmission */
+		if (frag_no <= item->total_fragments &&
+		    item->parts[frag_no] != NULL) {
+			TRACE((PLOGLOC,
+			       "ikev2_frag_recv: duplicate frag "
+			       "%u/%u msgid=%u\n",
+			       frag_no, total_frags, msgid));
+			return NULL;
 		}
 	} else {
 		/* Create new assembly context */

@@ -486,16 +486,18 @@ static int switch_id_pl_addr(struct sockaddr *src, struct sockaddr *dst, int pro
         case IPSECDOI_ID_IPV4_ADDR:
         case IPSECDOI_ID_IPV4_ADDR_SUBNET:
         {
-            ((struct sockaddr_in*)dst)->sin_addr = 
-                    ((struct sockaddr_in*)src)->sin_addr;
+            memcpy((void *)dst,
+                   &((struct sockaddr_in*)src)->sin_addr,
+                   sizeof(struct in_addr));
 
             break;
         }
         case IPSECDOI_ID_IPV6_ADDR:
         case IPSECDOI_ID_IPV6_ADDR_SUBNET:
         {
-            ((struct sockaddr_in6*)dst)->sin6_addr =
-                    ((struct sockaddr_in6*)src)->sin6_addr;
+            memcpy((void *)dst,
+                   &((struct sockaddr_in6*)src)->sin6_addr,
+                   sizeof(struct in6_addr));
             break;
         }
         default:
@@ -711,7 +713,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     {
             plog(PLOG_INTERR, PLOGLOC, NULL,
                  "failed to get NAT-OAr\n");
-            return retval;
+            goto out_free;
     }
 
     oa_r = (struct sockaddr*)&ss;
@@ -730,7 +732,7 @@ int ph2natoa_set(struct ph2handle* iph2, int side)
     {
         plog(PLOG_INTERR, PLOGLOC, NULL,
                 "failed to get NAT-OAi: %d", side);
-        return retval;
+        goto out_free;
     }
 
 	oa_r = (struct sockaddr*)&ss;
